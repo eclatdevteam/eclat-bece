@@ -32,7 +32,7 @@ export const Pricing = ({ onGetStartedClick }: PricingProps) => {
         "Win monthly cash prizes",
       ],
       cta: "Go Premium",
-      popular: true,
+      popular: false,
     },
     {
       name: "Annual Premium",
