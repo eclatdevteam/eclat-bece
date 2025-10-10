@@ -36,33 +36,17 @@ export const Pricing = ({ onGetStartedClick }: PricingProps) => {
     },
     {
       name: "Annual Premium",
-      price: "₦10,000",
+      price: "₦12,000",
       period: "/year",
       features: [
         "Everything in Monthly Premium",
-        "Save ₦8,000 per year",
+        "Save ₦6,000 per year",
         "Exclusive annual prizes",
         "Priority support",
         "Advanced learning insights",
       ],
       cta: "Best Value",
       popular: true,
-    },
-    {
-      name: "School",
-      price: "Custom",
-      period: "pricing",
-      description: "For schools and institutions",
-      features: [
-        "Everything in Premium",
-        "Multi-user management",
-        "Custom assignments",
-        "Class analytics",
-        "Dedicated support",
-        "Custom branding",
-      ],
-      cta: "Contact Sales",
-      popular: false,
     },
   ];
 
@@ -96,10 +80,9 @@ export const Pricing = ({ onGetStartedClick }: PricingProps) => {
               )}
               <CardHeader className="text-center pb-8 pt-8">
                 <CardTitle className="text-2xl mb-2">{plan.name}</CardTitle>
-                <CardDescription className="mb-4">{plan.description}</CardDescription>
                 <div className="mb-2">
                   <span className="text-4xl font-bold text-foreground">{plan.price}</span>
-                  {plan.price !== "Custom" && <span className="text-muted-foreground"> / {plan.period}</span>}
+                  <span className="text-muted-foreground"> {plan.period}</span>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">

@@ -1,17 +1,26 @@
+import { useState } from "react";
 import { Medal, Crown, Trophy } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface LeaderboardProps {
   onViewFullLeaderboard: () => void;
 }
 
 export const Leaderboard = ({ onViewFullLeaderboard }: LeaderboardProps) => {
+  const [dialogOpen, setDialogOpen] = useState(false);
+
   const topStudents = [
     {
       rank: 1,
       name: "Chidinma Okafor",
-      school: "Kings College",
+      school: "Queen's College",
       points: 12450,
       avatar: "🎓",
       badge: Crown,
@@ -21,7 +30,7 @@ export const Leaderboard = ({ onViewFullLeaderboard }: LeaderboardProps) => {
     {
       rank: 2,
       name: "Emmanuel Adebayo",
-      school: "Queen's College",
+      school: "Kings College",
       points: 11890,
       avatar: "📚",
       badge: Medal,
@@ -38,6 +47,24 @@ export const Leaderboard = ({ onViewFullLeaderboard }: LeaderboardProps) => {
       color: "text-primary",
       bgColor: "bg-primary-light",
     },
+  ];
+
+  const allStudents = [
+    { rank: 1, name: "Chidinma Okafor", school: "Queen's College", points: 12450, avatar: "🎓" },
+    { rank: 2, name: "Emmanuel Adebayo", school: "Kings College", points: 11890, avatar: "📚" },
+    { rank: 3, name: "Fatima Hassan", school: "Federal Government College", points: 11250, avatar: "🌟" },
+    { rank: 4, name: "Aisha Mohammed", school: "Government Secondary School", points: 10980, avatar: "💫" },
+    { rank: 5, name: "Chukwudi Eze", school: "Queen's College", points: 10750, avatar: "🎯" },
+    { rank: 6, name: "Blessing Okonkwo", school: "Kings College", points: 10520, avatar: "⭐" },
+    { rank: 7, name: "Ibrahim Yusuf", school: "Federal Government College", points: 10340, avatar: "🏆" },
+    { rank: 8, name: "Ngozi Nwosu", school: "Government Secondary School", points: 10100, avatar: "✨" },
+    { rank: 9, name: "Taiwo Adeleke", school: "Queen's College", points: 9870, avatar: "🌟" },
+    { rank: 10, name: "Kemi Babatunde", school: "Kings College", points: 9650, avatar: "💎" },
+    { rank: 11, name: "Olumide Johnson", school: "Federal Government College", points: 9420, avatar: "🎓" },
+    { rank: 12, name: "Hauwa Bello", school: "Government Secondary School", points: 9200, avatar: "📖" },
+    { rank: 13, name: "David Okafor", school: "Queen's College", points: 8980, avatar: "🔥" },
+    { rank: 14, name: "Amaka Obi", school: "Kings College", points: 8760, avatar: "🚀" },
+    { rank: 15, name: "Segun Adeyemi", school: "Federal Government College", points: 8540, avatar: "💪" },
   ];
 
   return (
@@ -102,11 +129,50 @@ export const Leaderboard = ({ onViewFullLeaderboard }: LeaderboardProps) => {
 
         {/* View Full Leaderboard Button */}
         <div className="text-center animate-fade-in" style={{ animationDelay: "0.4s" }}>
-          <Button variant="hero" size="lg" onClick={onViewFullLeaderboard}>
+          <Button variant="hero" size="lg" onClick={() => setDialogOpen(true)}>
             View Full Leaderboard
           </Button>
         </div>
       </div>
+
+      {/* Full Leaderboard Dialog */}
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-2xl font-bold text-center">
+              <Trophy className="inline-block mr-2 text-accent" size={24} />
+              Full Leaderboard
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 mt-4">
+            {allStudents.map((student, index) => (
+              <Card
+                key={index}
+                className={`border ${student.rank <= 3 ? "border-accent" : "border-border"}`}
+              >
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-4">
+                    <div className="flex-shrink-0 w-12 h-12 bg-primary-light rounded-full flex items-center justify-center">
+                      <span className="text-2xl">{student.avatar}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xl font-bold text-primary">#{student.rank}</span>
+                        <h4 className="text-lg font-semibold text-foreground truncate">{student.name}</h4>
+                      </div>
+                      <p className="text-sm text-muted-foreground truncate">{student.school}</p>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-xl font-bold text-primary">{student.points.toLocaleString()}</div>
+                      <div className="text-xs text-muted-foreground">points</div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </DialogContent>
+      </Dialog>
     </section>
   );
 };

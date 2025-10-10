@@ -47,14 +47,14 @@ export const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-center gap-2">
                 <Mail size={16} className="text-background/80" />
-                <a href="mailto:hello@eclat.app" className="text-background/80 hover:text-background transition-colors">
-                  hello@eclat.app
+                <a href="mailto:hello@eclatapp.ng" className="text-background/80 hover:text-background transition-colors">
+                  hello@eclatapp.ng
                 </a>
               </li>
               <li className="flex items-center gap-2">
                 <Phone size={16} className="text-background/80" />
-                <a href="tel:+2341234567890" className="text-background/80 hover:text-background transition-colors">
-                  +234 123 456 7890
+                <a href="tel:+2348130202112" className="text-background/80 hover:text-background transition-colors">
+                  +234 813 020 2112
                 </a>
               </li>
             </ul>
