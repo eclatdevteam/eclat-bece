@@ -15,7 +15,7 @@ const Index = () => {
   const navigate = useNavigate();
   
   const handleAuthAction = () => {
-    navigate("/auth");
+    navigate("/role-selection");
   };
 
   const scrollToLeaderboard = () => {
