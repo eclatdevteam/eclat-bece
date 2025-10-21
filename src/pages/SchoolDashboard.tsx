@@ -18,39 +18,39 @@ export default function SchoolDashboard() {
 
   const classes = [
     {
-      name: "Class 5A",
+      name: "Junior SAT Prep",
       students: 28,
-      avgScore: 78,
-      teacher: "Mrs. Adeyemi",
-      subjects: ["Math", "English", "Science"],
+      avgScore: 1180,
+      teacher: "Mrs. Johnson",
+      subjects: ["Math", "Reading", "Writing"],
     },
     {
-      name: "Class 5B",
+      name: "Senior SAT Prep",
       students: 30,
-      avgScore: 74,
-      teacher: "Mr. Okafor",
-      subjects: ["Math", "English", "Science"],
+      avgScore: 1250,
+      teacher: "Mr. Williams",
+      subjects: ["Math", "Reading", "Writing"],
     },
     {
-      name: "Class 8A",
+      name: "Advanced SAT Prep",
       students: 32,
-      avgScore: 82,
-      teacher: "Dr. Hassan",
-      subjects: ["Math", "Physics", "Chemistry"],
+      avgScore: 1350,
+      teacher: "Dr. Chen",
+      subjects: ["Math", "Reading", "Writing"],
     },
   ];
 
   const classStudents = [
-    { name: "Ada Nwosu", score: 78, progress: 68, rank: 8, avatar: "👧" },
-    { name: "Chidi Obi", score: 85, progress: 80, rank: 3, avatar: "👦" },
-    { name: "Fatima Bello", score: 92, progress: 88, rank: 1, avatar: "👧" },
-    { name: "Tunde Adewale", score: 71, progress: 55, rank: 12, avatar: "👦" },
+    { name: "Emma Thompson", score: 1280, progress: 68, rank: 8, avatar: "👧" },
+    { name: "James Wilson", score: 1340, progress: 80, rank: 3, avatar: "👦" },
+    { name: "Sarah Chen", score: 1420, progress: 88, rank: 1, avatar: "👧" },
+    { name: "Michael Brown", score: 1180, progress: 55, rank: 12, avatar: "👦" },
   ];
 
   const topPerformers = [
-    { name: "Fatima Bello", class: "Class 8A", score: 92, avatar: "👧" },
-    { name: "Emmanuel Okon", class: "Class 5A", score: 89, avatar: "👦" },
-    { name: "Amina Yusuf", class: "Class 8A", score: 87, avatar: "👧" },
+    { name: "Sarah Chen", class: "Advanced SAT", score: 1420, avatar: "👧" },
+    { name: "David Kim", class: "Junior SAT", score: 1390, avatar: "👦" },
+    { name: "Priya Patel", class: "Advanced SAT", score: 1370, avatar: "👧" },
   ];
 
   return (
@@ -58,7 +58,12 @@ export default function SchoolDashboard() {
       {/* Header */}
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">Éclat School Portal</h1>
+          <img 
+            src="/src/assets/logo.png" 
+            alt="Éclat Logo" 
+            className="h-10 w-auto cursor-pointer" 
+            onClick={() => navigate("/")}
+          />
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
               <Settings size={20} />
@@ -75,8 +80,8 @@ export default function SchoolDashboard() {
           <>
             {/* Welcome Section */}
             <div className="mb-8 animate-fade-in">
-              <h2 className="text-3xl font-bold text-foreground mb-2">Kings College Dashboard</h2>
-              <p className="text-muted-foreground">Monitor student performance and manage learning activities</p>
+              <h2 className="text-3xl font-bold text-foreground mb-2">Boston Academy Dashboard</h2>
+              <p className="text-muted-foreground">Monitor SAT prep performance and support college readiness</p>
             </div>
 
             {/* Overview Stats */}
@@ -168,15 +173,15 @@ export default function SchoolDashboard() {
                             <p className="text-xl font-bold text-primary">{cls.students}</p>
                           </div>
                           <div>
-                            <p className="text-sm text-muted-foreground">Avg Score</p>
+                            <p className="text-sm text-muted-foreground">Avg SAT Score</p>
                             <div className="flex items-center gap-2">
                               <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
                                 <div
                                   className="h-full bg-gradient-hero"
-                                  style={{ width: `${cls.avgScore}%` }}
+                                  style={{ width: `${(cls.avgScore / 1600) * 100}%` }}
                                 ></div>
                               </div>
-                              <span className="text-xl font-bold text-accent">{cls.avgScore}%</span>
+                              <span className="text-xl font-bold text-accent">{cls.avgScore}</span>
                             </div>
                           </div>
                         </div>
@@ -196,7 +201,7 @@ export default function SchoolDashboard() {
                   <CardContent>
                     <div className="p-4 bg-primary-light rounded-lg text-center mb-4">
                       <p className="text-sm text-muted-foreground mb-1">Share with students</p>
-                      <p className="text-2xl font-bold text-primary tracking-wider">KINGS2025</p>
+                      <p className="text-2xl font-bold text-primary tracking-wider">BOSTON2025</p>
                     </div>
                     <Button variant="outline" className="w-full">Copy Code</Button>
                   </CardContent>
@@ -218,7 +223,7 @@ export default function SchoolDashboard() {
                           <p className="font-semibold text-sm">{student.name}</p>
                           <p className="text-xs text-muted-foreground">{student.class}</p>
                         </div>
-                        <span className="text-sm font-bold text-primary">{student.score}%</span>
+                        <span className="text-sm font-bold text-primary">{student.score}</span>
                       </div>
                     ))}
                   </CardContent>
@@ -278,17 +283,17 @@ export default function SchoolDashboard() {
                           <p className="text-sm text-muted-foreground">Rank #{student.rank}</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-6">
-                        <div>
-                          <p className="text-sm text-muted-foreground">Score</p>
-                          <p className="text-lg font-bold text-primary">{student.score}%</p>
+                        <div className="flex items-center gap-6">
+                          <div>
+                            <p className="text-sm text-muted-foreground">SAT Score</p>
+                            <p className="text-lg font-bold text-primary">{student.score}</p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">Progress</p>
+                            <p className="text-lg font-bold text-accent">{student.progress}%</p>
+                          </div>
+                          <Button variant="outline" size="sm">View Report</Button>
                         </div>
-                        <div>
-                          <p className="text-sm text-muted-foreground">Progress</p>
-                          <p className="text-lg font-bold text-accent">{student.progress}%</p>
-                        </div>
-                        <Button variant="outline" size="sm">View Details</Button>
-                      </div>
                     </div>
                   ))}
                 </div>

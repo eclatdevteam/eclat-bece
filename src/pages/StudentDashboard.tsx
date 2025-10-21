@@ -1,10 +1,13 @@
 import { useState } from "react";
-import { BookOpen, Trophy, TrendingUp, Award, Target, Flame, LogOut, Settings, User } from "lucide-react";
+import { BookOpen, Trophy, TrendingUp, Target, Flame, LogOut, Settings } from "lucide-react";
 import { CompetitionLeaderboards } from "@/components/CompetitionLeaderboards";
+import { PracticeAssignment } from "@/components/PracticeAssignment";
+import { ProgressReport } from "@/components/ProgressReport";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
+import logo from "@/assets/logo.png";
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
@@ -39,7 +42,7 @@ export default function StudentDashboard() {
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <h1 className="text-2xl font-bold text-foreground">Éclat</h1>
+            <img src={logo} alt="Éclat Logo" className="h-10 w-auto cursor-pointer" onClick={() => navigate("/")} />
             <div className="flex items-center gap-2 px-3 py-1 bg-accent-light rounded-full">
               <Flame className="text-accent" size={16} />
               <span className="text-sm font-semibold text-accent">5-day streak!</span>
@@ -60,7 +63,7 @@ export default function StudentDashboard() {
         {/* Welcome Section */}
         <div className="mb-8 animate-fade-in">
           <h2 className="text-3xl font-bold text-foreground mb-2">Welcome back, Ada! 🎉</h2>
-          <p className="text-muted-foreground">Keep pushing, Ada! You're 2 ranks away from Top 10!</p>
+          <p className="text-muted-foreground">Ready to conquer the SAT? You're 2 ranks away from Top 10 globally!</p>
         </div>
 
         {/* Quick Stats */}
@@ -161,8 +164,18 @@ export default function StudentDashboard() {
               </CardContent>
             </Card>
 
-            {/* Competition Leaderboards */}
+            {/* Practice Assignments */}
             <div className="animate-scale-in" style={{ animationDelay: "0.1s" }}>
+              <PracticeAssignment onStartAssignment={() => navigate("/quiz")} />
+            </div>
+
+            {/* Progress Report */}
+            <div className="animate-scale-in" style={{ animationDelay: "0.2s" }}>
+              <ProgressReport />
+            </div>
+
+            {/* Competition Leaderboards */}
+            <div className="animate-scale-in" style={{ animationDelay: "0.3s" }}>
               <CompetitionLeaderboards 
                 showCurrentUserPosition={true}
                 currentUserName="Ada"

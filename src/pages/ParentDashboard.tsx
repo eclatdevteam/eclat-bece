@@ -15,11 +15,11 @@ export default function ParentDashboard() {
       progress: 68,
       avatar: "👧",
       recentActivity: [
-        "Completed 10 English questions today",
-        "Scored 85% on Mathematics quiz",
+        "Completed 10 Reading Comprehension questions",
+        "Scored 85% on Math Practice Test",
         "Earned 'Quiz Master' badge",
       ],
-      weakAreas: ["Algebra", "Grammar"],
+      weakAreas: ["Algebra II", "Evidence-Based Reading"],
     },
     {
       name: "Kola",
@@ -28,11 +28,11 @@ export default function ParentDashboard() {
       progress: 75,
       avatar: "👦",
       recentActivity: [
-        "Completed 15 Science questions today",
-        "Ranked #8 in class leaderboard",
+        "Completed 15 Math questions today",
+        "Ranked #8 in global leaderboard",
         "5-day practice streak!",
       ],
-      weakAreas: ["Data Interpretation"],
+      weakAreas: ["Data Analysis & Problem Solving"],
     },
   ];
 
@@ -41,7 +41,12 @@ export default function ParentDashboard() {
       {/* Header */}
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-foreground">Éclat Parent Portal</h1>
+          <img 
+            src="/src/assets/logo.png" 
+            alt="Éclat Logo" 
+            className="h-10 w-auto cursor-pointer" 
+            onClick={() => navigate("/")}
+          />
           <div className="flex items-center gap-4">
             <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
               <Settings size={20} />
@@ -57,7 +62,7 @@ export default function ParentDashboard() {
         {/* Welcome Section */}
         <div className="mb-8 animate-fade-in">
           <h2 className="text-3xl font-bold text-foreground mb-2">Welcome back! 👋</h2>
-          <p className="text-muted-foreground">Track your children's learning progress and support their growth</p>
+          <p className="text-muted-foreground">Track your children's SAT prep progress and support their college journey</p>
         </div>
 
         {/* Quick Actions */}
@@ -184,10 +189,10 @@ export default function ParentDashboard() {
                 <BookOpen className="text-primary" size={24} />
               </div>
               <div className="flex-1">
-                <h3 className="font-bold text-lg mb-2">Supporting Your Child's Learning</h3>
+                <h3 className="font-bold text-lg mb-2">Supporting Your Child's SAT Journey</h3>
                 <p className="text-muted-foreground mb-4">
-                  Regular practice and positive reinforcement help build confidence. Encourage your child to practice
-                  daily, even for just 15 minutes!
+                  Consistent practice is key to SAT success. Encourage your child to practice daily for 20-30 minutes 
+                  and celebrate their progress along the way!
                 </p>
                 <Button variant="outline">View Parent Resources</Button>
               </div>
