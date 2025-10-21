@@ -166,7 +166,7 @@ export default function StudentDashboard() {
               <CompetitionLeaderboards 
                 showCurrentUserPosition={true}
                 currentUserName="Ada"
-                currentUserRanks={{ weekly: 45, monthly: 12, annual: 8 }}
+                currentUserRanks={{ monthly: 12, annual: 8 }}
               />
             </div>
           </div>

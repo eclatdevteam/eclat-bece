@@ -19,12 +19,12 @@ export const Hero = ({ onGetStartedClick, onViewLeaderboardClick }: HeroProps) =
 
           {/* Main Heading */}
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-foreground leading-tight animate-slide-up">
-            Learn. Compete. Win.
+            Master the SAT. Compete Globally. Win Big.
           </h1>
 
           {/* Subheading */}
           <p className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed animate-slide-up" style={{ animationDelay: "0.1s" }}>
-            Éclat turns exam prep into a game — practice questions, climb the leaderboard, and earn rewards.
+            Éclat transforms SAT prep into an engaging competition — practice unlimited questions, climb global leaderboards, and win real cash prizes.
           </p>
 
           {/* CTA Buttons */}
@@ -42,14 +42,14 @@ export const Hero = ({ onGetStartedClick, onViewLeaderboardClick }: HeroProps) =
           <div className="grid grid-cols-3 gap-8 pt-12 max-w-2xl mx-auto animate-scale-in" style={{ animationDelay: "0.3s" }}>
             <div className="text-center">
               <div className="text-3xl sm:text-4xl font-bold text-primary">10K+</div>
-              <div className="text-sm text-muted-foreground mt-1">Active Students</div>
+              <div className="text-sm text-muted-foreground mt-1">Students Worldwide</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl sm:text-4xl font-bold text-primary">50K+</div>
-              <div className="text-sm text-muted-foreground mt-1">Questions Solved</div>
+              <div className="text-3xl sm:text-4xl font-bold text-primary">100K+</div>
+              <div className="text-sm text-muted-foreground mt-1">SAT Questions</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl sm:text-4xl font-bold text-accent">₦2M+</div>
+              <div className="text-3xl sm:text-4xl font-bold text-accent">$10K+</div>
               <div className="text-sm text-muted-foreground mt-1">Prizes Awarded</div>
             </div>
           </div>

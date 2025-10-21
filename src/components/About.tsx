@@ -3,16 +3,16 @@ import { CheckCircle2 } from "lucide-react";
 export const About = () => {
   const steps = [
     {
-      title: "Students Practice Daily",
-      description: "Access thousands of practice questions organized by subject and difficulty.",
+      title: "Practice Real SAT Questions",
+      description: "Access thousands of authentic SAT questions covering Reading, Writing, and Math sections.",
     },
     {
-      title: "Parents Monitor Growth",
-      description: "Track progress with detailed analytics and receive regular performance updates.",
+      title: "Compete Globally",
+      description: "Climb leaderboards and compete with students worldwide for cash prizes.",
     },
     {
-      title: "Schools Assign & Review",
-      description: "Create custom assignments and monitor entire classrooms with ease.",
+      title: "Track Your Progress",
+      description: "Monitor your improvement with detailed analytics and personalized insights.",
     },
   ];
 
@@ -59,16 +59,16 @@ export const About = () => {
           {/* Benefits Grid */}
           <div className="bg-primary-light/50 rounded-2xl p-8 animate-scale-in" style={{ animationDelay: "0.3s" }}>
             <h3 className="text-2xl font-bold text-foreground mb-6 text-center">
-              Why Students Love Éclat
+              Why Students Choose Éclat
             </h3>
             <div className="grid sm:grid-cols-2 gap-4">
               {[
-                "Gamified learning experience",
-                "Win real prizes every month",
-                "Track your improvement over time",
-                "Compete with friends nationwide",
-                "Personalized study recommendations",
-                "Available on all devices",
+                "Authentic SAT practice questions",
+                "Win real cash prizes monthly",
+                "Track your score improvements",
+                "Compete with students worldwide",
+                "Personalized study insights",
+                "Mobile & desktop optimized",
               ].map((benefit, index) => (
                 <div key={index} className="flex items-center gap-3">
                   <CheckCircle2 className="text-primary flex-shrink-0" size={20} />

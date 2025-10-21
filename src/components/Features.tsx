@@ -5,22 +5,22 @@ export const Features = () => {
   const features = [
     {
       icon: BookOpen,
-      title: "Practice by Subject & Topic",
-      description: "Master any subject with targeted practice questions organized by topics and difficulty levels.",
+      title: "Comprehensive SAT Practice",
+      description: "Master Reading, Writing, and Math with thousands of authentic SAT questions organized by section and difficulty.",
       color: "text-primary",
       bgColor: "bg-primary-light",
     },
     {
       icon: Trophy,
-      title: "Live Leaderboards",
-      description: "Compete with students nationwide in real-time. Climb the ranks and win monthly prizes!",
+      title: "Global Competition",
+      description: "Compete with SAT students worldwide. Top performers win real cash prizes monthly and annually!",
       color: "text-accent",
       bgColor: "bg-accent-light",
     },
     {
       icon: BarChart3,
-      title: "Parent & School Dashboards",
-      description: "Track progress, assign homework, and monitor student performance with comprehensive analytics.",
+      title: "Detailed Performance Analytics",
+      description: "Track your progress with in-depth analytics. Parents and tutors can monitor performance in real-time.",
       color: "text-primary-glow",
       bgColor: "bg-primary-light",
     },

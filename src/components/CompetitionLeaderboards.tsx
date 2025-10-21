@@ -1,4 +1,4 @@
-import { Trophy, Zap, Calendar, Crown } from "lucide-react";
+import { Trophy, Calendar, Crown } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -14,7 +14,6 @@ interface CompetitionLeaderboardsProps {
   showCurrentUserPosition?: boolean;
   currentUserName?: string;
   currentUserRanks?: {
-    weekly: number;
     monthly: number;
     annual: number;
   };
@@ -22,31 +21,23 @@ interface CompetitionLeaderboardsProps {
 
 export const CompetitionLeaderboards = ({
   showCurrentUserPosition = false,
-  currentUserName = "Ada",
-  currentUserRanks = { weekly: 45, monthly: 12, annual: 8 },
+  currentUserName = "Alex",
+  currentUserRanks = { monthly: 12, annual: 8 },
 }: CompetitionLeaderboardsProps) => {
-  const weeklyLeaders: Student[] = [
-    { rank: 1, name: "Ibrahim Yusuf", school: "Federal Government College", points: 1450, avatar: "🏆" },
-    { rank: 2, name: "Amaka Obi", school: "Kings College", points: 1380, avatar: "⭐" },
-    { rank: 3, name: "Segun Adeyemi", school: "Queen's College", points: 1290, avatar: "✨" },
-    { rank: 4, name: "Blessing Okonkwo", school: "Government Secondary School", points: 1210, avatar: "💫" },
-    { rank: 5, name: "Taiwo Adeleke", school: "Federal Government College", points: 1150, avatar: "🌟" },
-  ];
-
   const monthlyLeaders: Student[] = [
-    { rank: 1, name: "Chidinma Okafor", school: "Queen's College", points: 12450, avatar: "🎓" },
-    { rank: 2, name: "Emmanuel Adebayo", school: "Kings College", points: 11890, avatar: "📚" },
-    { rank: 3, name: "Fatima Hassan", school: "Federal Government College", points: 11250, avatar: "🌟" },
-    { rank: 4, name: "Aisha Mohammed", school: "Government Secondary School", points: 10980, avatar: "💫" },
-    { rank: 5, name: "Chukwudi Eze", school: "Queen's College", points: 10750, avatar: "🎯" },
+    { rank: 1, name: "Sarah Chen", school: "Singapore International", points: 12450, avatar: "🎓" },
+    { rank: 2, name: "James Wilson", school: "Boston Academy", points: 11890, avatar: "📚" },
+    { rank: 3, name: "Priya Patel", school: "Delhi Public School", points: 11250, avatar: "🌟" },
+    { rank: 4, name: "Mohammed Al-Rashid", school: "Dubai International", points: 10980, avatar: "💫" },
+    { rank: 5, name: "Emma Thompson", school: "London College", points: 10750, avatar: "🎯" },
   ];
 
   const annualLeaders: Student[] = [
-    { rank: 1, name: "Fatima Hassan", school: "Federal Government College", points: 145890, avatar: "👑" },
-    { rank: 2, name: "Emmanuel Adebayo", school: "Kings College", points: 142340, avatar: "🥇" },
-    { rank: 3, name: "Chidinma Okafor", school: "Queen's College", points: 138920, avatar: "🥈" },
-    { rank: 4, name: "Ngozi Nwosu", school: "Government Secondary School", points: 135100, avatar: "🥉" },
-    { rank: 5, name: "Olumide Johnson", school: "Federal Government College", points: 132890, avatar: "⭐" },
+    { rank: 1, name: "Li Wei", school: "Beijing International", points: 145890, avatar: "👑" },
+    { rank: 2, name: "Sophia Martinez", school: "Madrid Academy", points: 142340, avatar: "🥇" },
+    { rank: 3, name: "David Kim", school: "Seoul Global School", points: 138920, avatar: "🥈" },
+    { rank: 4, name: "Olivia Brown", school: "Sydney Grammar", points: 135100, avatar: "🥉" },
+    { rank: 5, name: "Lucas Silva", school: "São Paulo International", points: 132890, avatar: "⭐" },
   ];
 
   const renderLeaderboard = (leaders: Student[], icon: React.ReactNode, prizeInfo: string) => (
@@ -73,9 +64,7 @@ export const CompetitionLeaderboards = ({
               </div>
               <div className="text-right">
                 <p className="text-2xl font-bold text-primary">
-                  #{leaders === weeklyLeaders ? currentUserRanks.weekly : 
-                    leaders === monthlyLeaders ? currentUserRanks.monthly : 
-                    currentUserRanks.annual}
+                  #{leaders === monthlyLeaders ? currentUserRanks.monthly : currentUserRanks.annual}
                 </p>
               </div>
             </div>
@@ -118,19 +107,15 @@ export const CompetitionLeaderboards = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Trophy className="text-accent" size={24} />
-          Competition Leaderboards
+          Global Leaderboards
         </CardTitle>
         <CardDescription>
-          Compete with students across Nigeria and win amazing prizes
+          Compete with SAT students worldwide and win real cash prizes
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="weekly" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="weekly">
-              <Zap size={16} className="mr-1" />
-              Weekly
-            </TabsTrigger>
+        <Tabs defaultValue="monthly" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="monthly">
               <Calendar size={16} className="mr-1" />
               Monthly
@@ -141,19 +126,11 @@ export const CompetitionLeaderboards = ({
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="weekly" className="mt-6">
-            {renderLeaderboard(
-              weeklyLeaders,
-              <Zap className="text-accent" size={20} />,
-              "Win Airtime Every Week!"
-            )}
-          </TabsContent>
-
           <TabsContent value="monthly" className="mt-6">
             {renderLeaderboard(
               monthlyLeaders,
               <Trophy className="text-accent" size={20} />,
-              "Share in ₦50,000 Prize Pool!"
+              "Win $100 Cash Prize!"
             )}
           </TabsContent>
 
@@ -161,7 +138,7 @@ export const CompetitionLeaderboards = ({
             {renderLeaderboard(
               annualLeaders,
               <Crown className="text-accent" size={20} />,
-              "Grand Prize Pool: ₦2,000,000!"
+              "Grand Prize: $1,500 Cash!"
             )}
           </TabsContent>
         </Tabs>
