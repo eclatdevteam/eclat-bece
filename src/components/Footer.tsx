@@ -47,8 +47,8 @@ export const Footer = () => {
             <ul className="space-y-3">
               <li className="flex items-center gap-2">
                 <Mail size={16} className="text-background/80" />
-                <a href="mailto:hello@eclatapp.ng" className="text-background/80 hover:text-background transition-colors">
-                  hello@eclatapp.ng
+                <a href="mailto:hello@eclatapp.xyz" className="text-background/80 hover:text-background transition-colors">
+                  hello@eclatapp.xyz
                 </a>
               </li>
               <li className="flex items-center gap-2">

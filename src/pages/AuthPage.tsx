@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { BookOpen } from "lucide-react";
 
 export default function AuthPage() {
@@ -185,6 +186,18 @@ export default function AuthPage() {
                           placeholder="you@example.com"
                           required
                         />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="signup-class">Class</Label>
+                        <Select required>
+                          <SelectTrigger id="signup-class">
+                            <SelectValue placeholder="Select your class" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="year6">Year 6 (Common Entrance)</SelectItem>
+                            <SelectItem value="year9">Year 9 (BECE)</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="signup-password">Password</Label>

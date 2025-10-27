@@ -97,10 +97,18 @@ export default function ParentDashboard() {
                     </div>
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => navigate("/quiz")}
+                    >
                       View Report
                     </Button>
-                    <Button variant="hero" size="sm">
+                    <Button 
+                      variant="hero" 
+                      size="sm"
+                      onClick={() => navigate("/quiz")}
+                    >
                       Assign Practice
                     </Button>
                   </div>

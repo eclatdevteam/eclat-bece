@@ -22,10 +22,10 @@ export const Pricing = ({ onGetStartedClick }: PricingProps) => {
     },
     {
       name: "Monthly",
-      price: "₦2,999",
+      price: "₦1,500",
       period: "/month",
       features: [
-        "Unlimited BECE practice questions",
+        "Unlimited BECE & Common Entrance practice",
         "Full leaderboard access",
         "Compete for ₦30K monthly prizes",
         "Detailed performance analytics",
@@ -36,7 +36,7 @@ export const Pricing = ({ onGetStartedClick }: PricingProps) => {
     },
     {
       name: "Annual",
-      price: "₦24,999",
+      price: "₦12,000",
       period: "/year",
       features: [
         "Everything in Monthly",

@@ -160,12 +160,20 @@ export default function SchoolDashboard() {
                             <h4 className="font-bold text-lg">{cls.name}</h4>
                             <p className="text-sm text-muted-foreground">{cls.teacher}</p>
                           </div>
-                          <Button variant="outline" size="sm" onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedClass(cls.name);
-                          }}>
-                            View Class
-                          </Button>
+                          <div className="flex gap-2">
+                            <Button variant="outline" size="sm" onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedClass(cls.name);
+                            }}>
+                              View Class
+                            </Button>
+                            <Button variant="default" size="sm" onClick={(e) => {
+                              e.stopPropagation();
+                              navigate("/quiz");
+                            }}>
+                              View Analytics
+                            </Button>
+                          </div>
                         </div>
                         <div className="grid grid-cols-2 gap-4">
                           <div>
