@@ -3,12 +3,12 @@ import { CheckCircle2, BookOpen, TrendingUp, Target, Award, Globe, Smartphone } 
 export const About = () => {
   const steps = [
     {
-      title: "Practice Real SAT Questions",
-      description: "Access thousands of authentic SAT questions covering Reading, Writing, and Math sections.",
+      title: "Practice Real BECE Questions",
+      description: "Access thousands of authentic BECE questions covering Mathematics, English, Basic Science, and Social Studies.",
     },
     {
-      title: "Compete Globally",
-      description: "Climb leaderboards and compete with students worldwide for cash prizes.",
+      title: "Compete Nationwide",
+      description: "Climb leaderboards and compete with students across Nigeria for cash prizes.",
     },
     {
       title: "Track Your Progress",
@@ -63,10 +63,10 @@ export const About = () => {
             </h3>
             <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
-                { icon: BookOpen, text: "Authentic SAT practice questions", color: "text-primary" },
+                { icon: BookOpen, text: "Authentic BECE practice questions", color: "text-primary" },
                 { icon: Award, text: "Win real cash prizes monthly", color: "text-accent" },
                 { icon: TrendingUp, text: "Track your score improvements", color: "text-primary" },
-                { icon: Globe, text: "Compete with students worldwide", color: "text-accent" },
+                { icon: Globe, text: "Compete with students nationwide", color: "text-accent" },
                 { icon: Target, text: "Personalized study insights", color: "text-primary" },
                 { icon: Smartphone, text: "Mobile & desktop optimized", color: "text-accent" },
               ].map((benefit, index) => (

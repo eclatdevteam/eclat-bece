@@ -5,22 +5,22 @@ export const Features = () => {
   const features = [
     {
       icon: BookOpen,
-      title: "Comprehensive SAT Practice",
-      description: "Master Reading, Writing, and Math with thousands of authentic SAT questions organized by section and difficulty.",
+      title: "Comprehensive BECE Practice",
+      description: "Master Mathematics, English, Basic Science, and Social Studies with thousands of authentic BECE questions organized by subject and difficulty.",
       color: "text-primary",
       bgColor: "bg-primary-light",
     },
     {
       icon: Trophy,
-      title: "Global Competition",
-      description: "Compete with SAT students worldwide. Top performers win real cash prizes monthly and annually!",
+      title: "National Competition",
+      description: "Compete with BECE students across Nigeria. Top performers win real cash prizes monthly and annually!",
       color: "text-accent",
       bgColor: "bg-accent-light",
     },
     {
       icon: BarChart3,
       title: "Detailed Performance Analytics",
-      description: "Track your progress with in-depth analytics. Parents and tutors can monitor performance in real-time.",
+      description: "Track your progress with in-depth analytics. Parents and teachers can monitor performance in real-time.",
       color: "text-primary-glow",
       bgColor: "bg-primary-light",
     },
@@ -89,7 +89,7 @@ export const Features = () => {
                   <CheckCircle2 className="text-primary" size={24} />
                 </div>
                 <h4 className="font-semibold mb-2">Proven Results</h4>
-                <p className="text-sm text-muted-foreground">Average 150+ point improvement</p>
+                <p className="text-sm text-muted-foreground">Significant score improvements</p>
               </div>
             </div>
           </div>

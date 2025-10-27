@@ -19,12 +19,13 @@ interface ProgressReportProps {
 
 export const ProgressReport = ({
   subjectProgress = [
-    { subject: "Math", currentScore: 580, improvement: 45, questionsCompleted: 142, accuracy: 78 },
-    { subject: "Reading", currentScore: 620, improvement: 38, questionsCompleted: 98, accuracy: 82 },
-    { subject: "Writing", currentScore: 610, improvement: 52, questionsCompleted: 87, accuracy: 85 },
+    { subject: "Mathematics", currentScore: 78, improvement: 12, questionsCompleted: 142, accuracy: 78 },
+    { subject: "English Language", currentScore: 82, improvement: 10, questionsCompleted: 98, accuracy: 82 },
+    { subject: "Basic Science", currentScore: 85, improvement: 15, questionsCompleted: 87, accuracy: 85 },
+    { subject: "Social Studies", currentScore: 80, improvement: 9, questionsCompleted: 76, accuracy: 80 },
   ],
-  totalQuestionsCompleted = 327,
-  overallAccuracy = 82,
+  totalQuestionsCompleted = 403,
+  overallAccuracy = 81,
 }: ProgressReportProps) => {
   const [expanded, setExpanded] = useState(false);
   const totalScore = subjectProgress.reduce((sum, item) => sum + item.currentScore, 0);
@@ -38,7 +39,7 @@ export const ProgressReport = ({
               <TrendingUp className="text-accent" size={24} />
               Progress Report
             </CardTitle>
-            <CardDescription>Your SAT prep journey at a glance</CardDescription>
+            <CardDescription>Your BECE prep journey at a glance</CardDescription>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm">
@@ -59,9 +60,9 @@ export const ProgressReport = ({
         {/* Overall Stats */}
         <div className="grid md:grid-cols-3 gap-4 mb-6 p-4 bg-gradient-to-br from-primary/10 to-accent/10 rounded-lg">
           <div className="text-center">
-            <p className="text-sm text-muted-foreground mb-1">Current SAT Score</p>
-            <p className="text-3xl font-bold text-primary">{totalScore}</p>
-            <p className="text-xs text-muted-foreground">out of 1600</p>
+            <p className="text-sm text-muted-foreground mb-1">Average Score</p>
+            <p className="text-3xl font-bold text-primary">{Math.round(totalScore / subjectProgress.length)}%</p>
+            <p className="text-xs text-muted-foreground">across all subjects</p>
           </div>
           <div className="text-center">
             <p className="text-sm text-muted-foreground mb-1">Questions Completed</p>
@@ -114,8 +115,8 @@ export const ProgressReport = ({
 
         <div className="mt-6 p-4 bg-primary-light/30 rounded-lg border border-primary/20">
           <p className="text-sm">
-            <span className="font-semibold">Pro Tip:</span> Focus on Math section to reach 1300+ score. 
-            Your reading and writing scores are strong!
+            <span className="font-semibold">Pro Tip:</span> Focus on Mathematics to reach 85%+ average score. 
+            Your English and Basic Science scores are strong!
           </p>
         </div>
 
@@ -134,7 +135,7 @@ export const ProgressReport = ({
                 <div className="text-xs text-muted-foreground">Total Hours</div>
               </div>
               <div className="text-center p-3 bg-muted/30 rounded-lg">
-                <div className="text-2xl font-bold text-accent">+180</div>
+                <div className="text-2xl font-bold text-accent">+15%</div>
                 <div className="text-xs text-muted-foreground">Score Gain</div>
               </div>
               <div className="text-center p-3 bg-muted/30 rounded-lg">
@@ -148,11 +149,11 @@ export const ProgressReport = ({
               <div className="grid md:grid-cols-2 gap-3">
                 <div className="p-3 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                   <p className="text-xs font-semibold text-green-700 dark:text-green-400 mb-1">Strong Areas</p>
-                  <p className="text-xs">Vocabulary, Grammar, Geometry</p>
+                  <p className="text-xs">Grammar, Living Things, Nigerian History</p>
                 </div>
                 <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
                   <p className="text-xs font-semibold text-yellow-700 dark:text-yellow-400 mb-1">Needs Improvement</p>
-                  <p className="text-xs">Algebra II, Data Analysis</p>
+                  <p className="text-xs">Algebraic Processes, Essay Writing</p>
                 </div>
               </div>
             </div>

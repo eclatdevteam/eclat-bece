@@ -25,17 +25,17 @@ export const Hero = ({ onGetStartedClick, onViewLeaderboardClick }: HeroProps) =
           {/* Badge */}
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-accent-light rounded-full text-accent font-semibold animate-scale-in">
             <Sparkles size={16} />
-            <span>Where Learning Meets Competition</span>
+            <span>Nigeria's Premier BECE Prep Platform</span>
           </div>
 
           {/* Main Heading */}
           <h1 className="text-5xl sm:text-6xl lg:text-7xl font-bold text-foreground leading-tight animate-slide-up">
-            Master the SAT. Compete Globally. Win Big.
+            Ace Your BECE. Compete Nationwide. Win Big.
           </h1>
 
           {/* Subheading */}
           <p className="text-xl sm:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed animate-slide-up" style={{ animationDelay: "0.1s" }}>
-            Éclat transforms SAT prep into an engaging competition — practice unlimited questions, climb global leaderboards, and win real cash prizes.
+            Éclat transforms BECE preparation into an engaging competition — practice unlimited questions, climb national leaderboards, and win real cash prizes.
           </p>
 
           {/* CTA Buttons */}
@@ -52,15 +52,15 @@ export const Hero = ({ onGetStartedClick, onViewLeaderboardClick }: HeroProps) =
           {/* Stats */}
           <div className="grid grid-cols-3 gap-8 pt-12 max-w-2xl mx-auto animate-scale-in" style={{ animationDelay: "0.3s" }}>
             <div className="text-center">
-              <div className="text-3xl sm:text-4xl font-bold text-primary">10K+</div>
-              <div className="text-sm text-muted-foreground mt-1">Students Worldwide</div>
+              <div className="text-3xl sm:text-4xl font-bold text-primary">5K+</div>
+              <div className="text-sm text-muted-foreground mt-1">Nigerian Students</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl sm:text-4xl font-bold text-primary">100K+</div>
-              <div className="text-sm text-muted-foreground mt-1">SAT Questions</div>
+              <div className="text-3xl sm:text-4xl font-bold text-primary">50K+</div>
+              <div className="text-sm text-muted-foreground mt-1">BECE Questions</div>
             </div>
             <div className="text-center">
-              <div className="text-3xl sm:text-4xl font-bold text-accent">$10K+</div>
+              <div className="text-3xl sm:text-4xl font-bold text-accent">₦500K+</div>
               <div className="text-sm text-muted-foreground mt-1">Prizes Awarded</div>
             </div>
           </div>

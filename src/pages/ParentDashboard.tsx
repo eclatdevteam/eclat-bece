@@ -10,29 +10,29 @@ export default function ParentDashboard() {
   const children = [
     {
       name: "Ada",
-      class: "Class 5",
+      class: "JSS 3",
       avgScore: 78,
       progress: 68,
       avatar: "👧",
       recentActivity: [
-        "Completed 10 Reading Comprehension questions",
-        "Scored 85% on Math Practice Test",
+        "Completed 10 English Comprehension questions",
+        "Scored 85% on Mathematics Practice Test",
         "Earned 'Quiz Master' badge",
       ],
-      weakAreas: ["Algebra II", "Evidence-Based Reading"],
+      weakAreas: ["Algebraic Processes", "Essay Writing"],
     },
     {
       name: "Kola",
-      class: "Class 8",
+      class: "JSS 3",
       avgScore: 82,
       progress: 75,
       avatar: "👦",
       recentActivity: [
-        "Completed 15 Math questions today",
-        "Ranked #8 in global leaderboard",
+        "Completed 15 Mathematics questions today",
+        "Ranked #8 in national leaderboard",
         "5-day practice streak!",
       ],
-      weakAreas: ["Data Analysis & Problem Solving"],
+      weakAreas: ["Basic Science - Living Things"],
     },
   ];
 
@@ -62,7 +62,7 @@ export default function ParentDashboard() {
         {/* Welcome Section */}
         <div className="mb-8 animate-fade-in">
           <h2 className="text-3xl font-bold text-foreground mb-2">Welcome back! 👋</h2>
-          <p className="text-muted-foreground">Track your children's SAT prep progress and support their college journey</p>
+          <p className="text-muted-foreground">Track your children's BECE prep progress and support their educational journey</p>
         </div>
 
         {/* Quick Actions */}
@@ -189,9 +189,9 @@ export default function ParentDashboard() {
                 <BookOpen className="text-primary" size={24} />
               </div>
               <div className="flex-1">
-                <h3 className="font-bold text-lg mb-2">Supporting Your Child's SAT Journey</h3>
+                <h3 className="font-bold text-lg mb-2">Supporting Your Child's BECE Journey</h3>
                 <p className="text-muted-foreground mb-4">
-                  Consistent practice is key to SAT success. Encourage your child to practice daily for 20-30 minutes 
+                  Consistent practice is key to BECE success. Encourage your child to practice daily for 20-30 minutes
                   and celebrate their progress along the way!
                 </p>
                 <Button variant="outline">View Parent Resources</Button>

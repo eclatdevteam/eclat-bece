@@ -22,26 +22,26 @@ interface PracticeAssignmentProps {
 export const PracticeAssignment = ({ 
   assignments = [
     {
-      title: "Algebra & Functions Review",
+      title: "Number & Numeration Practice",
       dueDate: "Due in 2 days",
       questions: 20,
-      subject: "SAT Math",
+      subject: "Mathematics",
       difficulty: "Medium",
       completed: false,
     },
     {
-      title: "Reading Comprehension Practice",
+      title: "Comprehension Passages",
       dueDate: "Due in 5 days",
       questions: 15,
-      subject: "SAT Reading",
+      subject: "English Language",
       difficulty: "Hard",
       completed: false,
     },
     {
-      title: "Grammar & Usage Quiz",
+      title: "Living Things Quiz",
       dueDate: "Completed",
       questions: 18,
-      subject: "SAT Writing",
+      subject: "Basic Science",
       difficulty: "Easy",
       completed: true,
       score: 89,

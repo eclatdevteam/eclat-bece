@@ -18,39 +18,39 @@ export default function SchoolDashboard() {
 
   const classes = [
     {
-      name: "Junior SAT Prep",
+      name: "JSS 3A",
       students: 28,
-      avgScore: 1180,
-      teacher: "Mrs. Johnson",
-      subjects: ["Math", "Reading", "Writing"],
+      avgScore: 72,
+      teacher: "Mrs. Adebayo",
+      subjects: ["Mathematics", "English", "Basic Science", "Social Studies"],
     },
     {
-      name: "Senior SAT Prep",
+      name: "JSS 3B",
       students: 30,
-      avgScore: 1250,
-      teacher: "Mr. Williams",
-      subjects: ["Math", "Reading", "Writing"],
+      avgScore: 78,
+      teacher: "Mr. Okonkwo",
+      subjects: ["Mathematics", "English", "Basic Science", "Social Studies"],
     },
     {
-      name: "Advanced SAT Prep",
+      name: "JSS 3C",
       students: 32,
-      avgScore: 1350,
-      teacher: "Dr. Chen",
-      subjects: ["Math", "Reading", "Writing"],
+      avgScore: 85,
+      teacher: "Dr. Ibrahim",
+      subjects: ["Mathematics", "English", "Basic Science", "Social Studies"],
     },
   ];
 
   const classStudents = [
-    { name: "Emma Thompson", score: 1280, progress: 68, rank: 8, avatar: "👧" },
-    { name: "James Wilson", score: 1340, progress: 80, rank: 3, avatar: "👦" },
-    { name: "Sarah Chen", score: 1420, progress: 88, rank: 1, avatar: "👧" },
-    { name: "Michael Brown", score: 1180, progress: 55, rank: 12, avatar: "👦" },
+    { name: "Chidinma Okafor", score: 82, progress: 68, rank: 8, avatar: "👧" },
+    { name: "Ibrahim Musa", score: 88, progress: 80, rank: 3, avatar: "👦" },
+    { name: "Blessing Adeyemi", score: 94, progress: 88, rank: 1, avatar: "👧" },
+    { name: "Emeka Nwankwo", score: 75, progress: 55, rank: 12, avatar: "👦" },
   ];
 
   const topPerformers = [
-    { name: "Sarah Chen", class: "Advanced SAT", score: 1420, avatar: "👧" },
-    { name: "David Kim", class: "Junior SAT", score: 1390, avatar: "👦" },
-    { name: "Priya Patel", class: "Advanced SAT", score: 1370, avatar: "👧" },
+    { name: "Blessing Adeyemi", class: "JSS 3C", score: 94, avatar: "👧" },
+    { name: "Oluwaseun Ajayi", class: "JSS 3B", score: 91, avatar: "👦" },
+    { name: "Amina Yusuf", class: "JSS 3C", score: 89, avatar: "👧" },
   ];
 
   return (
@@ -80,8 +80,8 @@ export default function SchoolDashboard() {
           <>
             {/* Welcome Section */}
             <div className="mb-8 animate-fade-in">
-              <h2 className="text-3xl font-bold text-foreground mb-2">Boston Academy Dashboard</h2>
-              <p className="text-muted-foreground">Monitor SAT prep performance and support college readiness</p>
+              <h2 className="text-3xl font-bold text-foreground mb-2">School Dashboard</h2>
+              <p className="text-muted-foreground">Monitor BECE prep performance and support student success</p>
             </div>
 
             {/* Overview Stats */}
@@ -172,18 +172,18 @@ export default function SchoolDashboard() {
                             <p className="text-sm text-muted-foreground">Students</p>
                             <p className="text-xl font-bold text-primary">{cls.students}</p>
                           </div>
-                          <div>
-                            <p className="text-sm text-muted-foreground">Avg SAT Score</p>
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-gradient-hero"
-                                  style={{ width: `${(cls.avgScore / 1600) * 100}%` }}
-                                ></div>
-                              </div>
-                              <span className="text-xl font-bold text-accent">{cls.avgScore}</span>
-                            </div>
-                          </div>
+                           <div>
+                             <p className="text-sm text-muted-foreground">Avg Score</p>
+                             <div className="flex items-center gap-2">
+                               <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                                 <div
+                                   className="h-full bg-gradient-hero"
+                                   style={{ width: `${cls.avgScore}%` }}
+                                 ></div>
+                               </div>
+                               <span className="text-xl font-bold text-accent">{cls.avgScore}%</span>
+                             </div>
+                           </div>
                         </div>
                       </div>
                     ))}
@@ -199,10 +199,10 @@ export default function SchoolDashboard() {
                     <CardTitle className="text-lg">School Promo Code</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="p-4 bg-primary-light rounded-lg text-center mb-4">
-                      <p className="text-sm text-muted-foreground mb-1">Share with students</p>
-                      <p className="text-2xl font-bold text-primary tracking-wider">BOSTON2025</p>
-                    </div>
+                     <div className="p-4 bg-primary-light rounded-lg text-center mb-4">
+                       <p className="text-sm text-muted-foreground mb-1">Share with students</p>
+                       <p className="text-2xl font-bold text-primary tracking-wider">SCHOOL2025</p>
+                     </div>
                     <Button variant="outline" className="w-full">Copy Code</Button>
                   </CardContent>
                 </Card>
@@ -284,8 +284,8 @@ export default function SchoolDashboard() {
                         </div>
                       </div>
                         <div className="flex items-center gap-6">
-                          <div>
-                            <p className="text-sm text-muted-foreground">SAT Score</p>
+                         <div>
+                           <p className="text-sm text-muted-foreground">Score</p>
                             <p className="text-lg font-bold text-primary">{student.score}</p>
                           </div>
                           <div>

@@ -25,19 +25,19 @@ export const CompetitionLeaderboards = ({
   currentUserRanks = { monthly: 12, annual: 8 },
 }: CompetitionLeaderboardsProps) => {
   const monthlyLeaders: Student[] = [
-    { rank: 1, name: "Sarah Chen", school: "Singapore International", points: 12450, avatar: "🎓" },
-    { rank: 2, name: "James Wilson", school: "Boston Academy", points: 11890, avatar: "📚" },
-    { rank: 3, name: "Priya Patel", school: "Delhi Public School", points: 11250, avatar: "🌟" },
-    { rank: 4, name: "Mohammed Al-Rashid", school: "Dubai International", points: 10980, avatar: "💫" },
-    { rank: 5, name: "Emma Thompson", school: "London College", points: 10750, avatar: "🎯" },
+    { rank: 1, name: "Chidinma Okafor", school: "Corona Secondary School, Lagos", points: 9850, avatar: "🎓" },
+    { rank: 2, name: "Ibrahim Musa", school: "Government College, Abuja", points: 9620, avatar: "📚" },
+    { rank: 3, name: "Blessing Adeyemi", school: "International School, Ibadan", points: 9340, avatar: "🌟" },
+    { rank: 4, name: "Emeka Nwankwo", school: "Enugu State Academy", points: 9180, avatar: "💫" },
+    { rank: 5, name: "Fatima Bello", school: "Capital Science Academy, Kano", points: 8950, avatar: "🎯" },
   ];
 
   const annualLeaders: Student[] = [
-    { rank: 1, name: "Li Wei", school: "Beijing International", points: 145890, avatar: "👑" },
-    { rank: 2, name: "Sophia Martinez", school: "Madrid Academy", points: 142340, avatar: "🥇" },
-    { rank: 3, name: "David Kim", school: "Seoul Global School", points: 138920, avatar: "🥈" },
-    { rank: 4, name: "Olivia Brown", school: "Sydney Grammar", points: 135100, avatar: "🥉" },
-    { rank: 5, name: "Lucas Silva", school: "São Paulo International", points: 132890, avatar: "⭐" },
+    { rank: 1, name: "Oluwaseun Ajayi", school: "Lagos Preparatory School", points: 98540, avatar: "👑" },
+    { rank: 2, name: "Amina Yusuf", school: "Government Secondary, Kaduna", points: 96780, avatar: "🥇" },
+    { rank: 3, name: "Chukwuemeka Eze", school: "Port Harcourt International", points: 94920, avatar: "🥈" },
+    { rank: 4, name: "Aisha Mohammed", school: "Federal Capital College, Abuja", points: 92650, avatar: "🥉" },
+    { rank: 5, name: "Tunde Williams", school: "Gateway Academy, Ibadan", points: 90340, avatar: "⭐" },
   ];
 
   const renderLeaderboard = (leaders: Student[], icon: React.ReactNode, prizeInfo: string) => (
@@ -107,10 +107,10 @@ export const CompetitionLeaderboards = ({
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Trophy className="text-accent" size={24} />
-          Global Leaderboards
+          National Leaderboards
         </CardTitle>
         <CardDescription>
-          Compete with SAT students worldwide and win real cash prizes
+          Compete with BECE students across Nigeria and win real cash prizes
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -130,7 +130,7 @@ export const CompetitionLeaderboards = ({
             {renderLeaderboard(
               monthlyLeaders,
               <Trophy className="text-accent" size={20} />,
-              "Win $100 Cash Prize!"
+              "Win ₦30,000 Cash Prize!"
             )}
           </TabsContent>
 
@@ -138,7 +138,7 @@ export const CompetitionLeaderboards = ({
             {renderLeaderboard(
               annualLeaders,
               <Crown className="text-accent" size={20} />,
-              "Grand Prize: $1,500 Cash!"
+              "Grand Prize: ₦500,000 Cash!"
             )}
           </TabsContent>
         </Tabs>

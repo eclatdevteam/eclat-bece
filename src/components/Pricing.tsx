@@ -10,11 +10,11 @@ export const Pricing = ({ onGetStartedClick }: PricingProps) => {
   const plans = [
     {
       name: "Free Trial",
-      price: "$0",
+      price: "Free",
       period: "one quiz",
       features: [
         "One complete practice quiz",
-        "View global leaderboard",
+        "View national leaderboard",
         "Basic performance report",
       ],
       cta: "Try Free",
@@ -22,12 +22,12 @@ export const Pricing = ({ onGetStartedClick }: PricingProps) => {
     },
     {
       name: "Monthly",
-      price: "$9.99",
+      price: "₦2,999",
       period: "/month",
       features: [
-        "Unlimited SAT practice questions",
+        "Unlimited BECE practice questions",
         "Full leaderboard access",
-        "Compete for $100 monthly prizes",
+        "Compete for ₦30K monthly prizes",
         "Detailed performance analytics",
         "Mobile & desktop access",
       ],
@@ -36,12 +36,12 @@ export const Pricing = ({ onGetStartedClick }: PricingProps) => {
     },
     {
       name: "Annual",
-      price: "$79.99",
+      price: "₦24,999",
       period: "/year",
       features: [
         "Everything in Monthly",
-        "Save $40 per year",
-        "Compete for $1,500 annual grand prize",
+        "Save ₦10K per year",
+        "Compete for ₦500K annual grand prize",
         "Priority support",
         "Advanced progress tracking",
       ],

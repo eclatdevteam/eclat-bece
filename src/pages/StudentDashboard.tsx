@@ -14,18 +14,19 @@ export default function StudentDashboard() {
   const [activeTab, setActiveTab] = useState("subject");
 
   const subjects = [
-    { name: "SAT Math", icon: "📐", difficulty: "Challenging", questions: 1850 },
-    { name: "SAT Reading & Writing", icon: "📚", difficulty: "Moderate", questions: 1620 },
-    { name: "SAT Essay (Optional)", icon: "✍️", difficulty: "Advanced", questions: 180 },
+    { name: "Mathematics", icon: "📐", difficulty: "Core Subject", questions: 1850 },
+    { name: "English Language", icon: "📚", difficulty: "Core Subject", questions: 1620 },
+    { name: "Basic Science", icon: "🔬", difficulty: "Core Subject", questions: 1450 },
+    { name: "Social Studies", icon: "🌍", difficulty: "Core Subject", questions: 1340 },
   ];
 
   const topics = [
-    { name: "Algebra & Functions", subject: "SAT Math", icon: "➗", questions: 420 },
-    { name: "Evidence-Based Reading", subject: "Reading", icon: "📖", questions: 380 },
-    { name: "Data Analysis", subject: "SAT Math", icon: "📊", questions: 325 },
-    { name: "Grammar & Punctuation", subject: "Writing", icon: "✍️", questions: 290 },
-    { name: "Geometry & Trigonometry", subject: "SAT Math", icon: "📐", questions: 285 },
-    { name: "Vocabulary in Context", subject: "Reading", icon: "💭", questions: 245 },
+    { name: "Number & Numeration", subject: "Mathematics", icon: "➗", questions: 420 },
+    { name: "Comprehension Passages", subject: "English", icon: "📖", questions: 380 },
+    { name: "Living Things", subject: "Basic Science", icon: "🦋", questions: 325 },
+    { name: "Grammar & Composition", subject: "English", icon: "✍️", questions: 290 },
+    { name: "Algebraic Processes", subject: "Mathematics", icon: "📐", questions: 285 },
+    { name: "Nigerian History", subject: "Social Studies", icon: "📜", questions: 245 },
   ];
 
   const badges = [
@@ -62,7 +63,7 @@ export default function StudentDashboard() {
         {/* Welcome Section */}
         <div className="mb-8 animate-fade-in">
           <h2 className="text-3xl font-bold text-foreground mb-2">Welcome back, Ada! 🎉</h2>
-          <p className="text-muted-foreground">Ready to conquer the SAT? You're 2 ranks away from Top 10 globally!</p>
+          <p className="text-muted-foreground">Ready to ace your BECE? You're 2 ranks away from Top 10 nationally!</p>
         </div>
 
         {/* Quick Stats */}
