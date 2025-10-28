@@ -44,8 +44,9 @@ export const RoleSelectionDialog = ({ open, onOpenChange }: RoleSelectionDialogP
     },
   ];
 
-  const handleRoleSelect = (path: string) => {
-    navigate(path);
+  const handleRoleSelect = (role: string) => {
+    const roleParam = role.toLowerCase().replace("/dashboard/", "");
+    navigate(`/auth?role=${roleParam}`);
     onOpenChange(false);
   };
 
@@ -65,7 +66,7 @@ export const RoleSelectionDialog = ({ open, onOpenChange }: RoleSelectionDialogP
               <Card
                 key={index}
                 className="cursor-pointer border-2 hover:border-primary hover:shadow-hover transition-all duration-300 group"
-                onClick={() => handleRoleSelect(role.path)}
+                onClick={() => handleRoleSelect(role.title)}
               >
                 <CardContent className="p-6 text-center space-y-4">
                   <div className={`w-16 h-16 ${role.bgColor} rounded-2xl flex items-center justify-center mx-auto group-hover:scale-110 transition-transform`}>
