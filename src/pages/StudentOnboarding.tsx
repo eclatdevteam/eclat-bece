@@ -35,16 +35,17 @@ export default function StudentOnboarding() {
         return;
       }
 
-      // Find school if school code provided
+      // Find school if school code provided using secure lookup function
       let schoolId = null;
       if (schoolCode.trim()) {
-        const { data: schoolData } = await supabase
-          .from("schools")
-          .select("user_id")
-          .eq("school_code", schoolCode.toUpperCase())
-          .single();
+        const { data: schoolData, error: schoolError } = await supabase
+          .rpc("lookup_school_by_code", { _school_code: schoolCode.toUpperCase() });
         
-        schoolId = schoolData?.user_id || null;
+        if (schoolError) {
+          console.error("Error looking up school:", schoolError);
+        } else if (schoolData && schoolData.length > 0) {
+          schoolId = schoolData[0].id;
+        }
       }
 
       // Find parent if parent code provided

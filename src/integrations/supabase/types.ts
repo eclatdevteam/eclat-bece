@@ -187,6 +187,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      lookup_school_by_code: {
+        Args: { _school_code: string }
+        Returns: {
+          id: string
+          school_name: string
+        }[]
+      }
     }
     Enums: {
       app_role: "student" | "parent" | "school"
