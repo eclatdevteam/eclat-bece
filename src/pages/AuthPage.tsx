@@ -23,6 +23,10 @@ const signupSchema = z.object({
   fullName: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
   email: z.string().trim().email("Invalid email address").max(255),
   password: z.string().min(6, "Password must be at least 6 characters").max(100),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
 });
 
 export default function AuthPage() {
@@ -174,9 +178,10 @@ export default function AuthPage() {
       const fullName = formData.get("fullName") as string;
       const email = formData.get("email") as string;
       const password = formData.get("password") as string;
+      const confirmPassword = formData.get("confirmPassword") as string;
 
       // Validate input
-      const validated = signupSchema.parse({ fullName, email, password });
+      const validated = signupSchema.parse({ fullName, email, password, confirmPassword });
 
       const { data, error } = await supabase.auth.signUp({
         email: validated.email,
@@ -445,6 +450,18 @@ export default function AuthPage() {
                     <Input
                       id="signup-password"
                       name="password"
+                      type="password"
+                      placeholder="••••••••"
+                      required
+                      minLength={6}
+                      maxLength={100}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="signup-confirm-password">Confirm Password</Label>
+                    <Input
+                      id="signup-confirm-password"
+                      name="confirmPassword"
                       type="password"
                       placeholder="••••••••"
                       required
