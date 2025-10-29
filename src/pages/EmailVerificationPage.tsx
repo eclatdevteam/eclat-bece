@@ -60,6 +60,12 @@ export default function EmailVerificationPage() {
         return;
       }
 
+      // Refresh the session to get updated user data with email_confirmed_at
+      const { error: refreshError } = await supabase.auth.refreshSession();
+      if (refreshError) {
+        console.error("Session refresh error:", refreshError);
+      }
+
       toast({
         title: "Email Verified!",
         description: "Your email has been verified successfully. Redirecting to onboarding...",

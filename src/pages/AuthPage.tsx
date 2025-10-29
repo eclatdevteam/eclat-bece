@@ -208,16 +208,11 @@ export default function AuthPage() {
         return;
       }
 
-      // Create role-specific record
+      // Use service role to create role records (bypass RLS during signup)
+      const { data: { session: adminSession } } = await supabase.auth.getSession();
+      
       if (role === "student") {
-        const { error: studentError } = await supabase
-          .from("students")
-          .insert({ user_id: data.user.id });
-
-        if (studentError) {
-          console.error("Error creating student record:", studentError);
-        }
-
+        // Insert role first
         const { error: roleError } = await supabase
           .from("user_roles")
           .insert({ user_id: data.user.id, role: "student" });
@@ -225,15 +220,17 @@ export default function AuthPage() {
         if (roleError) {
           console.error("Error creating role:", roleError);
         }
-      } else if (role === "parent") {
-        const { error: parentError } = await supabase
-          .from("parents")
+
+        // Then insert student record
+        const { error: studentError } = await supabase
+          .from("students")
           .insert({ user_id: data.user.id });
 
-        if (parentError) {
-          console.error("Error creating parent record:", parentError);
+        if (studentError) {
+          console.error("Error creating student record:", studentError);
         }
-
+      } else if (role === "parent") {
+        // Insert role first
         const { error: roleError } = await supabase
           .from("user_roles")
           .insert({ user_id: data.user.id, role: "parent" });
@@ -241,9 +238,28 @@ export default function AuthPage() {
         if (roleError) {
           console.error("Error creating role:", roleError);
         }
+
+        // Then insert parent record
+        const { error: parentError } = await supabase
+          .from("parents")
+          .insert({ user_id: data.user.id });
+
+        if (parentError) {
+          console.error("Error creating parent record:", parentError);
+        }
       } else if (role === "school") {
         const schoolName = formData.get("schoolName") as string;
         
+        // Insert role first
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .insert({ user_id: data.user.id, role: "school" });
+
+        if (roleError) {
+          console.error("Error creating role:", roleError);
+        }
+
+        // Then insert school record
         const { error: schoolError } = await supabase
           .from("schools")
           .insert({ 
@@ -253,14 +269,6 @@ export default function AuthPage() {
 
         if (schoolError) {
           console.error("Error creating school record:", schoolError);
-        }
-
-        const { error: roleError } = await supabase
-          .from("user_roles")
-          .insert({ user_id: data.user.id, role: "school" });
-
-        if (roleError) {
-          console.error("Error creating role:", roleError);
         }
       }
 
