@@ -42,17 +42,15 @@ export default function EmailVerificationPage() {
         return;
       }
 
-      // Verify the code
-      const { data: verificationData, error: verifyError } = await supabase
-        .from("email_verification_codes")
-        .select("*")
-        .eq("user_id", userId)
-        .eq("code", code.toUpperCase())
-        .eq("verified", false)
-        .gt("expires_at", new Date().toISOString())
-        .single();
+      // Verify the code via edge function
+      const { error: verifyError } = await supabase.functions.invoke(
+        "verify-email-code",
+        {
+          body: { user_id: userId, code: code.trim() },
+        }
+      );
 
-      if (verifyError || !verificationData) {
+      if (verifyError) {
         toast({
           title: "Invalid Code",
           description: "The verification code is incorrect or has expired.",
@@ -61,22 +59,6 @@ export default function EmailVerificationPage() {
         setIsVerifying(false);
         return;
       }
-
-      // Mark code as verified
-      const { error: updateError } = await supabase
-        .from("email_verification_codes")
-        .update({ verified: true })
-        .eq("id", verificationData.id);
-
-      if (updateError) throw updateError;
-
-      // Update profile to mark email as verified
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({ email_verified: true })
-        .eq("id", userId);
-
-      if (profileError) throw profileError;
 
       toast({
         title: "Email Verified!",
