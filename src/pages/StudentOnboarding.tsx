@@ -26,18 +26,35 @@ export default function StudentOnboarding() {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
         
-        if (!user) {
-          navigate("/auth");
+        if (userError || !user) {
+          console.error("No authenticated user:", userError);
+          toast({
+            title: "Authentication Required",
+            description: "Please sign in to continue.",
+            variant: "destructive",
+          });
+          navigate("/auth?role=student");
           return;
         }
 
-        const { data: profileData } = await supabase
+        const { data: profileData, error: profileError } = await supabase
           .from("profiles")
           .select("full_name, email")
           .eq("id", user.id)
-          .single();
+          .maybeSingle();
+
+        if (profileError) {
+          console.error("Error fetching profile:", profileError);
+          toast({
+            title: "Error",
+            description: "Unable to load your profile. Please try again.",
+            variant: "destructive",
+          });
+          navigate("/auth?role=student");
+          return;
+        }
 
         if (profileData) {
           setFullName(profileData.full_name || "");
@@ -45,13 +62,19 @@ export default function StudentOnboarding() {
         }
       } catch (error) {
         console.error("Error fetching user data:", error);
+        toast({
+          title: "Error",
+          description: "An unexpected error occurred.",
+          variant: "destructive",
+        });
+        navigate("/auth?role=student");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchUserData();
-  }, [navigate]);
+  }, [navigate, toast]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
