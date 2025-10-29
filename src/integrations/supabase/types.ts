@@ -123,6 +123,7 @@ export type Database = {
         Row: {
           class_year: Database["public"]["Enums"]["class_year"] | null
           created_at: string
+          date_of_birth: string | null
           id: string
           onboarding_completed: boolean | null
           parent_id: string | null
@@ -133,6 +134,7 @@ export type Database = {
         Insert: {
           class_year?: Database["public"]["Enums"]["class_year"] | null
           created_at?: string
+          date_of_birth?: string | null
           id?: string
           onboarding_completed?: boolean | null
           parent_id?: string | null
@@ -143,6 +145,7 @@ export type Database = {
         Update: {
           class_year?: Database["public"]["Enums"]["class_year"] | null
           created_at?: string
+          date_of_birth?: string | null
           id?: string
           onboarding_completed?: boolean | null
           parent_id?: string | null

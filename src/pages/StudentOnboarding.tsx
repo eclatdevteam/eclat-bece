@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,10 +14,44 @@ export default function StudentOnboarding() {
   const navigate = useNavigate();
   const { toast } = useToast();
   
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
   const [classYear, setClassYear] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
   const [schoolCode, setSchoolCode] = useState("");
   const [parentCode, setParentCode] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchUserData = async () => {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        if (!user) {
+          navigate("/auth");
+          return;
+        }
+
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("full_name, email")
+          .eq("id", user.id)
+          .single();
+
+        if (profileData) {
+          setFullName(profileData.full_name || "");
+          setEmail(profileData.email || "");
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchUserData();
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,6 +108,7 @@ export default function StudentOnboarding() {
         .from("students")
         .update({
           class_year: classYear === "year6" ? "year_6" : "year_9",
+          date_of_birth: dateOfBirth,
           school_id: schoolId,
           parent_id: parentId,
           onboarding_completed: true,
@@ -99,6 +134,14 @@ export default function StudentOnboarding() {
     }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-primary-light/20 via-background to-accent-light/20 flex items-center justify-center p-4">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-light/20 via-background to-accent-light/20 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -120,6 +163,28 @@ export default function StudentOnboarding() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
+                <Label htmlFor="full-name">Full Name</Label>
+                <Input
+                  id="full-name"
+                  type="text"
+                  value={fullName}
+                  disabled
+                  className="bg-muted"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  disabled
+                  className="bg-muted"
+                />
+              </div>
+
+              <div className="space-y-2">
                 <Label htmlFor="class">Class Year *</Label>
                 <Select value={classYear} onValueChange={setClassYear} required>
                   <SelectTrigger id="class">
@@ -130,6 +195,18 @@ export default function StudentOnboarding() {
                     <SelectItem value="year9">Year 9 (BECE)</SelectItem>
                   </SelectContent>
                 </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="dob">Date of Birth *</Label>
+                <Input
+                  id="dob"
+                  type="date"
+                  value={dateOfBirth}
+                  onChange={(e) => setDateOfBirth(e.target.value)}
+                  required
+                  max={new Date().toISOString().split('T')[0]}
+                />
               </div>
 
               <div className="space-y-2">
@@ -166,7 +243,7 @@ export default function StudentOnboarding() {
                 type="submit"
                 variant="hero"
                 className="w-full"
-                disabled={isSubmitting || !classYear}
+                disabled={isSubmitting || !classYear || !dateOfBirth}
               >
                 {isSubmitting ? (
                   <>
