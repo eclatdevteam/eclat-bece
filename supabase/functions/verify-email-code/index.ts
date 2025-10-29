@@ -82,6 +82,20 @@ serve(async (req) => {
       );
     }
 
+    // Confirm email in Supabase Auth system
+    const { error: confirmError } = await supabase.auth.admin.updateUserById(
+      user_id,
+      { email_confirm: true }
+    );
+
+    if (confirmError) {
+      console.error("Failed to confirm email in auth system", confirmError);
+      return new Response(
+        JSON.stringify({ error: "Failed to confirm email" }),
+        { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     return new Response(JSON.stringify({ ok: true }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
