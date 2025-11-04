@@ -92,7 +92,7 @@ export type Database = {
         }
         Relationships: []
       }
-      quiz_options: {
+      quiz_options_year6: {
         Row: {
           created_at: string | null
           display_order: number | null
@@ -119,15 +119,86 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "quiz_options_question_id_fkey"
+            foreignKeyName: "quiz_options_year6_question_id_fkey"
             columns: ["question_id"]
             isOneToOne: false
-            referencedRelation: "quiz_questions"
+            referencedRelation: "quiz_questions_year6"
             referencedColumns: ["id"]
           },
         ]
       }
-      quiz_questions: {
+      quiz_options_year9: {
+        Row: {
+          created_at: string | null
+          display_order: number | null
+          id: string
+          is_correct: boolean | null
+          option_text: string
+          question_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_correct?: boolean | null
+          option_text: string
+          question_id: string
+        }
+        Update: {
+          created_at?: string | null
+          display_order?: number | null
+          id?: string
+          is_correct?: boolean | null
+          option_text?: string
+          question_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_options_year9_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_questions_year9"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_questions_year6: {
+        Row: {
+          correct_answer: string
+          created_at: string | null
+          difficulty: string | null
+          explanation: string | null
+          id: string
+          question_text: string
+          subject: string
+          topic: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          correct_answer: string
+          created_at?: string | null
+          difficulty?: string | null
+          explanation?: string | null
+          id?: string
+          question_text: string
+          subject: string
+          topic?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          correct_answer?: string
+          created_at?: string | null
+          difficulty?: string | null
+          explanation?: string | null
+          id?: string
+          question_text?: string
+          subject?: string
+          topic?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      quiz_questions_year9: {
         Row: {
           correct_answer: string
           created_at: string | null

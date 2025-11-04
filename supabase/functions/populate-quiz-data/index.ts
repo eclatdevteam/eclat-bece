@@ -222,19 +222,20 @@ serve(async (req) => {
       ...socialQuestions
     ];
 
-    // Insert questions and options
+    // Insert questions and options for Year 6
+    console.log('Inserting Year 6 questions...');
     for (const q of allQuestions) {
       const { options, ...questionData } = q;
       
       // Insert question
       const { data: question, error: questionError } = await supabase
-        .from('quiz_questions')
+        .from('quiz_questions_year6')
         .insert(questionData)
         .select()
         .single();
 
       if (questionError) {
-        console.error('Error inserting question:', questionError);
+        console.error('Error inserting Year 6 question:', questionError);
         continue;
       }
 
@@ -247,11 +248,45 @@ serve(async (req) => {
       }));
 
       const { error: optionsError } = await supabase
-        .from('quiz_options')
+        .from('quiz_options_year6')
         .insert(optionsData);
 
       if (optionsError) {
-        console.error('Error inserting options:', optionsError);
+        console.error('Error inserting Year 6 options:', optionsError);
+      }
+    }
+
+    // Insert questions and options for Year 9
+    console.log('Inserting Year 9 questions...');
+    for (const q of allQuestions) {
+      const { options, ...questionData } = q;
+      
+      // Insert question
+      const { data: question, error: questionError } = await supabase
+        .from('quiz_questions_year9')
+        .insert(questionData)
+        .select()
+        .single();
+
+      if (questionError) {
+        console.error('Error inserting Year 9 question:', questionError);
+        continue;
+      }
+
+      // Insert options
+      const optionsData = options.map((option, index) => ({
+        question_id: question.id,
+        option_text: option,
+        is_correct: option === questionData.correct_answer,
+        display_order: index
+      }));
+
+      const { error: optionsError } = await supabase
+        .from('quiz_options_year9')
+        .insert(optionsData);
+
+      if (optionsError) {
+        console.error('Error inserting Year 9 options:', optionsError);
       }
     }
 

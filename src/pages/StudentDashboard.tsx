@@ -16,27 +16,56 @@ export default function StudentDashboard() {
   const { signOut, user } = useAuth();
   const [activeTab, setActiveTab] = useState("subject");
   const [userName, setUserName] = useState("Student");
+  const [classYear, setClassYear] = useState<string | null>(null);
   const [subjectCounts, setSubjectCounts] = useState<Record<string, number>>({});
 
   useEffect(() => {
-    const fetchUserName = async () => {
+    const fetchUserData = async () => {
       if (!user) return;
       
-      const { data } = await supabase
+      // Fetch user name
+      const { data: profileData } = await supabase
         .from("profiles")
         .select("full_name")
         .eq("id", user.id)
         .single();
       
-      if (data?.full_name) {
-        const firstName = data.full_name.split(" ")[0];
+      if (profileData?.full_name) {
+        const firstName = profileData.full_name.split(" ")[0];
         setUserName(firstName);
+      }
+
+      // Fetch student's class year
+      const { data: studentData } = await supabase
+        .from("students")
+        .select("class_year")
+        .eq("user_id", user.id)
+        .single();
+      
+      if (studentData?.class_year) {
+        setClassYear(studentData.class_year);
       }
     };
 
     const fetchQuestionCounts = async () => {
+      if (!user) return;
+
+      // First get the student's class year
+      const { data: studentData } = await supabase
+        .from("students")
+        .select("class_year")
+        .eq("user_id", user.id)
+        .single();
+
+      if (!studentData?.class_year) return;
+
+      // Determine which table to query based on class year
+      const tableName = studentData.class_year === 'year_6' 
+        ? 'quiz_questions_year6' 
+        : 'quiz_questions_year9';
+
       const { data, error } = await supabase
-        .from("quiz_questions")
+        .from(tableName as any)
         .select("subject");
 
       if (data && !error) {
@@ -48,7 +77,7 @@ export default function StudentDashboard() {
       }
     };
 
-    fetchUserName();
+    fetchUserData();
     fetchQuestionCounts();
   }, [user]);
 
