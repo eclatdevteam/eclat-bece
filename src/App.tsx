@@ -15,11 +15,16 @@ import EmailVerificationPage from "./pages/EmailVerificationPage";
 import StudentOnboarding from "./pages/StudentOnboarding";
 import ParentOnboarding from "./pages/ParentOnboarding";
 import SchoolOnboarding from "./pages/SchoolOnboarding";
-import StudentDashboard from "./pages/StudentDashboard";
+import StudentDashboardOverview from "./pages/StudentDashboardOverview";
+import StudentPractice from "./pages/StudentPractice";
+import StudentAssignments from "./pages/StudentAssignments";
+import StudentProgressPage from "./pages/StudentProgressPage";
+import StudentLeaderboardPage from "./pages/StudentLeaderboardPage";
 import ParentDashboard from "./pages/ParentDashboard";
 import SchoolDashboard from "./pages/SchoolDashboard";
 import QuizPage from "./pages/QuizPage";
 import SubjectAnalytics from "./pages/SubjectAnalytics";
+import { StudentLayout } from "./components/StudentLayout";
 
 const queryClient = new QueryClient();
 
@@ -54,7 +59,37 @@ const App = () => (
           } />
           <Route path="/dashboard/student" element={
             <ProtectedRoute requiredRole="student">
-              <StudentDashboard />
+              <StudentLayout>
+                <StudentDashboardOverview />
+              </StudentLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/student/practice" element={
+            <ProtectedRoute requiredRole="student">
+              <StudentLayout>
+                <StudentPractice />
+              </StudentLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/student/assignments" element={
+            <ProtectedRoute requiredRole="student">
+              <StudentLayout>
+                <StudentAssignments />
+              </StudentLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/student/progress" element={
+            <ProtectedRoute requiredRole="student">
+              <StudentLayout>
+                <StudentProgressPage />
+              </StudentLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/dashboard/student/leaderboard" element={
+            <ProtectedRoute requiredRole="student">
+              <StudentLayout>
+                <StudentLeaderboardPage />
+              </StudentLayout>
             </ProtectedRoute>
           } />
           <Route path="/dashboard/parent" element={
