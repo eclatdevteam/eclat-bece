@@ -52,30 +52,32 @@ export function StudentLayout({ children }: StudentLayoutProps) {
         <div className="flex-1 flex flex-col">
           {/* Header */}
           <header className="border-b border-border/30 bg-gradient-to-r from-background via-background/98 to-background backdrop-blur-xl sticky top-0 z-50 shadow-[0_4px_24px_rgba(0,0,0,0.08)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.2)]">
-            <div className="flex items-center justify-between px-6 py-5">
-              <div className="flex items-center gap-6">
-                <SidebarTrigger className="hover:scale-110 transition-transform duration-200" />
+            <div className="flex items-center justify-between px-3 sm:px-4 md:px-6 py-3 sm:py-4 md:py-5">
+              <div className="flex items-center gap-2 sm:gap-3 md:gap-6 overflow-x-auto">
+                <SidebarTrigger className="hover:scale-110 transition-transform duration-200 flex-shrink-0" />
                 <img 
                   src={logo} 
                   alt="Éclat Logo" 
-                  className="h-12 w-auto cursor-pointer hover:scale-110 transition-all duration-300 filter drop-shadow-lg hover:drop-shadow-2xl" 
+                  className="h-8 sm:h-10 md:h-12 w-auto cursor-pointer hover:scale-110 transition-all duration-300 filter drop-shadow-lg hover:drop-shadow-2xl flex-shrink-0" 
                   onClick={() => navigate("/")} 
                 />
-                <div className={`flex items-center gap-2.5 px-5 py-2.5 rounded-full shadow-lg backdrop-blur-sm border transition-all duration-300 hover:scale-105 ${
+                <div className={`flex items-center gap-1.5 sm:gap-2 md:gap-2.5 px-2 sm:px-3 md:px-5 py-1.5 sm:py-2 md:py-2.5 rounded-full shadow-lg backdrop-blur-sm border transition-all duration-300 hover:scale-105 flex-shrink-0 ${
                   currentStreak === 0 
                     ? 'bg-destructive/20 border-destructive/30' 
                     : currentStreak >= 7 
                     ? 'bg-gradient-to-r from-green-500/20 to-emerald-500/20 border-green-500/40' 
                     : 'bg-gradient-to-r from-accent/20 to-primary/20 border-accent/30'
                 }`}>
-                  <Flame className={`transition-all duration-300 ${
-                    currentStreak === 0 
-                      ? 'text-destructive' 
-                      : currentStreak >= 7 
-                      ? 'text-green-600 drop-shadow-[0_0_8px_rgba(34,197,94,0.5)]' 
-                      : 'text-accent drop-shadow-[0_0_8px_rgba(var(--accent),0.5)]'
-                  }`} size={18} />
-                  <span className={`text-[15px] font-bold tracking-tight ${
+                  <Flame 
+                    className={`transition-all duration-300 flex-shrink-0 w-3.5 h-3.5 sm:w-4 sm:h-4 md:w-[18px] md:h-[18px] ${
+                      currentStreak === 0 
+                        ? 'text-destructive' 
+                        : currentStreak >= 7 
+                        ? 'text-green-600 drop-shadow-[0_0_8px_rgba(34,197,94,0.5)]' 
+                        : 'text-accent drop-shadow-[0_0_8px_rgba(var(--accent),0.5)]'
+                    }`} 
+                  />
+                  <span className={`text-xs sm:text-sm md:text-[15px] font-bold tracking-tight whitespace-nowrap ${
                     currentStreak === 0 
                       ? 'text-destructive' 
                       : currentStreak >= 7 
@@ -84,22 +86,22 @@ export function StudentLayout({ children }: StudentLayoutProps) {
                   }`}>{currentStreak}-day streak!</span>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3">
                 <ThemeToggle />
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="hover:scale-110 hover:bg-accent/20 transition-all duration-300 h-11 w-11 rounded-xl"
+                  className="hover:scale-110 hover:bg-accent/20 transition-all duration-300 h-9 w-9 sm:h-10 sm:w-10 md:h-11 md:w-11 rounded-xl flex-shrink-0"
                 >
-                  <Settings size={22} />
+                  <Settings className="w-[18px] h-[18px] sm:w-5 sm:h-5 md:w-[22px] md:h-[22px]" />
                 </Button>
                 <Button 
                   variant="ghost" 
                   size="icon" 
                   onClick={signOut}
-                  className="hover:scale-110 hover:bg-destructive/20 hover:text-destructive transition-all duration-300 h-11 w-11 rounded-xl"
+                  className="hover:scale-110 hover:bg-destructive/20 hover:text-destructive transition-all duration-300 h-9 w-9 sm:h-10 sm:w-10 md:h-11 md:w-11 rounded-xl flex-shrink-0"
                 >
-                  <LogOut size={22} />
+                  <LogOut className="w-[18px] h-[18px] sm:w-5 sm:h-5 md:w-[22px] md:h-[22px]" />
                 </Button>
               </div>
             </div>
