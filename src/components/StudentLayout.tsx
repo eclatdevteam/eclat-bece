@@ -7,7 +7,9 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { StudentSidebar } from "@/components/StudentSidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import logo from "@/assets/logo.png";
+import { useTheme } from "next-themes";
+import logoDark from "@/assets/logo-dark.png";
+import logoLight from "@/assets/logo-light.png";
 
 interface StudentLayoutProps {
   children: ReactNode;
@@ -16,7 +18,10 @@ interface StudentLayoutProps {
 export function StudentLayout({ children }: StudentLayoutProps) {
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
+  const { theme } = useTheme();
   const [currentStreak, setCurrentStreak] = useState(0);
+  
+  const logo = theme === "dark" ? logoLight : logoDark;
 
   useEffect(() => {
     const fetchStreak = async () => {

@@ -7,14 +7,20 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { StudentReportDialog } from "@/components/StudentReportDialog";
 import { ClassAnalyticsDialog } from "@/components/ClassAnalyticsDialog";
+import { useTheme } from "next-themes";
+import logoDark from "@/assets/logo-dark.png";
+import logoLight from "@/assets/logo-light.png";
 
 export default function SchoolDashboard() {
   const navigate = useNavigate();
   const { signOut } = useAuth();
+  const { theme } = useTheme();
   const [selectedClass, setSelectedClass] = useState<string | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState<{ name: string; class: string } | null>(null);
+  
+  const logo = theme === "dark" ? logoLight : logoDark;
 
   const overviewStats = {
     totalClasses: 12,
@@ -66,7 +72,7 @@ export default function SchoolDashboard() {
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <img 
-            src="/src/assets/logo.png" 
+            src={logo} 
             alt="Éclat Logo" 
             className="h-10 w-auto cursor-pointer" 
             onClick={() => navigate("/")}

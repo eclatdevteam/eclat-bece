@@ -10,16 +10,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
-import logo from "@/assets/logo.png";
+import { useTheme } from "next-themes";
+import logoDark from "@/assets/logo-dark.png";
+import logoLight from "@/assets/logo-light.png";
 
 export default function StudentDashboard() {
   const navigate = useNavigate();
   const { signOut, user } = useAuth();
+  const { theme } = useTheme();
   const [activeTab, setActiveTab] = useState("subject");
   const [userName, setUserName] = useState("Student");
   const [classYear, setClassYear] = useState<string | null>(null);
   const [subjectCounts, setSubjectCounts] = useState<Record<string, number>>({});
   const [currentStreak, setCurrentStreak] = useState(0);
+  
+  const logo = theme === "dark" ? logoLight : logoDark;
 
   useEffect(() => {
     const fetchUserData = async () => {
