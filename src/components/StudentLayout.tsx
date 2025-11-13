@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from "react";
-import { Flame, Settings, User as UserIcon, KeyRound } from "lucide-react";
+import { Flame, Settings, User as UserIcon, KeyRound, Link2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { StudentSidebar } from "@/components/StudentSidebar";
 import { StudentProfileSettings } from "@/components/StudentProfileSettings";
 import { PasswordChangeDialog } from "@/components/PasswordChangeDialog";
+import { AccountSettingsDialog } from "@/components/AccountSettingsDialog";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "next-themes";
@@ -31,6 +32,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
   const [currentStreak, setCurrentStreak] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
+  const [accountSettingsOpen, setAccountSettingsOpen] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState("");
   const [displayName, setDisplayName] = useState("");
   
@@ -150,6 +152,10 @@ export function StudentLayout({ children }: StudentLayoutProps) {
                       <KeyRound className="mr-2 h-4 w-4" />
                       <span>Change Password</span>
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setAccountSettingsOpen(true)}>
+                      <Link2 className="mr-2 h-4 w-4" />
+                      <span>Account Settings</span>
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -165,6 +171,7 @@ export function StudentLayout({ children }: StudentLayoutProps) {
       
       <StudentProfileSettings open={settingsOpen} onOpenChange={setSettingsOpen} />
       <PasswordChangeDialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen} />
+      <AccountSettingsDialog open={accountSettingsOpen} onOpenChange={setAccountSettingsOpen} />
     </SidebarProvider>
   );
 }
