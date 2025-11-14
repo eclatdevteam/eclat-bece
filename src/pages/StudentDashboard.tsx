@@ -7,6 +7,7 @@ import { ProgressReport } from "@/components/ProgressReport";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -225,9 +226,11 @@ export default function StudentDashboard() {
           </Card>
         </div>
 
+        <Separator className="my-10 opacity-[0.07]" />
+
         <div className="grid lg:grid-cols-3 gap-8">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-10">
             {/* Practice Section */}
             <Card className="border-2 animate-scale-in">
               <CardHeader>
@@ -297,10 +300,14 @@ export default function StudentDashboard() {
               <PracticeAssignment onStartAssignment={() => navigate("/quiz")} />
             </div>
 
+            <Separator className="my-8 opacity-[0.05]" />
+
             {/* Progress Report */}
             <div className="animate-scale-in" style={{ animationDelay: "0.2s" }}>
               <ProgressReport />
             </div>
+
+            <Separator className="my-8 opacity-[0.05]" />
 
             {/* Competition Leaderboards */}
             <div className="animate-scale-in" style={{ animationDelay: "0.3s" }}>

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { BookOpen, ClipboardList, TrendingUp, Trophy, Target, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -83,7 +84,7 @@ export default function StudentDashboardOverview() {
   return (
     <div className="container mx-auto px-4 py-8">
       {/* Welcome Section */}
-      <div className="mb-8 animate-fade-in">
+      <div className="mb-12 animate-fade-in">
         <h2 className="text-3xl font-bold text-foreground mb-2">Welcome back, {userName}! 🎉</h2>
         {classYear && (
           <p className="text-lg font-semibold text-primary mb-2">
@@ -92,6 +93,8 @@ export default function StudentDashboardOverview() {
         )}
         <p className="text-muted-foreground">Ready to ace your exams? You're 2 ranks away from Top 10 nationally!</p>
       </div>
+
+      <Separator className="my-8 opacity-10" />
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 animate-slide-up">
@@ -130,8 +133,10 @@ export default function StudentDashboardOverview() {
         </Card>
       </div>
 
+      <Separator className="my-10 opacity-[0.07]" />
+
       {/* Feature Cards */}
-      <div className="mb-8">
+      <div className="mb-12">
         <h3 className="text-2xl font-bold text-foreground mb-6">Quick Access</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {featureCards.map((feature, index) => {
@@ -163,6 +168,8 @@ export default function StudentDashboardOverview() {
           })}
         </div>
       </div>
+
+      <Separator className="my-10 opacity-[0.07]" />
 
       {/* Recent Activity */}
       <Card className="border-2 animate-fade-in">
