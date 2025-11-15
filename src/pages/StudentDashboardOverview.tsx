@@ -25,6 +25,7 @@ export default function StudentDashboardOverview() {
   const [studentId, setStudentId] = useState<string | null>(null);
   const [totalQuestions, setTotalQuestions] = useState(0);
   const [averageScore, setAverageScore] = useState(0);
+  const [monthlyRank, setMonthlyRank] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -77,6 +78,41 @@ export default function StudentDashboardOverview() {
           
           const avgScore = allResults.reduce((sum, result) => sum + result.score, 0) / allResults.length;
           setAverageScore(Math.round(avgScore));
+        }
+
+        // Calculate monthly rank
+        const now = new Date();
+        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+        
+        const { data: monthlyResults } = await supabase
+          .from("quiz_results")
+          .select("student_id, score")
+          .gte("completed_at", firstDayOfMonth);
+        
+        if (monthlyResults && monthlyResults.length > 0) {
+          // Group by student and calculate average score
+          const studentScores = new Map<string, number[]>();
+          monthlyResults.forEach(result => {
+            if (!studentScores.has(result.student_id)) {
+              studentScores.set(result.student_id, []);
+            }
+            studentScores.get(result.student_id)!.push(result.score);
+          });
+          
+          // Calculate average for each student
+          const studentAverages = Array.from(studentScores.entries()).map(([studentId, scores]) => ({
+            studentId,
+            avgScore: scores.reduce((sum, score) => sum + score, 0) / scores.length
+          }));
+          
+          // Sort by average score descending
+          studentAverages.sort((a, b) => b.avgScore - a.avgScore);
+          
+          // Find current student's rank
+          const rank = studentAverages.findIndex(s => s.studentId === studentData.id) + 1;
+          if (rank > 0) {
+            setMonthlyRank(rank);
+          }
         }
       }
     };
@@ -133,7 +169,13 @@ export default function StudentDashboardOverview() {
             {classYear === 'year_6' ? 'Year 6 • Common Entrance' : 'Year 9 • BECE'}
           </p>
         )}
-        <p className="text-muted-foreground">Ready to ace your exams? You're 2 ranks away from Top 10 nationally!</p>
+        <p className="text-muted-foreground">
+          {monthlyRank && monthlyRank <= 10 
+            ? "You're in the Top 10 this month! Keep it up!" 
+            : monthlyRank && monthlyRank <= 12 
+            ? `You're ${12 - monthlyRank} ranks away from Top 10!` 
+            : "Ready to ace your exams? Start practicing to climb the leaderboard!"}
+        </p>
       </div>
 
       <Separator className="my-8 opacity-10" />
@@ -167,7 +209,9 @@ export default function StudentDashboardOverview() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Rank This Month</p>
-                <p className="text-3xl font-bold text-primary">#12</p>
+                <p className="text-3xl font-bold text-primary">
+                  {monthlyRank ? `#${monthlyRank}` : '-'}
+                </p>
               </div>
               <Trophy className="text-accent" size={32} />
             </div>
