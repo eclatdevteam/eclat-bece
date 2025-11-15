@@ -24,6 +24,7 @@ export default function StudentDashboardOverview() {
   const [recentActivity, setRecentActivity] = useState<QuizResult[]>([]);
   const [studentId, setStudentId] = useState<string | null>(null);
   const [totalQuestions, setTotalQuestions] = useState(0);
+  const [averageScore, setAverageScore] = useState(0);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -64,15 +65,18 @@ export default function StudentDashboardOverview() {
           setRecentActivity(quizResults);
         }
 
-        // Calculate total questions answered
+        // Calculate total questions answered and average score
         const { data: allResults } = await supabase
           .from("quiz_results")
-          .select("total_questions")
+          .select("total_questions, score")
           .eq("student_id", studentData.id);
         
-        if (allResults) {
+        if (allResults && allResults.length > 0) {
           const total = allResults.reduce((sum, result) => sum + result.total_questions, 0);
           setTotalQuestions(total);
+          
+          const avgScore = allResults.reduce((sum, result) => sum + result.score, 0) / allResults.length;
+          setAverageScore(Math.round(avgScore));
         }
       }
     };
@@ -152,7 +156,7 @@ export default function StudentDashboardOverview() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Average Score</p>
-                <p className="text-3xl font-bold text-accent">78%</p>
+                <p className="text-3xl font-bold text-accent">{averageScore}%</p>
               </div>
               <TrendingUp className="text-accent" size={32} />
             </div>
