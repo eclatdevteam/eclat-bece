@@ -23,6 +23,7 @@ export default function StudentDashboardOverview() {
   const [classYear, setClassYear] = useState<string | null>(null);
   const [recentActivity, setRecentActivity] = useState<QuizResult[]>([]);
   const [studentId, setStudentId] = useState<string | null>(null);
+  const [totalQuestions, setTotalQuestions] = useState(0);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -61,6 +62,17 @@ export default function StudentDashboardOverview() {
         
         if (quizResults) {
           setRecentActivity(quizResults);
+        }
+
+        // Calculate total questions answered
+        const { data: allResults } = await supabase
+          .from("quiz_results")
+          .select("total_questions")
+          .eq("student_id", studentData.id);
+        
+        if (allResults) {
+          const total = allResults.reduce((sum, result) => sum + result.total_questions, 0);
+          setTotalQuestions(total);
         }
       }
     };
@@ -129,7 +141,7 @@ export default function StudentDashboardOverview() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Total Questions</p>
-                <p className="text-3xl font-bold text-primary">847</p>
+                <p className="text-3xl font-bold text-primary">{totalQuestions}</p>
               </div>
               <Target className="text-primary" size={32} />
             </div>
