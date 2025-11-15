@@ -24,6 +24,7 @@ export default function QuizPage() {
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const subject = searchParams.get("subject");
+  const topic = searchParams.get("topic");
   
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -61,13 +62,17 @@ export default function QuizPage() {
           ? 'quiz_options_year6'
           : 'quiz_options_year9';
 
-        // Build query with subject filter if provided
+        // Build query with subject and/or topic filter if provided
         let query = supabase
           .from(tableName as any)
           .select("*");
 
         if (subject) {
           query = query.eq("subject", subject);
+        }
+
+        if (topic) {
+          query = query.eq("topic", topic);
         }
 
         // Fetch all questions matching the criteria first

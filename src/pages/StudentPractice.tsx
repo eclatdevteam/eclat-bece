@@ -12,9 +12,10 @@ export default function StudentPractice() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("subject");
   const [subjectCounts, setSubjectCounts] = useState<Record<string, number>>({});
+  const [topics, setTopics] = useState<Array<{name: string; subject: string; icon: string; questions: number}>>([]);
 
   useEffect(() => {
-    const fetchQuestionCounts = async () => {
+    const fetchQuestionData = async () => {
       if (!user) return;
 
       const { data: studentData } = await supabase
@@ -31,18 +32,51 @@ export default function StudentPractice() {
 
       const { data, error } = await supabase
         .from(tableName as any)
-        .select("subject");
+        .select("subject, topic");
 
       if (data && !error) {
+        // Count questions by subject
         const counts = data.reduce((acc: Record<string, number>, curr: any) => {
           acc[curr.subject] = (acc[curr.subject] || 0) + 1;
           return acc;
         }, {});
         setSubjectCounts(counts);
+
+        // Group by topic and count
+        const topicMap = new Map<string, {subject: string; count: number}>();
+        data.forEach((item: any) => {
+          if (item.topic) {
+            const key = item.topic;
+            if (!topicMap.has(key)) {
+              topicMap.set(key, { subject: item.subject, count: 0 });
+            }
+            topicMap.get(key)!.count++;
+          }
+        });
+
+        // Convert to array with icons
+        const topicIcons: Record<string, string> = {
+          "Number & Numeration": "➗",
+          "Comprehension Passages": "📖",
+          "Living Things": "🦋",
+          "Grammar & Composition": "✍️",
+          "Algebraic Processes": "📐",
+          "Nigerian History": "📜",
+          "default": "📚"
+        };
+
+        const topicsArray = Array.from(topicMap.entries()).map(([name, data]) => ({
+          name,
+          subject: data.subject,
+          icon: topicIcons[name] || topicIcons.default,
+          questions: data.count
+        }));
+
+        setTopics(topicsArray);
       }
     };
 
-    fetchQuestionCounts();
+    fetchQuestionData();
   }, [user]);
 
   const subjects = [
@@ -52,14 +86,6 @@ export default function StudentPractice() {
     { name: "Social Studies", icon: "🌍", difficulty: "Core Subject", questions: subjectCounts["Social Studies"] || 0 },
   ];
 
-  const topics = [
-    { name: "Number & Numeration", subject: "Mathematics", icon: "➗", questions: 420 },
-    { name: "Comprehension Passages", subject: "English", icon: "📖", questions: 380 },
-    { name: "Living Things", subject: "Basic Science", icon: "🦋", questions: 325 },
-    { name: "Grammar & Composition", subject: "English", icon: "✍️", questions: 290 },
-    { name: "Algebraic Processes", subject: "Mathematics", icon: "📐", questions: 285 },
-    { name: "Nigerian History", subject: "Social Studies", icon: "📜", questions: 245 },
-  ];
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -123,7 +149,13 @@ export default function StudentPractice() {
                       <p className="text-sm text-muted-foreground">{topic.subject} • {topic.questions} questions</p>
                     </div>
                   </div>
-                  <Button variant="hero" size="sm" onClick={() => navigate("/quiz")}>Start Practice</Button>
+                  <Button 
+                    variant="hero" 
+                    size="sm" 
+                    onClick={() => navigate(`/quiz?topic=${encodeURIComponent(topic.name)}&subject=${encodeURIComponent(topic.subject)}`)}
+                  >
+                    Start Practice
+                  </Button>
                 </div>
               ))}
             </TabsContent>
