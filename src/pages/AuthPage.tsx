@@ -131,6 +131,19 @@ export default function AuthPage() {
         return;
       }
 
+      // Validate that user is logging in through the correct role portal
+      if (userRole !== role) {
+        toast({
+          title: "Wrong Login Portal",
+          description: `This account is registered as a ${userRole}. Please use the ${userRole} login.`,
+          variant: "destructive",
+        });
+        await supabase.auth.signOut();
+        // Redirect to the correct role selection
+        navigate(`/auth?role=${userRole}`);
+        return;
+      }
+
       // Check onboarding status based on role
       if (userRole === "student") {
         const { data: studentData } = await supabase
