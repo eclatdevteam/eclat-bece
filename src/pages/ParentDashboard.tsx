@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Users, TrendingUp, BookOpen, Plus, FileText, LogOut, Settings } from "lucide-react";
 import { CompetitionLeaderboards } from "@/components/CompetitionLeaderboards";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,45 +10,166 @@ import { AssignPracticeDialog } from "@/components/AssignPracticeDialog";
 import { useTheme } from "next-themes";
 import logoDark from "@/assets/logo-dark.png";
 import logoLight from "@/assets/logo-light.png";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+interface LinkedChild {
+  id: string;
+  user_id: string;
+  class_year: string | null;
+  profile: {
+    full_name: string | null;
+    unique_id: string;
+  };
+}
 
 export default function ParentDashboard() {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const { theme } = useTheme();
   const [reportOpen, setReportOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
   const [selectedChild, setSelectedChild] = useState<{ name: string; class: string; avatar: string } | null>(null);
+  const [addChildOpen, setAddChildOpen] = useState(false);
+  const [studentCode, setStudentCode] = useState("");
+  const [isAddingChild, setIsAddingChild] = useState(false);
+  const [linkedChildren, setLinkedChildren] = useState<LinkedChild[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [parentUserId, setParentUserId] = useState<string | null>(null);
   
   const logo = theme === "dark" ? logoLight : logoDark;
 
-  const children = [
-    {
-      name: "Ada",
-      class: "JSS 3",
-      avgScore: 78,
-      progress: 68,
-      avatar: "👧",
-      recentActivity: [
-        "Completed 10 English Comprehension questions",
-        "Scored 85% on Mathematics Practice Test",
-        "Earned 'Quiz Master' badge",
-      ],
-      weakAreas: ["Algebraic Processes", "Essay Writing"],
-    },
-    {
-      name: "Kola",
-      class: "JSS 3",
-      avgScore: 82,
-      progress: 75,
-      avatar: "👦",
-      recentActivity: [
-        "Completed 15 Mathematics questions today",
-        "Ranked #8 in national leaderboard",
-        "5-day practice streak!",
-      ],
-      weakAreas: ["Basic Science - Living Things"],
-    },
-  ];
+  useEffect(() => {
+    const fetchParentData = async () => {
+      if (!user) return;
+
+      try {
+        const { data: parentData } = await supabase
+          .from("parents")
+          .select("id")
+          .eq("user_id", user.id)
+          .single();
+
+        if (parentData) {
+          setParentUserId(parentData.id);
+          await fetchLinkedChildren(parentData.id);
+        }
+      } catch (error) {
+        console.error("Error fetching parent data:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchParentData();
+  }, [user]);
+
+  const fetchLinkedChildren = async (parentId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from("students")
+        .select(`
+          id,
+          user_id,
+          class_year,
+          profile:profiles!students_user_id_fkey(full_name, unique_id)
+        `)
+        .eq("parent_id", parentId);
+
+      if (error) throw error;
+
+      if (data) {
+        setLinkedChildren(data as unknown as LinkedChild[]);
+      }
+    } catch (error) {
+      console.error("Error fetching linked children:", error);
+      toast.error("Failed to load linked children");
+    }
+  };
+
+  const handleAddChild = async () => {
+    if (!studentCode.trim()) {
+      toast.error("Please enter a student code");
+      return;
+    }
+
+    if (studentCode.length !== 8) {
+      toast.error("Student code must be 8 characters");
+      return;
+    }
+
+    if (!parentUserId) {
+      toast.error("Parent profile not found");
+      return;
+    }
+
+    setIsAddingChild(true);
+
+    try {
+      // Find the student by their unique_id
+      const { data: profileData, error: profileError } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("unique_id", studentCode.toUpperCase())
+        .single();
+
+      if (profileError || !profileData) {
+        toast.error("Invalid student code. Please check and try again.");
+        setIsAddingChild(false);
+        return;
+      }
+
+      // Check if this user is actually a student
+      const { data: studentData, error: studentError } = await supabase
+        .from("students")
+        .select("id, parent_id")
+        .eq("user_id", profileData.id)
+        .single();
+
+      if (studentError || !studentData) {
+        toast.error("This code does not belong to a student account");
+        setIsAddingChild(false);
+        return;
+      }
+
+      // Check if already linked to this parent
+      if (studentData.parent_id === parentUserId) {
+        toast.error("This child is already linked to your account");
+        setIsAddingChild(false);
+        return;
+      }
+
+      // Check if already linked to another parent
+      if (studentData.parent_id && studentData.parent_id !== parentUserId) {
+        toast.error("This student is already linked to another parent account");
+        setIsAddingChild(false);
+        return;
+      }
+
+      // Link the student to this parent
+      const { error: updateError } = await supabase
+        .from("students")
+        .update({ parent_id: parentUserId })
+        .eq("id", studentData.id);
+
+      if (updateError) throw updateError;
+
+      toast.success("Child successfully linked to your account!");
+      setStudentCode("");
+      setAddChildOpen(false);
+      
+      // Refresh the linked children list
+      await fetchLinkedChildren(parentUserId);
+    } catch (error) {
+      console.error("Error linking child:", error);
+      toast.error("Failed to link child. Please try again.");
+    } finally {
+      setIsAddingChild(false);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-primary-light/20 via-background to-accent-light/20">
@@ -81,7 +202,7 @@ export default function ParentDashboard() {
 
         {/* Quick Actions */}
         <div className="flex gap-3 mb-8 animate-slide-up">
-          <Button variant="hero">
+          <Button variant="hero" onClick={() => setAddChildOpen(true)}>
             <Plus size={18} />
             Add Child
           </Button>
@@ -92,161 +213,171 @@ export default function ParentDashboard() {
         </div>
 
         {/* Children Overview */}
-        <div className="space-y-6">
-          {children.map((child, index) => (
-            <Card
-              key={index}
-              className="border-2 hover:shadow-hover transition-all animate-scale-in"
-              style={{ animationDelay: `${index * 0.1}s` }}
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 rounded-full bg-primary-light flex items-center justify-center text-3xl">
-                      {child.avatar}
-                    </div>
-                    <div>
-                      <CardTitle className="text-2xl">{child.name}</CardTitle>
-                      <CardDescription className="text-base">{child.class}</CardDescription>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => {
-                        setSelectedChild({ name: child.name, class: child.class, avatar: child.avatar });
-                        setReportOpen(true);
-                      }}
-                    >
-                      View Report
-                    </Button>
-                    <Button 
-                      variant="hero" 
-                      size="sm"
-                      onClick={() => {
-                        setSelectedChild({ name: child.name, class: child.class, avatar: child.avatar });
-                        setAssignOpen(true);
-                      }}
-                    >
-                      Assign Practice
-                    </Button>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-3 gap-6">
-                  {/* Stats */}
-                  <div>
-                    <h4 className="font-semibold text-sm text-muted-foreground mb-3">Performance</h4>
-                    <div className="space-y-3">
-                      <div>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span>Average Score</span>
-                          <span className="font-bold text-primary">{child.avgScore}%</span>
-                        </div>
-                        <div className="h-2 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-hero"
-                            style={{ width: `${child.avgScore}%` }}
-                          ></div>
-                        </div>
+        {isLoading ? (
+          <div className="text-center py-12">
+            <p className="text-muted-foreground">Loading your children...</p>
+          </div>
+        ) : linkedChildren.length === 0 ? (
+          <Card className="border-2 border-dashed">
+            <CardContent className="py-12 text-center">
+              <Users className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
+              <h3 className="text-lg font-semibold mb-2">No Children Linked Yet</h3>
+              <p className="text-muted-foreground mb-4">
+                Add your first child by clicking the "Add Child" button above
+              </p>
+              <Button variant="hero" onClick={() => setAddChildOpen(true)}>
+                <Plus size={18} />
+                Add Child
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <div className="space-y-6">
+            {linkedChildren.map((child, index) => (
+              <Card
+                key={child.id}
+                className="border-2 hover:shadow-hover transition-all animate-scale-in"
+                style={{ animationDelay: `${index * 0.1}s` }}
+              >
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-center gap-4">
+                      <div className="h-16 w-16 rounded-full bg-gradient-hero flex items-center justify-center text-2xl font-bold text-white">
+                        {child.profile.full_name?.charAt(0).toUpperCase() || "?"}
                       </div>
                       <div>
-                        <div className="flex justify-between text-sm mb-1">
-                          <span>Progress</span>
-                          <span className="font-bold text-accent">{child.progress}%</span>
-                        </div>
-                        <div className="h-2 bg-muted rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-accent"
-                            style={{ width: `${child.progress}%` }}
-                          ></div>
-                        </div>
+                        <CardTitle className="text-2xl">{child.profile.full_name || "Unknown"}</CardTitle>
+                        <CardDescription className="text-base">
+                          {child.class_year === "year_6" ? "Year 6" : child.class_year === "year_9" ? "Year 9" : "No Class"}
+                        </CardDescription>
+                        <p className="text-xs text-muted-foreground mt-1">Code: {child.profile.unique_id}</p>
                       </div>
                     </div>
-                  </div>
-
-                  {/* Recent Activity */}
-                  <div>
-                    <h4 className="font-semibold text-sm text-muted-foreground mb-3">Recent Activity</h4>
-                    <ul className="space-y-2">
-                      {child.recentActivity.map((activity, idx) => (
-                        <li key={idx} className="text-sm flex items-start gap-2">
-                          <span className="text-primary mt-1">•</span>
-                          <span>{activity}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  {/* Weak Areas */}
-                  <div>
-                    <h4 className="font-semibold text-sm text-muted-foreground mb-3">Needs Improvement</h4>
-                    <div className="space-y-2">
-                      {child.weakAreas.map((area, idx) => (
-                        <div
-                          key={idx}
-                          className="px-3 py-2 bg-accent-light border border-accent rounded-lg text-sm font-medium cursor-pointer hover:shadow-hover transition-all"
-                          onClick={() => navigate(`/subject-analytics?subject=${encodeURIComponent(area)}`)}
-                        >
-                          {area}
-                        </div>
-                      ))}
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedChild({ 
+                            name: child.profile.full_name || "Unknown",
+                            class: child.class_year === "year_6" ? "Year 6" : "Year 9",
+                            avatar: child.profile.full_name?.charAt(0).toUpperCase() || "?"
+                          });
+                          setReportOpen(true);
+                        }}
+                      >
+                        View Report
+                      </Button>
+                      <Button 
+                        variant="hero" 
+                        size="sm"
+                        onClick={() => {
+                          setSelectedChild({ 
+                            name: child.profile.full_name || "Unknown",
+                            class: child.class_year === "year_6" ? "Year 6" : "Year 9",
+                            avatar: child.profile.full_name?.charAt(0).toUpperCase() || "?"
+                          });
+                          setAssignOpen(true);
+                        }}
+                      >
+                        Assign Practice
+                      </Button>
                     </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-
-        {/* Competition Leaderboards - Ward's Position */}
-        <div className="mt-8 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-          <CompetitionLeaderboards 
-            showCurrentUserPosition={true}
-            currentUserName="Ada"
-            currentUserRanks={{ monthly: 12, annual: 8 }}
-          />
-        </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p className="mb-2">Detailed analytics coming soon!</p>
+                    <p className="text-sm">We're working on bringing you comprehensive performance insights.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
 
         {/* Support Section */}
         <Card className="mt-8 border-2 border-primary animate-fade-in" style={{ animationDelay: "0.4s" }}>
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
               <div className="w-12 h-12 rounded-full bg-primary-light flex items-center justify-center flex-shrink-0">
-                <BookOpen className="text-primary" size={24} />
+                <span className="text-2xl">💪</span>
               </div>
-              <div className="flex-1">
-                <h3 className="font-bold text-lg mb-2">Supporting Your Child's Journey</h3>
+              <div>
+                <h3 className="font-bold text-lg mb-2">Supporting Your Child's Success</h3>
                 <p className="text-muted-foreground mb-4">
-                  Consistent practice is key to exam success. Encourage your child to practice daily for 20-30 minutes
-                  and celebrate their progress along the way!
+                  Every question completed brings them closer to exam excellence. Encourage regular practice and celebrate progress!
                 </p>
-                <Button variant="outline">View Parent Resources</Button>
+                <Button variant="outline" size="sm">
+                  📚 View Parent Resources
+                </Button>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Dialogs */}
-      {selectedChild && (
-        <>
-          <StudentReportDialog
-            open={reportOpen}
-            onOpenChange={setReportOpen}
-            studentName={selectedChild.name}
-            studentClass={selectedChild.class}
-            avatar={selectedChild.avatar}
-          />
-          <AssignPracticeDialog
-            open={assignOpen}
-            onOpenChange={setAssignOpen}
-            childName={selectedChild.name}
-          />
-        </>
-      )}
+      <StudentReportDialog
+        open={reportOpen}
+        onOpenChange={setReportOpen}
+        studentName={selectedChild?.name || ""}
+        studentClass={selectedChild?.class || ""}
+        avatar={selectedChild?.avatar}
+      />
+      <AssignPracticeDialog
+        open={assignOpen}
+        onOpenChange={setAssignOpen}
+        childName={selectedChild?.name}
+      />
+
+      {/* Add Child Dialog */}
+      <Dialog open={addChildOpen} onOpenChange={setAddChildOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Child</DialogTitle>
+            <DialogDescription>
+              Enter your child's 8-character student code to link their account
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="studentCode">Student Code</Label>
+              <Input
+                id="studentCode"
+                placeholder="Enter 8-character code"
+                value={studentCode}
+                onChange={(e) => setStudentCode(e.target.value.toUpperCase())}
+                maxLength={8}
+                className="uppercase font-mono text-lg tracking-widest"
+              />
+              <p className="text-sm text-muted-foreground">
+                Ask your child for their unique student code from their dashboard
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setAddChildOpen(false);
+                  setStudentCode("");
+                }}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+              <Button
+                variant="hero"
+                onClick={handleAddChild}
+                disabled={isAddingChild || studentCode.length !== 8}
+                className="flex-1"
+              >
+                {isAddingChild ? "Linking..." : "Link Child"}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
