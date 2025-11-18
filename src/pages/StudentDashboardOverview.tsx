@@ -179,56 +179,19 @@ export default function StudentDashboardOverview() {
       {/* Welcome Section */}
       <div className="mb-12 animate-fade-in">
         <h2 className="text-3xl font-bold text-foreground mb-2">Welcome back, {userName}! 🎉</h2>
-        {classYear && (
-          <p className="text-lg font-semibold text-primary mb-2">
-            {classYear === 'year_6' ? 'Year 6 • Common Entrance' : 'Year 9 • BECE'}
-          </p>
-        )}
-        <p className="text-muted-foreground">
-          {monthlyRank && monthlyRank <= 10 
-            ? "You're in the Top 10 this month! Keep it up!" 
-            : monthlyRank && monthlyRank <= 12 
-            ? `You're ${12 - monthlyRank} ranks away from Top 10!` 
-            : "Ready to ace your exams? Start practicing to climb the leaderboard!"}
+      {classYear && (
+        <p className="text-lg font-semibold text-primary mb-2">
+          {classYear === 'year_6' ? 'Year 6 • Common Entrance' : 'Year 9 • BECE'}
         </p>
-
-        {/* Student Code Display */}
-        {studentCode && (
-          <Card className="mt-6 bg-gradient-to-r from-primary/10 to-accent/10 border-primary/30 shadow-lg">
-            <CardContent className="p-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Your Student Code</p>
-                  <p className="text-xs text-muted-foreground mb-3">Share this code with your parent to link accounts</p>
-                  <div className="flex items-center gap-3">
-                    <code className="text-2xl sm:text-3xl font-bold tracking-widest bg-background/50 px-4 py-2 rounded-lg border border-border text-primary">
-                      {studentCode}
-                    </code>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleCopyCode}
-                      className="shrink-0"
-                    >
-                      {copiedCode ? (
-                        <>
-                          <Check className="h-4 w-4 mr-1" />
-                          Copied!
-                        </>
-                      ) : (
-                        <>
-                          <Copy className="h-4 w-4 mr-1" />
-                          Copy
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+      )}
+      <p className="text-muted-foreground">
+        {monthlyRank && monthlyRank <= 10 
+          ? "You're in the Top 10 this month! Keep it up!" 
+          : monthlyRank && monthlyRank <= 12 
+          ? `You're ${12 - monthlyRank} ranks away from Top 10!` 
+          : "Ready to ace your exams? Start practicing to climb the leaderboard!"}
+      </p>
+    </div>
 
       <Separator className="my-8 opacity-10" />
 
@@ -342,9 +305,46 @@ export default function StudentDashboardOverview() {
                 </div>
               ))}
             </div>
-          )}
+        )}
+      </CardContent>
+    </Card>
+
+    {/* Student Code Display */}
+    {studentCode && (
+      <Card className="mt-8 bg-gradient-to-r from-primary/10 to-accent/10 border-primary/30 shadow-lg animate-fade-in">
+        <CardContent className="p-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium text-muted-foreground mb-1">Your Student Code</p>
+              <p className="text-xs text-muted-foreground mb-3">Share this code with your parent to link accounts</p>
+              <div className="flex items-center gap-3">
+                <code className="text-2xl sm:text-3xl font-bold tracking-widest bg-background/50 px-4 py-2 rounded-lg border border-border text-primary">
+                  {studentCode}
+                </code>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleCopyCode}
+                  className="shrink-0"
+                >
+                  {copiedCode ? (
+                    <>
+                      <Check className="h-4 w-4 mr-1" />
+                      Copied!
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-4 w-4 mr-1" />
+                      Copy
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    )}
+  </div>
+);
 }
