@@ -281,6 +281,46 @@ export function AddQuestionDialog({ onSuccess }: AddQuestionDialogProps) {
                                 />
                             </div>
 
+                            <div className="grid grid-cols-2 gap-4">
+                                <FormField
+                                    control={form.control}
+                                    name="subject"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Subject</FormLabel>
+                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select subject" />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    <SelectItem value="Mathematics">Mathematics</SelectItem>
+                                                    <SelectItem value="English">English</SelectItem>
+                                                    <SelectItem value="General Paper">General Paper</SelectItem>
+                                                    <SelectItem value="Basic Science">Basic Science</SelectItem>
+                                                    <SelectItem value="Social Studies">Social Studies</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                                <FormField
+                                    control={form.control}
+                                    name="topic"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Topic</FormLabel>
+                                            <FormControl>
+                                                <Input placeholder="e.g. Algebra" {...field} />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            </div>
+
                             {/* Question Type Selection */}
                             <FormField
                                 control={form.control}
@@ -347,46 +387,6 @@ export function AddQuestionDialog({ onSuccess }: AddQuestionDialogProps) {
                                     </p>
                                 </div>
                             )}
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormField
-                                    control={form.control}
-                                    name="subject"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Subject</FormLabel>
-                                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                                <FormControl>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select subject" />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    <SelectItem value="Mathematics">Mathematics</SelectItem>
-                                                    <SelectItem value="English">English</SelectItem>
-                                                    <SelectItem value="General Paper">General Paper</SelectItem>
-                                                    <SelectItem value="Basic Science">Basic Science</SelectItem>
-                                                    <SelectItem value="Social Studies">Social Studies</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                                <FormField
-                                    control={form.control}
-                                    name="topic"
-                                    render={({ field }) => (
-                                        <FormItem>
-                                            <FormLabel>Topic (Optional)</FormLabel>
-                                            <FormControl>
-                                                <Input placeholder="e.g. Algebra" {...field} />
-                                            </FormControl>
-                                            <FormMessage />
-                                        </FormItem>
-                                    )}
-                                />
-                            </div>
 
                             <FormField
                                 control={form.control}
