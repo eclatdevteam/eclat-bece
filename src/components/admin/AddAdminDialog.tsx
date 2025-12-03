@@ -101,22 +101,25 @@ export function AddAdminDialog({ onSuccess }: AddAdminDialogProps) {
                     created_by: (await supabase.rpc('get_admin_id', { _user_id: user.id })).data,
                     is_active: true,
                 })
-                .select()
+                .select('id')
                 .single();
 
             if (adminError) throw adminError;
 
             // 4. Log action
-            await supabase.rpc('log_admin_action', {
-                _admin_id: (await supabase.rpc('get_admin_id', { _user_id: user.id })).data,
-                _action: 'create_admin',
-                _resource_type: 'admin',
-                _resource_id: newAdmin.id,
-                _details: {
-                    target_user_email: values.email,
-                    is_super_admin: values.isSuperAdmin
-                }
-            });
+            const adminRecord = newAdmin as unknown as { id: string } | null;
+            if (adminRecord?.id) {
+                await supabase.rpc('log_admin_action', {
+                    _admin_id: (await supabase.rpc('get_admin_id', { _user_id: user.id })).data,
+                    _action: 'create_admin',
+                    _resource_type: 'admin',
+                    _resource_id: adminRecord.id,
+                    _details: {
+                        target_user_email: values.email,
+                        is_super_admin: values.isSuperAdmin
+                    }
+                });
+            }
 
             toast.success("Admin added successfully");
             setOpen(false);
