@@ -28,6 +28,7 @@ import SubjectAnalytics from "./pages/SubjectAnalytics";
 import { StudentLayout } from "./components/StudentLayout";
 import { AdminLayout } from "./components/AdminLayout";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminLoginPage from "./pages/AdminLoginPage";
 
 const queryClient = new QueryClient();
 
@@ -116,6 +117,7 @@ const App = () => (
               </ProtectedRoute>
             } />
             {/* Admin Routes */}
+            <Route path="/admin/login" element={<AdminLoginPage />} />
             <Route path="/admin" element={
               <AdminProtectedRoute>
                 <AdminLayout>

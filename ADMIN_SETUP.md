@@ -29,7 +29,7 @@ Run the following SQL in the Supabase SQL Editor:
 
 DO $$
 DECLARE
-  v_user_id UUID := '75ae9b85-bd50-40d2-af63-a337c20ebd46';
+  v_user_id UUID := 'd8ef2eb0-d577-457d-827c-7c2e0c075fdf';
   v_full_name TEXT := 'Solab Academy';
   v_admin_id UUID;
 BEGIN
@@ -59,9 +59,12 @@ END $$;
 
 ### Step 4: Verify Admin Access
 
-1. Log out and log back in with the admin account
-2. You should be automatically redirected to `/admin`
-3. You should see a "Super Admin" badge on the dashboard
+1. Navigate to `/admin/login` (dedicated admin login page)
+2. Log in with your admin credentials
+3. You should be automatically redirected to `/admin` dashboard
+4. You should see a "Super Admin" badge on the dashboard
+
+**Note**: Admins can also use the regular `/auth` login page, but `/admin/login` provides a dedicated admin-focused experience with enhanced security messaging.
 
 ## Admin Permissions
 

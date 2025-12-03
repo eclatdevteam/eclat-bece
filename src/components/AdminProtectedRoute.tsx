@@ -41,7 +41,7 @@ export const AdminProtectedRoute = ({
                 if (event === 'SIGNED_OUT') {
                     setIsAuthorized(false);
                     setIsChecking(false);
-                    navigate('/auth');
+                    navigate('/admin/login');
                 } else if (event === 'SIGNED_IN') {
                     checkAdminStatus();
                 }
@@ -57,7 +57,7 @@ export const AdminProtectedRoute = ({
             const { data: { session } } = await supabase.auth.getSession();
 
             if (!session?.user) {
-                navigate("/auth");
+                navigate("/admin/login");
                 setIsAuthorized(false);
                 return;
             }
@@ -73,7 +73,7 @@ export const AdminProtectedRoute = ({
                 .from("user_roles")
                 .select("role")
                 .eq("user_id", session.user.id)
-                .eq("role", "admin")
+                .eq("role", "admin" as any) // Cast to any until types are regenerated
                 .maybeSingle();
 
             if (!roleData) {
@@ -98,10 +98,10 @@ export const AdminProtectedRoute = ({
 
             // Check admin record exists and is active
             const { data: adminData } = await supabase
-                .from("admins")
+                .from("admins" as any) // Cast to any until types are regenerated
                 .select("id, is_super_admin, is_active")
                 .eq("user_id", session.user.id)
-                .maybeSingle();
+                .maybeSingle() as any;
 
             if (!adminData || !adminData.is_active) {
                 navigate("/");
@@ -118,7 +118,7 @@ export const AdminProtectedRoute = ({
             setIsAuthorized(true);
         } catch (error) {
             console.error("Admin auth check error:", error);
-            navigate("/auth");
+            navigate("/admin/login");
         } finally {
             setIsChecking(false);
         }
