@@ -30,6 +30,7 @@ import { AdminLayout } from "./components/AdminLayout";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminLoginPage from "./pages/AdminLoginPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
+import PlatformUsersPage from "./pages/PlatformUsersPage";
 
 const queryClient = new QueryClient();
 
@@ -130,6 +131,13 @@ const App = () => (
               <AdminProtectedRoute>
                 <AdminLayout>
                   <AdminUsersPage />
+                </AdminLayout>
+              </AdminProtectedRoute>
+            } />
+            <Route path="/admin/platform-users" element={
+              <AdminProtectedRoute>
+                <AdminLayout>
+                  <PlatformUsersPage />
                 </AdminLayout>
               </AdminProtectedRoute>
             } />
