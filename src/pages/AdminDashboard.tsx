@@ -51,10 +51,10 @@ export default function AdminDashboard() {
         if (!user) return;
 
         const { data } = await supabase
-            .from("admins")
+            .from("admins" as any)
             .select("full_name, is_super_admin")
             .eq("user_id", user.id)
-            .single();
+            .single() as any;
 
         if (data) {
             setAdminName(data.full_name || "Admin");
@@ -119,7 +119,7 @@ export default function AdminDashboard() {
     const fetchRecentActivity = async () => {
         try {
             const { data } = await supabase
-                .from("admin_audit_log")
+                .from("admin_audit_log" as any)
                 .select(`
           id,
           action,
@@ -129,7 +129,7 @@ export default function AdminDashboard() {
           admin:admins(full_name)
         `)
                 .order("created_at", { ascending: false })
-                .limit(10);
+                .limit(10) as any;
 
             if (data) {
                 setRecentActivity(data as RecentActivity[]);
