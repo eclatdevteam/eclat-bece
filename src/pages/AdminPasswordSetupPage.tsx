@@ -97,9 +97,16 @@ export default function AdminPasswordSetupPage() {
                 }
             });
 
-            if (error) throw error;
+            if (error) {
+                console.error("Edge Function error:", error);
+                throw new Error(`Edge Function error: ${error.message}`);
+            }
 
             const result = data as any;
+
+            // Log the full response for debugging
+            console.log("Edge Function response:", result);
+
             if (!result.success) {
                 throw new Error(result.error || "Failed to create admin account");
             }
