@@ -1,10 +1,9 @@
 -- Create Year 6 Comprehension Passages Table
 CREATE TABLE IF NOT EXISTS public.comprehension_passages_year6 (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title TEXT,
+  title TEXT NOT NULL,
   passage_text TEXT NOT NULL,
   subject TEXT DEFAULT 'English Language',
-  topic TEXT,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -12,10 +11,9 @@ CREATE TABLE IF NOT EXISTS public.comprehension_passages_year6 (
 -- Create Year 9 Comprehension Passages Table
 CREATE TABLE IF NOT EXISTS public.comprehension_passages_year9 (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title TEXT,
+  title TEXT NOT NULL,
   passage_text TEXT NOT NULL,
   subject TEXT DEFAULT 'English Language',
-  topic TEXT,
   created_at TIMESTAMPTZ DEFAULT now(),
   updated_at TIMESTAMPTZ DEFAULT now()
 );
@@ -37,8 +35,6 @@ END $$;
 -- Create indexes for efficient querying
 CREATE INDEX IF NOT EXISTS idx_quiz_questions_year6_passage ON public.quiz_questions_year6(passage_id);
 CREATE INDEX IF NOT EXISTS idx_quiz_questions_year9_passage ON public.quiz_questions_year9(passage_id);
-CREATE INDEX IF NOT EXISTS idx_comprehension_passages_year6_topic ON public.comprehension_passages_year6(topic);
-CREATE INDEX IF NOT EXISTS idx_comprehension_passages_year9_topic ON public.comprehension_passages_year9(topic);
 
 -- Enable RLS
 ALTER TABLE public.comprehension_passages_year6 ENABLE ROW LEVEL SECURITY;

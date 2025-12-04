@@ -36,9 +36,8 @@ import { useAuth } from "@/hooks/useAuth";
 
 const formSchema = z.object({
     classYear: z.enum(["year_6", "year_9"]),
-    title: z.string().optional(),
+    title: z.string().min(1, "Title is required"),
     passageText: z.string().min(10, "Passage must be at least 10 characters"),
-    topic: z.string().optional(),
 });
 
 interface AddPassageDialogProps {
@@ -56,7 +55,6 @@ export function AddPassageDialog({ onSuccess }: AddPassageDialogProps) {
             classYear: "year_6",
             title: "",
             passageText: "",
-            topic: "",
         },
     });
 
@@ -72,9 +70,8 @@ export function AddPassageDialog({ onSuccess }: AddPassageDialogProps) {
             const { error } = await supabase
                 .from(tableName)
                 .insert({
-                    title: values.title || null,
+                    title: values.title,
                     passage_text: values.passageText,
-                    topic: values.topic || null,
                 });
 
             if (error) throw error;
@@ -87,7 +84,7 @@ export function AddPassageDialog({ onSuccess }: AddPassageDialogProps) {
                 _resource_id: null,
                 _details: {
                     class_year: values.classYear,
-                    has_title: !!values.title
+                    has_title: true
                 }
             });
 
@@ -122,7 +119,7 @@ export function AddPassageDialog({ onSuccess }: AddPassageDialogProps) {
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 gap-4">
                             <FormField
                                 control={form.control}
                                 name="classYear"
@@ -144,19 +141,6 @@ export function AddPassageDialog({ onSuccess }: AddPassageDialogProps) {
                                     </FormItem>
                                 )}
                             />
-                            <FormField
-                                control={form.control}
-                                name="topic"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Topic (Optional)</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="e.g. Fables, Science" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
                         </div>
 
                         <FormField
@@ -164,7 +148,7 @@ export function AddPassageDialog({ onSuccess }: AddPassageDialogProps) {
                             name="title"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Title (Optional)</FormLabel>
+                                    <FormLabel>Title</FormLabel>
                                     <FormControl>
                                         <Input placeholder="e.g. The Lion and the Mouse" {...field} />
                                     </FormControl>

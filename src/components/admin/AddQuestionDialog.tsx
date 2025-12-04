@@ -63,13 +63,14 @@ const formSchema = z.object({
             if (data.passageMode === "select" && !data.passageId) {
                 return false;
             }
-            if (data.passageMode === "create" && (!data.newPassageText || data.newPassageText.length < 10)) {
-                return false;
+            if (data.passageMode === "create") {
+                if (!data.newPassageText || data.newPassageText.length < 10) return false;
+                if (!data.newPassageTitle || data.newPassageTitle.trim().length === 0) return false;
             }
         }
         return true;
     },
-    { message: "Please complete passage selection or creation", path: ["passageId"] }
+    { message: "Please complete passage selection or creation (Title and Text required for new passages)", path: ["passageId"] }
 );
 
 interface AddQuestionDialogProps {
@@ -148,13 +149,14 @@ export function AddQuestionDialog({ onSuccess }: AddQuestionDialogProps) {
 
             // If creating a new passage, insert it first
             if (values.questionType === "comprehension" && values.passageMode === "create" && values.newPassageText) {
+                if (!values.newPassageText || !values.newPassageTitle) return;
+
                 const { data: newPassage, error: passageError } = await supabase
-                    .from(passageTableName as any)
+                    .from(passageTableName)
                     .insert({
-                        title: values.newPassageTitle || null,
+                        title: values.newPassageTitle,
                         passage_text: values.newPassageText,
-                        subject: 'English Language',
-                        topic: values.topic,
+                        subject: values.subject // Passages inherit subject from the question being created
                     })
                     .select()
                     .single();
@@ -474,7 +476,7 @@ export function AddQuestionDialog({ onSuccess }: AddQuestionDialogProps) {
                                                 name="newPassageTitle"
                                                 render={({ field }) => (
                                                     <FormItem>
-                                                        <FormLabel>Passage Title (Optional)</FormLabel>
+                                                        <FormLabel>Passage Title</FormLabel>
                                                         <FormControl>
                                                             <Input placeholder="e.g. The Lion and the Mouse" {...field} />
                                                         </FormControl>
