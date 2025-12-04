@@ -202,7 +202,7 @@ export default function QuestionBankPage() {
                     <SelectContent>
                         <SelectItem value="all">All Subjects</SelectItem>
                         <SelectItem value="Mathematics">Mathematics</SelectItem>
-                        <SelectItem value="English">English</SelectItem>
+                        <SelectItem value="English Language">English Language</SelectItem>
                         <SelectItem value="General Paper">General Paper</SelectItem>
                         <SelectItem value="Basic Science">Basic Science</SelectItem>
                         <SelectItem value="Social Studies">Social Studies</SelectItem>
