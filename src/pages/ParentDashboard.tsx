@@ -9,6 +9,7 @@ import { AssignPracticeDialog } from "@/components/AssignPracticeDialog";
 import { ChildOverviewCard } from "@/components/parent/ChildOverviewCard";
 import { DummyPaymentModal } from "@/components/parent/DummyPaymentModal";
 import { ParentActivityFeed } from "@/components/parent/ParentActivityFeed";
+import { DeleteChildDialog } from "@/components/parent/DeleteChildDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -31,6 +32,9 @@ export default function ParentDashboard() {
   const [globalActivities, setGlobalActivities] = useState<QuizResult[]>([]);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [selectedPaymentChild, setSelectedPaymentChild] = useState<{ id: string; name: string } | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [childToDelete, setChildToDelete] = useState<LinkedChild | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Derived Top-Level Metrics
   const totalChildren = linkedChildren.length;
@@ -97,6 +101,39 @@ export default function ParentDashboard() {
     } catch (error) {
       console.error("Error fetching linked children:", error);
       toast.error("Failed to load linked children");
+    }
+  };
+
+  const handleDeleteChild = async () => {
+    if (!childToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("delete-student-account", {
+        body: { studentId: childToDelete.id },
+      });
+
+      if (error) {
+        const errorData = await error.context.json();
+        throw new Error(errorData.error || error.message);
+      }
+
+      toast.success(`${childToDelete.profile.full_name}'s account has been deleted.`);
+      setDeleteDialogOpen(false);
+      setChildToDelete(null);
+
+      // Refresh the list - we use the stored parentUserId
+      if (parentUserId) {
+        await fetchLinkedChildren(parentUserId);
+      } else {
+        // Fallback: re-fetch parent data which will trigger linked children
+        window.location.reload();
+      }
+    } catch (error: any) {
+      console.error("Error deleting child:", error);
+      toast.error(error.message || "Failed to delete student account");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -338,6 +375,10 @@ export default function ParentDashboard() {
                     setSelectedPaymentChild({ id: c.id, name: c.profile.full_name || "Unknown" });
                     setPaymentModalOpen(true);
                   }}
+                  onDeleteChild={(c) => {
+                    setChildToDelete(c);
+                    setDeleteDialogOpen(true);
+                  }}
                 />
               ))}
             </div>
@@ -504,6 +545,14 @@ export default function ParentDashboard() {
           }}
         />
       )}
+
+      <DeleteChildDialog
+        isOpen={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        child={childToDelete}
+        onConfirm={handleDeleteChild}
+        isDeleting={isDeleting}
+      />
     </div>
   );
 }

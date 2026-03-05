@@ -19,6 +19,7 @@ interface ChildOverviewCardProps {
     onViewReport: (child: LinkedChild) => void;
     onAssignPractice: (child: LinkedChild) => void;
     onUpgradePremium: (child: LinkedChild) => void;
+    onDeleteChild: (child: LinkedChild) => void;
 }
 
 export function ChildOverviewCard({
@@ -27,7 +28,8 @@ export function ChildOverviewCard({
     index,
     onViewReport,
     onAssignPractice,
-    onUpgradePremium
+    onUpgradePremium,
+    onDeleteChild
 }: ChildOverviewCardProps) {
     const initials = child.profile.full_name?.charAt(0).toUpperCase() || "?";
 
@@ -118,8 +120,11 @@ export function ChildOverviewCard({
                                         Upgrade Premium
                                     </DropdownMenuItem>
                                 )}
-                                <DropdownMenuItem className="rounded-lg text-destructive font-bold focus:bg-destructive/10 focus:text-destructive">
-                                    Unlink Student
+                                <DropdownMenuItem
+                                    className="rounded-lg text-destructive font-bold focus:bg-destructive/10 focus:text-destructive"
+                                    onClick={() => onDeleteChild(child)}
+                                >
+                                    Delete Account
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
