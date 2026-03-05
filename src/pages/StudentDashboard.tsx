@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BookOpen, Trophy, TrendingUp, Target, Flame, LogOut, Settings, Menu } from "lucide-react";
+import { BookOpen, Trophy, TrendingUp, Target, Flame, LogOut, Settings, Menu, Lock } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CompetitionLeaderboards } from "@/components/CompetitionLeaderboards";
 import { PracticeAssignment } from "@/components/PracticeAssignment";
@@ -31,6 +31,8 @@ export default function StudentDashboard() {
   const [classYear, setClassYear] = useState<string | null>(null);
   const [subjectCounts, setSubjectCounts] = useState<Record<string, number>>({});
   const [currentStreak, setCurrentStreak] = useState(0);
+  const [currentStreak, setCurrentStreak] = useState(0);
+  const [isPremium, setIsPremium] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const logo = theme === "dark" ? logoLight : logoDark;
@@ -50,15 +52,16 @@ export default function StudentDashboard() {
       setUserName(firstName);
     }
 
-    // Fetch student's class year
+    // Fetch student's class year and premium status
     const { data: studentData } = await supabase
       .from("students")
-      .select("class_year")
+      .select("class_year, is_premium")
       .eq("user_id", user.id)
       .single();
 
-    if (studentData?.class_year) {
-      setClassYear(studentData.class_year);
+    if (studentData) {
+      if (studentData.class_year) setClassYear(studentData.class_year);
+      setIsPremium(!!studentData.is_premium);
     }
   };
 
@@ -158,19 +161,19 @@ export default function StudentDashboard() {
   }, [refreshing]);
 
   const subjects = [
-    { name: "Mathematics", icon: "📐", difficulty: "Core Subject", questions: subjectCounts["Mathematics"] || 0 },
-    { name: "English Language", icon: "📚", difficulty: "Core Subject", questions: subjectCounts["English Language"] || 0 },
-    { name: "Basic Science", icon: "🔬", difficulty: "Core Subject", questions: subjectCounts["Basic Science"] || 0 },
-    { name: "Social Studies", icon: "🌍", difficulty: "Core Subject", questions: subjectCounts["Social Studies"] || 0 },
+    { name: "Mathematics", icon: "📐", difficulty: "Core Subject", questions: subjectCounts["Mathematics"] || 0, isPremium: false },
+    { name: "English Language", icon: "📚", difficulty: "Core Subject", questions: subjectCounts["English Language"] || 0, isPremium: false },
+    { name: "Basic Science", icon: "🔬", difficulty: "Core Subject", questions: subjectCounts["Basic Science"] || 0, isPremium: true },
+    { name: "Social Studies", icon: "🌍", difficulty: "Core Subject", questions: subjectCounts["Social Studies"] || 0, isPremium: true },
   ];
 
   const topics = [
-    { name: "Number & Numeration", subject: "Mathematics", icon: "➗", questions: 420 },
-    { name: "Comprehension Passages", subject: "English", icon: "📖", questions: 380 },
-    { name: "Living Things", subject: "Basic Science", icon: "🦋", questions: 325 },
-    { name: "Grammar & Composition", subject: "English", icon: "✍️", questions: 290 },
-    { name: "Algebraic Processes", subject: "Mathematics", icon: "📐", questions: 285 },
-    { name: "Nigerian History", subject: "Social Studies", icon: "📜", questions: 245 },
+    { name: "Number & Numeration", subject: "Mathematics", icon: "➗", questions: 420, isPremium: false },
+    { name: "Comprehension Passages", subject: "English", icon: "📖", questions: 380, isPremium: false },
+    { name: "Living Things", subject: "Basic Science", icon: "🦋", questions: 325, isPremium: true },
+    { name: "Grammar & Composition", subject: "English", icon: "✍️", questions: 290, isPremium: false },
+    { name: "Algebraic Processes", subject: "Mathematics", icon: "📐", questions: 285, isPremium: true },
+    { name: "Nigerian History", subject: "Social Studies", icon: "📜", questions: 245, isPremium: true },
   ];
 
   const badges = [
@@ -358,16 +361,28 @@ export default function StudentDashboard() {
                               <span className="text-xs px-2 py-0.5 rounded-full bg-primary-light text-primary font-medium hidden sm:inline-block">
                                 {subject.difficulty}
                               </span>
+                              {subject.isPremium && !isPremium && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 font-medium flex items-center gap-1">
+                                  <Lock size={12} /> Premium
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
                         <Button
-                          variant="hero"
+                          variant={subject.isPremium && !isPremium ? "outline" : "hero"}
                           size="sm"
                           className="w-full sm:w-auto sm:min-w-[140px] min-h-[44px]"
-                          onClick={() => navigate(`/quiz?subject=${encodeURIComponent(subject.name)}`)}
+                          onClick={() => {
+                            if (subject.isPremium && !isPremium) {
+                              // Ignore or show toast
+                            } else {
+                              navigate(`/quiz?subject=${encodeURIComponent(subject.name)}`)
+                            }
+                          }}
+                          disabled={subject.isPremium && !isPremium}
                         >
-                          Start Practice
+                          {subject.isPremium && !isPremium ? "Locked" : "Start Practice"}
                         </Button>
                       </div>
                     ))}
@@ -382,18 +397,32 @@ export default function StudentDashboard() {
                           <span className="text-2xl sm:text-3xl">{topic.icon}</span>
                           <div className="flex-1 min-w-0">
                             <h4 className="font-semibold text-foreground truncate">{topic.name}</h4>
-                            <p className="text-xs sm:text-sm text-muted-foreground">
-                              {topic.subject} • {topic.questions} questions
-                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <p className="text-xs sm:text-sm text-muted-foreground">
+                                {topic.subject} • {topic.questions} questions
+                              </p>
+                              {topic.isPremium && !isPremium && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 font-medium flex items-center gap-1">
+                                  <Lock size={12} /> Premium
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <Button
-                          variant="hero"
+                          variant={topic.isPremium && !isPremium ? "outline" : "hero"}
                           size="sm"
                           className="w-full sm:w-auto sm:min-w-[140px] min-h-[44px]"
-                          onClick={() => navigate("/quiz")}
+                          onClick={() => {
+                            if (topic.isPremium && !isPremium) {
+                              // ignore
+                            } else {
+                              navigate("/quiz")
+                            }
+                          }}
+                          disabled={topic.isPremium && !isPremium}
                         >
-                          Start Practice
+                          {topic.isPremium && !isPremium ? "Locked" : "Start Practice"}
                         </Button>
                       </div>
                     ))}

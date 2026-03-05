@@ -61,15 +61,31 @@ export default function AuthPage() {
 
     try {
       const formData = new FormData(e.target as HTMLFormElement);
-      const email = formData.get("email") as string;
+      const emailOrUsername = formData.get(role === "student" ? "username" : "email") as string;
       const password = formData.get("password") as string;
 
       // Validate input
-      const validated = loginSchema.parse({ email, password });
+      let loginEmail = emailOrUsername;
+      if (role === "student") {
+        loginEmail = `${emailOrUsername.trim().toLowerCase()}@student.eclat.com`;
+      } else {
+        const validated = loginSchema.parse({ email: emailOrUsername, password });
+        loginEmail = validated.email;
+      }
+
+      if (password.length < 6) {
+        toast({
+          title: "Validation Error",
+          description: "Password must be at least 6 characters",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+        return;
+      }
 
       const { data, error } = await supabase.auth.signInWithPassword({
-        email: validated.email,
-        password: validated.password,
+        email: loginEmail,
+        password: password,
       });
 
       if (error) {
@@ -82,7 +98,7 @@ export default function AuthPage() {
       }
 
       // Check if email is verified
-      if (!data.user?.email_confirmed_at) {
+      if (!data.user?.email_confirmed_at && role !== "student") {
         toast({
           title: "Email Not Verified",
           description: "Please verify your email before logging in.",
@@ -159,11 +175,11 @@ export default function AuthPage() {
       }
 
       // Navigate to appropriate dashboard based on actual role
-      const dashboardPath = userRole === "parent" 
-        ? "/dashboard/parent" 
-        : userRole === "school" 
-        ? "/dashboard/school" 
-        : "/dashboard/student";
+      const dashboardPath = userRole === "parent"
+        ? "/dashboard/parent"
+        : userRole === "school"
+          ? "/dashboard/school"
+          : "/dashboard/student";
 
       navigate(dashboardPath);
     } catch (error: any) {
@@ -273,10 +289,10 @@ export default function AuthPage() {
   const handleGoogleLogin = async () => {
     try {
       setIsLoading(true);
-      
+
       // Store role in localStorage before OAuth redirect
       localStorage.setItem('pendingRole', role);
-      
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
@@ -336,12 +352,12 @@ export default function AuthPage() {
               <TabsContent value="login">
                 <form onSubmit={handleLogin} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="login-email">Email</Label>
+                    <Label htmlFor="login-email">{role === "student" ? "Username" : "Email"}</Label>
                     <Input
                       id="login-email"
-                      name="email"
-                      type="email"
-                      placeholder="you@example.com"
+                      name={role === "student" ? "username" : "email"}
+                      type={role === "student" ? "text" : "email"}
+                      placeholder={role === "student" ? "e.g. ada.okafor" : "you@example.com"}
                       required
                       maxLength={255}
                     />
@@ -422,11 +438,11 @@ export default function AuthPage() {
                     </svg>
                     Continue with Google
                   </Button>
-                  
+
                   <p className="text-sm text-center text-muted-foreground">
                     Forgot your password?{" "}
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => navigate("/password-reset")}
                       className="text-primary hover:underline"
                     >

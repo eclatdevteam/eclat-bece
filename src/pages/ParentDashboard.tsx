@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { StudentReportDialog } from "@/components/StudentReportDialog";
 import { AssignPracticeDialog } from "@/components/AssignPracticeDialog";
+import { DummyPaymentModal } from "@/components/parent/DummyPaymentModal";
 import { useTheme } from "next-themes";
 import logoDark from "@/assets/logo-dark.png";
 import logoLight from "@/assets/logo-light.png";
@@ -23,6 +24,7 @@ interface LinkedChild {
   id: string;
   user_id: string;
   class_year: string | null;
+  is_premium?: boolean;
   profile: {
     full_name: string | null;
     unique_id: string;
@@ -60,7 +62,9 @@ export default function ParentDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [parentUserId, setParentUserId] = useState<string | null>(null);
   const [childrenAnalytics, setChildrenAnalytics] = useState<Map<string, ChildAnalytics>>(new Map());
-  
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [selectedPaymentChild, setSelectedPaymentChild] = useState<{ id: string; name: string } | null>(null);
+
   const logo = theme === "dark" ? logoLight : logoDark;
 
   useEffect(() => {
@@ -96,7 +100,8 @@ export default function ParentDashboard() {
           id,
           user_id,
           class_year,
-          profile:profiles!students_user_id_fkey(full_name, unique_id)
+          is_premium,
+          profile:profiles(full_name, unique_id, username)
         `)
         .eq("parent_id", parentId);
 
@@ -160,14 +165,22 @@ export default function ParentDashboard() {
     }
   };
 
-  const handleAddChild = async () => {
-    if (!studentCode.trim()) {
-      toast.error("Please enter a student code");
+  const [newChildData, setNewChildData] = useState({
+    fullName: "",
+    classYear: "",
+    username: "",
+    password: "",
+  });
+  const [createdChildCredentials, setCreatedChildCredentials] = useState<{ username: string; password: string } | null>(null);
+
+  const handleCreateChild = async () => {
+    if (!newChildData.fullName || !newChildData.classYear || !newChildData.username || !newChildData.password) {
+      toast.error("Please fill in all fields");
       return;
     }
 
-    if (studentCode.length !== 8) {
-      toast.error("Student code must be 8 characters");
+    if (newChildData.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
       return;
     }
 
@@ -179,103 +192,37 @@ export default function ParentDashboard() {
     setIsAddingChild(true);
 
     try {
-      // Find the student by their unique_id
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("unique_id", studentCode.toUpperCase())
-        .single();
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token) throw new Error("No session found");
 
-      if (profileError || !profileData) {
-        toast.error("Invalid student code. Please check and try again.");
-        setIsAddingChild(false);
-        return;
-      }
-
-      // Check if this user is actually a student
-      const { data: studentData, error: studentError } = await supabase
-        .from("students")
-        .select("id, parent_id")
-        .eq("user_id", profileData.id)
-        .single();
-
-      if (studentError || !studentData) {
-        toast.error("This code does not belong to a student account");
-        setIsAddingChild(false);
-        return;
-      }
-
-      // Check if already linked to this parent
-      if (studentData.parent_id === parentUserId) {
-        toast.error("This child is already linked to your account");
-        setIsAddingChild(false);
-        return;
-      }
-
-      // Check if there's already a pending request
-      const { data: existingRequest, error: requestCheckError } = await supabase
-        .from("parent_child_link_requests")
-        .select("id, status")
-        .eq("parent_id", parentUserId)
-        .eq("student_id", studentData.id)
-        .maybeSingle();
-
-      if (requestCheckError && requestCheckError.code !== "PGRST116") {
-        throw requestCheckError;
-      }
-
-      if (existingRequest) {
-        if (existingRequest.status === "pending") {
-          toast.error("You already have a pending request for this student");
-        } else {
-          toast.error("You already sent a request to this student");
+      const response = await supabase.functions.invoke("create-student-account", {
+        body: newChildData,
+        headers: {
+          Authorization: `Bearer ${session.access_token}`
         }
-        setIsAddingChild(false);
-        return;
+      });
+
+      if (response.error) {
+        toast.error(response.error.message || "Failed to create student account");
+        throw new Error(response.error.message);
       }
 
-      // Check if already linked to another parent
-      if (studentData.parent_id && studentData.parent_id !== parentUserId) {
-        toast.error("This student is already linked to another parent account");
-        setIsAddingChild(false);
-        return;
-      }
+      toast.success("Student account created successfully!");
+      setCreatedChildCredentials({ username: newChildData.username, password: newChildData.password });
 
-      // Create link request
-      const { data: linkRequest, error: requestError } = await supabase
-        .from("parent_child_link_requests")
-        .insert({
-          parent_id: parentUserId,
-          student_id: studentData.id,
-          status: "pending",
-        })
-        .select()
-        .single();
-
-      if (requestError) throw requestError;
-
-      // Create notification for student
-      const { error: notificationError } = await supabase
-        .from("notifications")
-        .insert({
-          user_id: profileData.id,
-          type: "link_request",
-          title: "New Parent Link Request",
-          message: "A parent has requested to link with your account. Please review and accept or reject this request.",
-          metadata: { request_id: linkRequest.id },
-        });
-
-      if (notificationError) throw notificationError;
-
-      toast.success("Link request sent! The student will receive a notification to accept or reject.");
-      setStudentCode("");
-      setAddChildOpen(false);
+      // Refresh linked children list
+      await fetchLinkedChildren(parentUserId);
     } catch (error) {
-      console.error("Error creating link request:", error);
-      toast.error("Failed to send link request. Please try again.");
+      console.error("Error creating student account:", error);
     } finally {
       setIsAddingChild(false);
     }
+  };
+
+  const handleCloseAddChild = () => {
+    setAddChildOpen(false);
+    setNewChildData({ fullName: "", classYear: "", username: "", password: "" });
+    setCreatedChildCredentials(null);
   };
 
   return (
@@ -283,10 +230,10 @@ export default function ParentDashboard() {
       {/* Header */}
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <img 
-            src={logo} 
-            alt="Éclat Logo" 
-            className="h-16 w-auto cursor-pointer" 
+          <img
+            src={logo}
+            alt="Éclat Logo"
+            className="h-16 w-auto cursor-pointer"
             onClick={() => navigate("/")}
           />
           <div className="flex items-center gap-4">
@@ -362,11 +309,11 @@ export default function ParentDashboard() {
                       </div>
                     </div>
                     <div className="flex gap-2">
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         size="sm"
                         onClick={() => {
-                          setSelectedChild({ 
+                          setSelectedChild({
                             name: child.profile.full_name || "Unknown",
                             class: child.class_year === "year_6" ? "Year 6" : "Year 9",
                             avatar: child.profile.full_name?.charAt(0).toUpperCase() || "?"
@@ -376,11 +323,11 @@ export default function ParentDashboard() {
                       >
                         View Report
                       </Button>
-                      <Button 
-                        variant="hero" 
+                      <Button
+                        variant="hero"
                         size="sm"
                         onClick={() => {
-                          setSelectedChild({ 
+                          setSelectedChild({
                             name: child.profile.full_name || "Unknown",
                             class: child.class_year === "year_6" ? "Year 6" : "Year 9",
                             avatar: child.profile.full_name?.charAt(0).toUpperCase() || "?"
@@ -391,6 +338,19 @@ export default function ParentDashboard() {
                         Assign Practice
                       </Button>
                     </div>
+                    {!child.is_premium && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-primary hover:bg-primary/10 mt-2"
+                        onClick={() => {
+                          setSelectedPaymentChild({ id: child.id, name: child.profile.full_name || "Unknown" });
+                          setPaymentModalOpen(true);
+                        }}
+                      >
+                        Upgrade to Premium
+                      </Button>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent>
@@ -443,18 +403,18 @@ export default function ParentDashboard() {
                               <ResponsiveContainer width="100%" height="100%">
                                 <BarChart data={childrenAnalytics.get(child.id)!.subjectPerformance}>
                                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                                  <XAxis 
-                                    dataKey="subject" 
+                                  <XAxis
+                                    dataKey="subject"
                                     tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
                                   />
-                                  <YAxis 
+                                  <YAxis
                                     tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
                                     domain={[0, 100]}
                                   />
                                   <ChartTooltip content={<ChartTooltipContent />} />
-                                  <Bar 
-                                    dataKey="avgScore" 
-                                    fill="hsl(var(--primary))" 
+                                  <Bar
+                                    dataKey="avgScore"
+                                    fill="hsl(var(--primary))"
                                     radius={[8, 8, 0, 0]}
                                   />
                                 </BarChart>
@@ -545,52 +505,112 @@ export default function ParentDashboard() {
       />
 
       {/* Add Child Dialog */}
-      <Dialog open={addChildOpen} onOpenChange={setAddChildOpen}>
+      <Dialog open={addChildOpen} onOpenChange={handleCloseAddChild}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Add Child</DialogTitle>
+            <DialogTitle>{createdChildCredentials ? "Student Account Created" : "Create Student Account"}</DialogTitle>
             <DialogDescription>
-              Enter your child's 8-character student code to link their account
+              {createdChildCredentials
+                ? "Please save these login credentials. Your child will need them to log in."
+                : "Create a new student account for your child."}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="studentCode">Student Code</Label>
-              <Input
-                id="studentCode"
-                placeholder="Enter 8-character code"
-                value={studentCode}
-                onChange={(e) => setStudentCode(e.target.value.toUpperCase())}
-                maxLength={8}
-                className="uppercase font-mono text-lg tracking-widest"
-              />
-              <p className="text-sm text-muted-foreground">
-                Ask your child for their unique student code from their dashboard
-              </p>
-            </div>
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setAddChildOpen(false);
-                  setStudentCode("");
-                }}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button
-                variant="hero"
-                onClick={handleAddChild}
-                disabled={isAddingChild || studentCode.length !== 8}
-                className="flex-1"
-              >
-                {isAddingChild ? "Linking..." : "Link Child"}
-              </Button>
-            </div>
+            {createdChildCredentials ? (
+              <div className="space-y-4 p-4 bg-muted rounded-lg border border-border">
+                <div>
+                  <Label className="text-muted-foreground text-xs">Username</Label>
+                  <p className="font-mono text-lg font-medium">{createdChildCredentials.username}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">Password</Label>
+                  <p className="font-mono text-lg font-medium">{createdChildCredentials.password}</p>
+                </div>
+                <Button
+                  className="w-full mt-4"
+                  variant="hero"
+                  onClick={handleCloseAddChild}
+                >
+                  Done
+                </Button>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    placeholder="e.g. Ada Okafor"
+                    value={newChildData.fullName}
+                    onChange={(e) => setNewChildData({ ...newChildData, fullName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="classYear">Class Year</Label>
+                  <select
+                    id="classYear"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                    value={newChildData.classYear}
+                    onChange={(e) => setNewChildData({ ...newChildData, classYear: e.target.value })}
+                  >
+                    <option value="" disabled>Select Class Year</option>
+                    <option value="year_6">Year 6 (Primary 6)</option>
+                    <option value="year_9">Year 9 (JSS 3)</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="username">Student Username</Label>
+                  <Input
+                    id="username"
+                    placeholder="e.g. ada.okafor"
+                    value={newChildData.username}
+                    onChange={(e) => setNewChildData({ ...newChildData, username: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Student Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="Minimum 6 characters"
+                    value={newChildData.password}
+                    onChange={(e) => setNewChildData({ ...newChildData, password: e.target.value })}
+                  />
+                </div>
+                <div className="flex gap-3 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={handleCloseAddChild}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    variant="hero"
+                    onClick={handleCreateChild}
+                    disabled={isAddingChild || !newChildData.fullName || !newChildData.classYear || !newChildData.username || !newChildData.password.trim()}
+                    className="flex-1"
+                  >
+                    {isAddingChild ? "Creating..." : "Create Account"}
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         </DialogContent>
       </Dialog>
+
+      {selectedPaymentChild && (
+        <DummyPaymentModal
+          open={paymentModalOpen}
+          onOpenChange={setPaymentModalOpen}
+          studentId={selectedPaymentChild.id}
+          studentName={selectedPaymentChild.name}
+          onSuccess={() => {
+            if (parentUserId) fetchLinkedChildren(parentUserId);
+          }}
+        />
+      )}
     </div>
   );
 }
