@@ -27,6 +27,7 @@ import QuizPage from "./pages/QuizPage";
 import SubjectAnalytics from "./pages/SubjectAnalytics";
 import { StudentLayout } from "./components/StudentLayout";
 import { AdminLayout } from "./components/AdminLayout";
+import { ParentLayout } from "./components/parent/ParentLayout";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminLoginPage from "./pages/AdminLoginPage";
 import AdminPasswordSetupPage from "./pages/AdminPasswordSetupPage";
@@ -110,7 +111,9 @@ const App = () => (
               } />
               <Route path="/dashboard/parent" element={
                 <ProtectedRoute requiredRole="parent">
-                  <ParentDashboard />
+                  <ParentLayout>
+                    <ParentDashboard />
+                  </ParentLayout>
                 </ProtectedRoute>
               } />
               <Route path="/dashboard/school" element={
