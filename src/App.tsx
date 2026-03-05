@@ -13,7 +13,7 @@ import AuthPage from "./pages/AuthPage";
 import AuthCallback from "./pages/AuthCallback";
 import PasswordResetPage from "./pages/PasswordResetPage";
 import EmailVerificationPage from "./pages/EmailVerificationPage";
-import StudentOnboarding from "./pages/StudentOnboarding";
+// import StudentOnboarding from "./pages/StudentOnboarding";
 import ParentOnboarding from "./pages/ParentOnboarding";
 import SchoolOnboarding from "./pages/SchoolOnboarding";
 import StudentDashboardOverview from "./pages/StudentDashboardOverview";
@@ -57,11 +57,12 @@ const App = () => (
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/password-reset" element={<PasswordResetPage />} />
               <Route path="/verify-email" element={<EmailVerificationPage />} />
-              <Route path="/onboarding/student" element={
+              {/* Student onboarding is no longer needed as parents provision the account fully */}
+              {/* <Route path="/onboarding/student" element={
                 <ProtectedRoute requiredRole="student">
                   <StudentOnboarding />
                 </ProtectedRoute>
-              } />
+              } /> */}
               <Route path="/onboarding/parent" element={
                 <ProtectedRoute requiredRole="parent">
                   <ParentOnboarding />
