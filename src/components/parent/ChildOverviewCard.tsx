@@ -1,4 +1,5 @@
-import { Award, BookOpen, Target, MoreVertical, CreditCard, ChevronRight, Trash2, User, Key, Fingerprint } from "lucide-react";
+import { Award, BookOpen, Target, MoreVertical, CreditCard, ChevronRight, Trash2, User, Key, Fingerprint, Copy, Check } from "lucide-react";
+import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,6 +39,17 @@ export function ChildOverviewCard({
     onChangePassword
 }: ChildOverviewCardProps) {
     const initials = child.profile.full_name?.charAt(0).toUpperCase() || "?";
+
+    const handleCopyUsername = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (child.profile.username) {
+            navigator.clipboard.writeText(child.profile.username);
+            toast.success("Username copied to clipboard", {
+                description: child.profile.username,
+                duration: 2000,
+            });
+        }
+    };
 
     return (
         <Card
@@ -84,7 +96,11 @@ export function ChildOverviewCard({
                                             ID: {child.profile.unique_id}
                                         </span>
                                         {child.profile.username && (
-                                            <span className="text-[10px] font-mono text-muted-foreground/60 bg-muted/30 px-2 py-0.5 rounded-lg border border-border/50 truncate max-w-[120px]" title={child.profile.username}>
+                                            <span
+                                                className="text-[10px] font-mono text-muted-foreground/60 bg-muted/30 px-2 py-0.5 rounded-lg border border-border/50 truncate max-w-[120px] cursor-pointer hover:bg-muted/50 transition-colors active:scale-95 touch-none selection:bg-transparent"
+                                                title={`Click to copy: ${child.profile.username}`}
+                                                onClick={handleCopyUsername}
+                                            >
                                                 {child.profile.username}
                                             </span>
                                         )}
