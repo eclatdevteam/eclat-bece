@@ -273,7 +273,7 @@ export default function ParentDashboard() {
             <div className="flex items-center justify-between mb-2 px-1">
               <div className="flex items-center gap-3">
                 <div className="h-8 w-1.5 bg-primary rounded-full" />
-                <h3 className="text-2xl font-black text-foreground tracking-tight uppercase">My Students</h3>
+                <h3 className="text-2xl font-black text-foreground tracking-tight uppercase">My Children</h3>
               </div>
               <Button
                 variant="ghost"
@@ -286,7 +286,7 @@ export default function ParentDashboard() {
             </div>
 
             <div className="grid grid-cols-1 gap-6">
-              {linkedChildren.slice(0, 2).map((child, index) => (
+              {linkedChildren.slice(0, 1).map((child, index) => (
                 <ChildOverviewCard
                   key={child.id}
                   child={child}
@@ -322,12 +322,14 @@ export default function ParentDashboard() {
           </div>
 
           {/* Right Column: Activity Feed & Sidebar */}
-          <div className="lg:col-span-4 space-y-8">
-            <div className="flex items-center gap-3 mb-2 px-1">
+          <div className="lg:col-span-4 flex flex-col gap-8">
+            <div className="flex items-center gap-3 px-1">
               <div className="h-8 w-1.5 bg-primary rounded-full" />
               <h3 className="text-2xl font-black text-foreground tracking-tight uppercase">Activity Feed</h3>
             </div>
-            <ParentActivityFeed activities={globalActivities} isLoading={isLoading} />
+            <div className="flex-1 min-h-0">
+              <ParentActivityFeed activities={globalActivities} isLoading={isLoading} />
+            </div>
           </div>
         </div>
       )}
