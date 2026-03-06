@@ -58,10 +58,13 @@ export function ChildOverviewCard({
                                 {initials}
                             </div>
                             <div className="space-y-1.5 min-w-0">
-                                <CardTitle className="text-xl sm:text-2xl font-black tracking-tight text-foreground truncate" title={child.profile.full_name || "Unknown"}>
+                                <CardTitle
+                                    className="text-xl sm:text-2xl font-black tracking-tight text-foreground truncate"
+                                    title={child.profile.full_name || "Unknown"}
+                                >
                                     {child.profile.full_name || "Unknown"}
                                 </CardTitle>
-                                <div className="flex items-center gap-2 flex-wrap">
+                                <div className="flex items-center gap-2 flex-nowrap overflow-hidden">
                                     {child.is_premium ? (
                                         <Badge variant="secondary" className="bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 border-amber-200 uppercase font-black text-[10px] py-0.5">
                                             Premium
@@ -77,6 +80,11 @@ export function ChildOverviewCard({
                                     <span className="text-[10px] font-mono text-muted-foreground/60 bg-muted/30 px-2 py-0.5 rounded-lg border border-border/50">
                                         ID: {child.profile.unique_id}
                                     </span>
+                                    {child.profile.username && (
+                                        <span className="text-[10px] font-mono text-muted-foreground/60 bg-muted/30 px-2 py-0.5 rounded-lg border border-border/50">
+                                            {child.profile.username}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
                         </div>
