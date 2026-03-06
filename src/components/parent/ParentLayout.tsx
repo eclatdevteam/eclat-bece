@@ -24,7 +24,7 @@ export function ParentLayout({ children }: ParentLayoutProps) {
 
     const navItems = [
         { title: "Dashboard", url: "/dashboard/parent", icon: LayoutDashboard },
-        { title: "Children", url: "/dashboard/parent#children", icon: Users },
+        { title: "Children", url: "/dashboard/parent/children", icon: Users },
         { title: "Billing", url: "/dashboard/parent#subscriptions", icon: CreditCard },
         { title: "Resources", url: "/dashboard/parent#resources", icon: HelpCircle },
     ];
@@ -87,8 +87,8 @@ export function ParentLayout({ children }: ParentLayoutProps) {
                                     <button
                                         key={item.title}
                                         onClick={() => {
-                                            if (item.url.startsWith("#")) {
-                                                const el = document.getElementById(item.url.substring(1));
+                                            if (item.url.includes("#") && currentPath === item.url.split("#")[0]) {
+                                                const el = document.getElementById(item.url.split("#")[1]);
                                                 if (el) el.scrollIntoView({ behavior: 'smooth' });
                                             } else {
                                                 navigate(item.url);

@@ -18,7 +18,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 
 const menuItems = [
     { title: "Dashboard", url: "/dashboard/parent", icon: LayoutDashboard },
-    { title: "My Children", url: "/dashboard/parent#children", icon: Users },
+    { title: "My Children", url: "/dashboard/parent/children", icon: Users },
     { title: "Subscriptions", url: "/dashboard/parent#subscriptions", icon: CreditCard },
     { title: "Help & Resources", url: "/dashboard/parent#resources", icon: HelpCircle },
 ];
@@ -58,8 +58,8 @@ export function ParentSidebar() {
                                             <TooltipTrigger asChild>
                                                 <SidebarMenuButton
                                                     onClick={() => {
-                                                        if (item.url.startsWith("#")) {
-                                                            const el = document.getElementById(item.url.substring(1));
+                                                        if (item.url.includes("#") && currentPath === item.url.split("#")[0]) {
+                                                            const el = document.getElementById(item.url.split("#")[1]);
                                                             if (el) el.scrollIntoView({ behavior: 'smooth' });
                                                         } else {
                                                             navigate(item.url);

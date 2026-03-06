@@ -22,6 +22,7 @@ import StudentAssignments from "./pages/StudentAssignments";
 import StudentProgressPage from "./pages/StudentProgressPage";
 import StudentLeaderboardPage from "./pages/StudentLeaderboardPage";
 import ParentDashboard from "./pages/ParentDashboard";
+import MyChildren from "./pages/parent/MyChildren";
 import SchoolDashboard from "./pages/SchoolDashboard";
 import QuizPage from "./pages/QuizPage";
 import SubjectAnalytics from "./pages/SubjectAnalytics";
@@ -113,6 +114,13 @@ const App = () => (
                 <ProtectedRoute requiredRole="parent">
                   <ParentLayout>
                     <ParentDashboard />
+                  </ParentLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/dashboard/parent/children" element={
+                <ProtectedRoute requiredRole="parent">
+                  <ParentLayout>
+                    <MyChildren />
                   </ParentLayout>
                 </ProtectedRoute>
               } />

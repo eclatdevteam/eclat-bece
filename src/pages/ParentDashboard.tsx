@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, TrendingUp, Plus, Award, Target, HelpCircle, Settings } from "lucide-react";
+import { Users, TrendingUp, Plus, Award, Target, HelpCircle, Settings, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -10,11 +10,9 @@ import { ChildOverviewCard } from "@/components/parent/ChildOverviewCard";
 import { DummyPaymentModal } from "@/components/parent/DummyPaymentModal";
 import { ParentActivityFeed } from "@/components/parent/ParentActivityFeed";
 import { DeleteChildDialog } from "@/components/parent/DeleteChildDialog";
+import { AddChildDialog } from "@/components/parent/AddChildDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { LinkedChild, ChildAnalytics, QuizResult } from "@/types/parent";
 
 export default function ParentDashboard() {
@@ -24,7 +22,6 @@ export default function ParentDashboard() {
   const [assignOpen, setAssignOpen] = useState(false);
   const [selectedChild, setSelectedChild] = useState<{ name: string; class: string; avatar: string } | null>(null);
   const [addChildOpen, setAddChildOpen] = useState(false);
-  const [isAddingChild, setIsAddingChild] = useState(false);
   const [linkedChildren, setLinkedChildren] = useState<LinkedChild[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [parentUserId, setParentUserId] = useState<string | null>(null);
@@ -49,7 +46,6 @@ export default function ParentDashboard() {
   });
 
   const overallAverage = totalQuizzesGlobal > 0 ? Math.round(totalScoreGlobal / totalQuizzesGlobal) : 0;
-
 
   useEffect(() => {
     const fetchParentData = async () => {
@@ -109,7 +105,7 @@ export default function ParentDashboard() {
 
     setIsDeleting(true);
     try {
-      const { data, error } = await supabase.functions.invoke("delete-student-account", {
+      const { error } = await supabase.functions.invoke("delete-student-account", {
         body: { studentId: childToDelete.id },
       });
 
@@ -122,12 +118,8 @@ export default function ParentDashboard() {
       setDeleteDialogOpen(false);
       setChildToDelete(null);
 
-      // Refresh the list - we use the stored parentUserId
       if (parentUserId) {
         await fetchLinkedChildren(parentUserId);
-      } else {
-        // Fallback: re-fetch parent data which will trigger linked children
-        window.location.reload();
       }
     } catch (error: any) {
       console.error("Error deleting child:", error);
@@ -148,10 +140,7 @@ export default function ParentDashboard() {
       if (error) throw error;
 
       if (quizResults && quizResults.length > 0) {
-        // Calculate average score
         const averageScore = quizResults.reduce((acc, result) => acc + result.score, 0) / quizResults.length;
-
-        // Calculate subject performance
         const subjectMap = new Map<string, { totalScore: number; count: number }>();
         quizResults.forEach((result) => {
           const existing = subjectMap.get(result.subject) || { totalScore: 0, count: 0 };
@@ -177,79 +166,17 @@ export default function ParentDashboard() {
 
         setChildrenAnalytics((prev) => new Map(prev).set(studentId, analytics));
 
-        // Add to global activities
         const studentName = linkedChildren.find(c => c.id === studentId)?.profile.full_name || "Unknown";
         const activitiesWithName = quizResults.map(q => ({ ...q, student_name: studentName })) as QuizResult[];
 
         setGlobalActivities(prev => {
           const combined = [...prev, ...activitiesWithName];
-          // Sort by completed_at descending
-          return combined.sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime()).slice(0, 20); // Keep top 20
+          return combined.sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime()).slice(0, 20);
         });
       }
     } catch (error) {
       console.error("Error fetching child analytics:", error);
     }
-  };
-
-  const [newChildData, setNewChildData] = useState({
-    fullName: "",
-    classYear: "",
-    username: "",
-    password: "",
-  });
-  const [createdChildCredentials, setCreatedChildCredentials] = useState<{ username: string; password: string } | null>(null);
-
-  const handleCreateChild = async () => {
-    if (!newChildData.fullName || !newChildData.classYear || !newChildData.username || !newChildData.password) {
-      toast.error("Please fill in all fields");
-      return;
-    }
-
-    if (newChildData.password.length < 6) {
-      toast.error("Password must be at least 6 characters");
-      return;
-    }
-
-    if (!parentUserId) {
-      toast.error("Parent profile not found");
-      return;
-    }
-
-    setIsAddingChild(true);
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.access_token) throw new Error("No session found");
-
-      const response = await supabase.functions.invoke("create-student-account", {
-        body: newChildData,
-        headers: {
-          Authorization: `Bearer ${session.access_token}`
-        }
-      });
-
-      if (response.error) {
-        toast.error(response.error.message || "Failed to create student account");
-        throw new Error(response.error.message);
-      }
-
-      toast.success("Student account created successfully!");
-      setCreatedChildCredentials({ username: newChildData.username, password: newChildData.password });
-
-      // Refresh linked children list
-      await fetchLinkedChildren(parentUserId);
-    } catch (error) {
-      console.error("Error creating student account:", error);
-    } finally {
-      setIsAddingChild(false);
-    }
-  };
-
-  const handleCloseAddChild = () => {
-    setAddChildOpen(false);
-    setNewChildData({ fullName: "", classYear: "", username: "", password: "" });
-    setCreatedChildCredentials(null);
   };
 
   return (
@@ -343,13 +270,23 @@ export default function ParentDashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
           {/* Left Column: Children Cards */}
           <div id="children" className="lg:col-span-8 space-y-8 scroll-mt-24">
-            <div className="flex items-center gap-3 mb-2 px-1">
-              <div className="h-8 w-1.5 bg-primary rounded-full" />
-              <h3 className="text-2xl font-black text-foreground tracking-tight uppercase">My Students</h3>
+            <div className="flex items-center justify-between mb-2 px-1">
+              <div className="flex items-center gap-3">
+                <div className="h-8 w-1.5 bg-primary rounded-full" />
+                <h3 className="text-2xl font-black text-foreground tracking-tight uppercase">My Students</h3>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate("/dashboard/parent/children")}
+                className="rounded-xl font-bold text-primary hover:bg-primary/10 transition-colors"
+              >
+                View All <ChevronRight className="ml-1 h-4 w-4" />
+              </Button>
             </div>
 
             <div className="grid grid-cols-1 gap-6">
-              {linkedChildren.map((child, index) => (
+              {linkedChildren.slice(0, 2).map((child, index) => (
                 <ChildOverviewCard
                   key={child.id}
                   child={child}
@@ -439,112 +376,22 @@ export default function ParentDashboard() {
         childName={selectedChild?.name}
       />
 
-      <Dialog open={addChildOpen} onOpenChange={handleCloseAddChild}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{createdChildCredentials ? "Student Account Created" : "Create Student Account"}</DialogTitle>
-            <DialogDescription>
-              {createdChildCredentials
-                ? "Please save these login credentials. Your child will need them to log in."
-                : "Create a new student account for your child."}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            {createdChildCredentials ? (
-              <div className="space-y-4 p-4 bg-muted rounded-lg border border-border">
-                <div>
-                  <Label className="text-muted-foreground text-xs">Username</Label>
-                  <p className="font-mono text-lg font-medium">{createdChildCredentials.username}</p>
-                </div>
-                <div>
-                  <Label className="text-muted-foreground text-xs">Password</Label>
-                  <p className="font-mono text-lg font-medium">{createdChildCredentials.password}</p>
-                </div>
-                <Button
-                  className="w-full mt-4"
-                  variant="hero"
-                  onClick={handleCloseAddChild}
-                >
-                  Done
-                </Button>
-              </div>
-            ) : (
-              <>
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Full Name</Label>
-                  <Input
-                    id="fullName"
-                    placeholder="e.g. Ada Okafor"
-                    value={newChildData.fullName}
-                    onChange={(e) => setNewChildData({ ...newChildData, fullName: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="classYear">Class Year</Label>
-                  <select
-                    id="classYear"
-                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                    value={newChildData.classYear}
-                    onChange={(e) => setNewChildData({ ...newChildData, classYear: e.target.value })}
-                  >
-                    <option value="" disabled>Select Class Year</option>
-                    <option value="year_6">Year 6 (Primary 6)</option>
-                    <option value="year_9">Year 9 (JSS 3)</option>
-                  </select>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="username">Student Username</Label>
-                  <Input
-                    id="username"
-                    placeholder="e.g. ada.okafor"
-                    value={newChildData.username}
-                    onChange={(e) => setNewChildData({ ...newChildData, username: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="password">Student Password</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="Minimum 6 characters"
-                    value={newChildData.password}
-                    onChange={(e) => setNewChildData({ ...newChildData, password: e.target.value })}
-                  />
-                </div>
-                <div className="flex gap-3 pt-2">
-                  <Button
-                    variant="outline"
-                    onClick={handleCloseAddChild}
-                    className="flex-1"
-                  >
-                    Cancel
-                  </Button>
-                  <Button
-                    variant="hero"
-                    onClick={handleCreateChild}
-                    disabled={isAddingChild || !newChildData.fullName || !newChildData.classYear || !newChildData.username || !newChildData.password.trim()}
-                    className="flex-1"
-                  >
-                    {isAddingChild ? "Creating..." : "Create Account"}
-                  </Button>
-                </div>
-              </>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      <AddChildDialog
+        open={addChildOpen}
+        onOpenChange={setAddChildOpen}
+        parentId={parentUserId}
+        onSuccess={() => parentUserId && fetchLinkedChildren(parentUserId)}
+      />
 
-      {selectedPaymentChild && (
-        <DummyPaymentModal
-          open={paymentModalOpen}
-          onOpenChange={setPaymentModalOpen}
-          studentId={selectedPaymentChild.id}
-          studentName={selectedPaymentChild.name}
-          onSuccess={() => {
-            if (parentUserId) fetchLinkedChildren(parentUserId);
-          }}
-        />
-      )}
+      <DummyPaymentModal
+        open={paymentModalOpen}
+        onOpenChange={setPaymentModalOpen}
+        studentId={selectedPaymentChild?.id || ""}
+        studentName={selectedPaymentChild?.name || ""}
+        onSuccess={() => {
+          if (parentUserId) fetchLinkedChildren(parentUserId);
+        }}
+      />
 
       <DeleteChildDialog
         isOpen={deleteDialogOpen}
