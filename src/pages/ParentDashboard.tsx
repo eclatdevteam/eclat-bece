@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, TrendingUp, Plus, Award, Target, HelpCircle, Settings, ChevronRight } from "lucide-react";
+import { Users, TrendingUp, Plus, Award, Target, ChevronRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -322,43 +322,8 @@ export default function ParentDashboard() {
           </div>
 
           {/* Right Column: Activity Feed & Sidebar */}
-          <div className="lg:col-span-4 space-y-10 lg:pt-[60px]">
+          <div className="lg:col-span-4 space-y-10">
             <ParentActivityFeed activities={globalActivities} isLoading={isLoading} />
-
-            <div id="resources" className="scroll-mt-24 space-y-6">
-              <Card className="border-none shadow-2xl bg-gradient-hero text-white rounded-[2.5rem] overflow-hidden relative">
-                <div className="absolute -top-12 -right-12 w-48 h-48 bg-white/10 rounded-full blur-3xl opacity-50" />
-                <div className="absolute -bottom-12 -left-12 w-48 h-48 bg-black/10 rounded-full blur-3xl opacity-50" />
-                <CardContent className="p-8 relative z-10 flex flex-col gap-6">
-                  <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center shadow-inner">
-                    <Award className="h-7 w-7 text-white" />
-                  </div>
-                  <div>
-                    <h3 className="font-black text-2xl mb-3 tracking-tight italic">Success Resources</h3>
-                    <p className="text-white/80 font-medium mb-6 leading-relaxed">
-                      Discover the best strategies to guide your child through their exam preparation with expert tips and materials.
-                    </p>
-                    <Button variant="secondary" className="w-full h-12 rounded-[1.25rem] font-bold text-primary hover:shadow-xl transition-all duration-300">
-                      Explore Learning Hub
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <div className="px-1 space-y-4">
-                <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/50">Quick Help</h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <Button variant="outline" className="h-20 rounded-3xl border-border/50 bg-background/50 flex flex-col items-center justify-center gap-1 hover:border-primary/50 hover:bg-primary/5 transition-all">
-                    <Settings className="h-5 w-5 opacity-40" />
-                    <span className="text-[10px] font-black tracking-widest uppercase">Settings</span>
-                  </Button>
-                  <Button variant="outline" className="h-20 rounded-3xl border-border/50 bg-background/50 flex flex-col items-center justify-center gap-1 hover:border-blue-500/50 hover:bg-blue-500/5 transition-all">
-                    <HelpCircle className="h-5 w-5 opacity-40" />
-                    <span className="text-[10px] font-black tracking-widest uppercase">Support</span>
-                  </Button>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
       )}
