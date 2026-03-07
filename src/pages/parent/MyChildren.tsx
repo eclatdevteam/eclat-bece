@@ -15,7 +15,7 @@ import { EditChildNameDialog } from "@/components/parent/EditChildNameDialog";
 import { ChangeChildPasswordDialog } from "@/components/parent/ChangeChildPasswordDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { LinkedChild, ChildAnalytics } from "@/types/parent";
+import { LinkedChild, ChildAnalytics, Assignment } from "@/types/parent";
 
 export default function MyChildren() {
     const navigate = useNavigate();
@@ -76,7 +76,10 @@ export default function MyChildren() {
             if (error) throw error;
             if (data) {
                 setChildren(data as unknown as LinkedChild[]);
-                data.forEach((child) => fetchAnalytics(child.id));
+                data.forEach((child) => {
+                    fetchAnalytics(child.id);
+                    fetchAssignments(child.id);
+                });
             }
         } catch (error) {
             console.error("Error fetching children:", error);
@@ -120,6 +123,27 @@ export default function MyChildren() {
             }
         } catch (error) {
             console.error("Error fetching child analytics:", error);
+        }
+    };
+
+    const fetchAssignments = async (studentId: string) => {
+        try {
+            const { data, error } = await (supabase
+                .from("practice_assignments" as any)
+                .select("*")
+                .eq("student_id", studentId)
+                .order("created_at", { ascending: false })
+                .limit(5) as any);
+
+            if (error) throw error;
+
+            setChildren((prev) =>
+                prev.map((child) =>
+                    child.id === studentId ? { ...child, assignments: data as Assignment[] } : child
+                )
+            );
+        } catch (error) {
+            console.error("Error fetching child assignments:", error);
         }
     };
 
@@ -221,6 +245,7 @@ export default function MyChildren() {
                             child={child}
                             index={index}
                             analytics={childrenAnalytics.get(child.id)}
+                            assignments={child.assignments}
                             onViewReport={(c) => {
                                 setSelectedChild(c);
                                 setReportOpen(true);
@@ -280,7 +305,7 @@ export default function MyChildren() {
             <AssignPracticeDialog
                 open={assignOpen}
                 onOpenChange={setAssignOpen}
-                childName={selectedChild?.profile.full_name}
+                child={selectedChild}
             />
 
             <AddChildDialog

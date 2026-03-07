@@ -11,11 +11,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
-import { LinkedChild, ChildAnalytics } from "@/types/parent";
+import { LinkedChild, ChildAnalytics, Assignment } from "@/types/parent";
 
 interface ChildOverviewCardProps {
     child: LinkedChild;
     analytics?: ChildAnalytics;
+    assignments?: Assignment[];
     index: number;
     onViewReport: (child: LinkedChild) => void;
     onAssignPractice: (child: LinkedChild) => void;
@@ -28,6 +29,7 @@ interface ChildOverviewCardProps {
 export function ChildOverviewCard({
     child,
     analytics,
+    assignments = [],
     index,
     onViewReport,
     onAssignPractice,
@@ -185,6 +187,48 @@ export function ChildOverviewCard({
             </CardHeader>
 
             <CardContent className="space-y-6 pt-2">
+                {/* Homework & Assignments Tracking */}
+                {(assignments.length > 0 || !analytics) && (
+                    <div className="space-y-3">
+                        <h4 className="font-black text-[11px] uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-emerald-500/60" />
+                            Homework Progress
+                        </h4>
+                        <div className="space-y-2">
+                            {assignments.length > 0 ? (
+                                assignments.map((assignment) => (
+                                    <div key={assignment.id} className="group/assignment flex items-center justify-between p-3 rounded-2xl bg-muted/20 border border-border/50 hover:border-primary/30 transition-all">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`p-2 rounded-lg ${assignment.status === 'completed' ? 'bg-emerald-500/10' : 'bg-primary/10 animate-pulse'}`}>
+                                                <Target className={`h-4 w-4 ${assignment.status === 'completed' ? 'text-emerald-600' : 'text-primary'}`} />
+                                            </div>
+                                            <div>
+                                                <p className="text-xs font-bold leading-none mb-1">{assignment.subject}</p>
+                                                <p className="text-[10px] text-muted-foreground font-medium">
+                                                    {assignment.num_questions} Questions • {assignment.status === 'completed' ? 'Done' : 'In Progress'}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        {assignment.status === 'completed' ? (
+                                            <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-black text-[10px]">
+                                                {assignment.score}%
+                                            </Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="text-primary border-primary/20 font-black text-[10px] animate-pulse">
+                                                PENDING
+                                            </Badge>
+                                        )}
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center py-4 rounded-2xl bg-muted/10 border border-dashed">
+                                    <p className="text-[10px] font-bold text-muted-foreground uppercase">No active assignments</p>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {analytics ? (
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
                         {/* Optimized Metrics Grid */}
@@ -217,6 +261,7 @@ export function ChildOverviewCard({
                                 </p>
                             </div>
                         </div>
+
 
                         {/* Performance Visualizer (Chart) */}
                         {analytics.subjectPerformance.length > 0 && (
@@ -265,7 +310,7 @@ export function ChildOverviewCard({
                             </div>
                         )}
                     </div>
-                ) : (
+                ) : assignments.length === 0 ? (
                     <div className="text-center py-10 px-4 bg-muted/30 rounded-[2.5rem] border border-dashed border-border/60 transition-colors group-hover:bg-muted/40">
                         <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm group-hover:rotate-12 transition-transform">
                             <BookOpen className="h-8 w-8 text-muted-foreground/30" />
@@ -278,7 +323,7 @@ export function ChildOverviewCard({
                             ASSIGN FIRST TASK
                         </Button>
                     </div>
-                )}
+                ) : null}
             </CardContent>
         </Card>
     );

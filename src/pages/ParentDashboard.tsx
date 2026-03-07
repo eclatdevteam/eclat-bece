@@ -15,7 +15,7 @@ import { EditChildNameDialog } from "@/components/parent/EditChildNameDialog";
 import { ChangeChildPasswordDialog } from "@/components/parent/ChangeChildPasswordDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { LinkedChild, ChildAnalytics, QuizResult } from "@/types/parent";
+import { LinkedChild, ChildAnalytics, QuizResult, Assignment } from "@/types/parent";
 
 export default function ParentDashboard() {
   const navigate = useNavigate();
@@ -93,9 +93,10 @@ export default function ParentDashboard() {
 
       if (data) {
         setLinkedChildren(data as unknown as LinkedChild[]);
-        // Fetch analytics for each child
+        // Fetch analytics and assignments for each child
         data.forEach((child) => {
           fetchChildAnalytics(child.id);
+          fetchChildAssignments(child.id);
         });
       }
     } catch (error) {
@@ -180,6 +181,27 @@ export default function ParentDashboard() {
       }
     } catch (error) {
       console.error("Error fetching child analytics:", error);
+    }
+  };
+
+  const fetchChildAssignments = async (studentId: string) => {
+    try {
+      const { data, error } = await (supabase
+        .from("practice_assignments" as any)
+        .select("*")
+        .eq("student_id", studentId)
+        .order("created_at", { ascending: false })
+        .limit(5) as any);
+
+      if (error) throw error;
+
+      setLinkedChildren((prev) =>
+        prev.map((child) =>
+          child.id === studentId ? { ...child, assignments: data as Assignment[] } : child
+        )
+      );
+    } catch (error) {
+      console.error("Error fetching child assignments:", error);
     }
   };
 
@@ -292,6 +314,7 @@ export default function ParentDashboard() {
                   child={child}
                   index={index}
                   analytics={childrenAnalytics.get(child.id)}
+                  assignments={child.assignments}
                   onViewReport={(c) => {
                     setSelectedChild(c);
                     setReportOpen(true);

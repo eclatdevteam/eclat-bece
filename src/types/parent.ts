@@ -9,6 +9,20 @@ export interface QuizResult {
     student_name?: string;
 }
 
+export interface Assignment {
+    id: string;
+    student_id: string;
+    parent_id: string;
+    subject: string;
+    topics: string[];
+    num_questions: number;
+    duration: number;
+    status: 'pending' | 'completed';
+    score?: number;
+    created_at: string;
+    completed_at?: string;
+}
+
 export interface ChildAnalytics {
     studentId: string;
     averageScore: number;
@@ -27,4 +41,5 @@ export interface LinkedChild {
         unique_id: string;
         username?: string;
     };
+    assignments?: Assignment[];
 }
