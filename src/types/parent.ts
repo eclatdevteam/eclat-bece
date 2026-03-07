@@ -1,11 +1,12 @@
 export interface QuizResult {
     id: string;
-    student_id?: string;
+    student_id: string;
     subject: string;
     score: number;
     correct_answers: number;
     total_questions: number;
     completed_at: string;
+    student_name?: string;
 }
 
 export interface ChildAnalytics {

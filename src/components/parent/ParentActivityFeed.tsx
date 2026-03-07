@@ -4,16 +4,7 @@ import { BookOpen, Award, Target, Brain, Search, PlusCircle } from "lucide-react
 import { formatDistanceToNow } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 
-interface QuizResult {
-    id: string;
-    student_id: string;
-    subject: string;
-    score: number;
-    correct_answers: number;
-    total_questions: number;
-    completed_at: string;
-    student_name?: string;
-}
+import { QuizResult } from "@/types/parent";
 
 interface ParentActivityFeedProps {
     activities: QuizResult[];

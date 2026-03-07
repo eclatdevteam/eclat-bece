@@ -1,128 +1,152 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Clock, BookOpen, Target } from "lucide-react";
+import { Clock, BookOpen, Target, Calendar } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { formatDistanceToNow } from "date-fns";
 
-interface Assignment {
-  title: string;
-  dueDate: string;
-  questions: number;
+export interface Assignment {
+  id: string;
   subject: string;
-  difficulty: "Easy" | "Medium" | "Hard";
-  completed: boolean;
+  topics: string[];
+  num_questions: number;
+  duration: number;
+  status: 'pending' | 'completed';
   score?: number;
+  created_at: string;
 }
 
 interface PracticeAssignmentProps {
-  assignments?: Assignment[];
-  onStartAssignment?: (index: number) => void;
+  assignments: Assignment[];
+  isLoading?: boolean;
 }
 
 export const PracticeAssignment = ({ 
-  assignments = [
-    {
-      title: "Number & Numeration Practice",
-      dueDate: "Due in 2 days",
-      questions: 20,
-      subject: "Mathematics",
-      difficulty: "Medium",
-      completed: false,
-    },
-    {
-      title: "Comprehension Passages",
-      dueDate: "Due in 5 days",
-      questions: 15,
-      subject: "English Language",
-      difficulty: "Hard",
-      completed: false,
-    },
-    {
-      title: "Living Things Quiz",
-      dueDate: "Completed",
-      questions: 18,
-      subject: "Basic Science",
-      difficulty: "Easy",
-      completed: true,
-      score: 89,
-    },
-  ],
-  onStartAssignment
+  assignments,
+  isLoading = false
 }: PracticeAssignmentProps) => {
   const navigate = useNavigate();
 
-  const handleStart = (index: number) => {
-    if (onStartAssignment) {
-      onStartAssignment(index);
+  const handleStart = (assignment: Assignment) => {
+    if (assignment.status === 'completed') {
+      // Review mode or just dashboard? For now review same quiz
+      navigate(`/quiz?assignmentId=${assignment.id}&review=true`);
     } else {
-      navigate("/quiz");
+      navigate(`/quiz?assignmentId=${assignment.id}`);
     }
   };
   
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Easy": return "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400";
-      case "Medium": return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400";
-      case "Hard": return "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400";
-      default: return "bg-muted text-muted-foreground";
-    }
-  };
+  if (isLoading) {
+    return (
+      <Card className="border-2 animate-pulse">
+        <CardHeader className="h-20 bg-muted/20" />
+        <CardContent className="p-6 space-y-4">
+          <div className="h-24 bg-muted/20 rounded-lg" />
+          <div className="h-24 bg-muted/20 rounded-lg" />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Card className="border-2">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Target className="text-primary" size={24} />
-          Practice Assignments
-        </CardTitle>
-        <CardDescription>Complete assigned practice sets to improve your score</CardDescription>
+    <Card className="border-2 overflow-hidden bg-background/50 backdrop-blur-sm shadow-soft">
+      <CardHeader className="border-b bg-muted/5">
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <CardTitle className="flex items-center gap-2 text-xl font-black text-foreground uppercase tracking-tight">
+              <Target className="text-primary" size={24} />
+              Homework tasks
+            </CardTitle>
+            <CardDescription className="font-medium">Curated practice sets from your parents</CardDescription>
+          </div>
+          <Badge variant="outline" className="font-black px-3 py-1 bg-background border-2">{assignments.length} Tasks</Badge>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-3">
-        {assignments.map((assignment, index) => (
-          <div
-            key={index}
-            className={`p-4 border-2 rounded-lg transition-all ${
-              assignment.completed 
-                ? "bg-muted/50 border-border" 
-                : "hover:border-primary hover:shadow-soft"
-            }`}
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div className="flex-1">
-                <h4 className="font-semibold text-lg mb-1">{assignment.title}</h4>
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <BookOpen size={14} />
-                  <span>{assignment.subject}</span>
-                  <span>•</span>
-                  <Clock size={14} />
-                  <span>{assignment.dueDate}</span>
+      <CardContent className="p-4 sm:p-6 space-y-4">
+        {assignments.length === 0 ? (
+          <div className="text-center py-12 px-6 bg-muted/10 rounded-[2rem] border-2 border-dashed border-border/60">
+            <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-primary/20">
+              <BookOpen className="h-8 w-8 text-primary/40" />
+            </div>
+            <p className="font-black text-sm uppercase tracking-widest text-foreground/60 mb-1">Clear Horizon</p>
+            <p className="text-xs text-muted-foreground leading-relaxed max-w-[200px] mx-auto">
+              No pending tasks right now. Great job keeping your plate clean!
+            </p>
+          </div>
+        ) : (
+          assignments.map((assignment) => (
+            <div
+              key={assignment.id}
+              className={`group relative p-5 border-2 rounded-[1.5rem] transition-all duration-300 ${
+                assignment.status === 'completed' 
+                  ? "bg-muted/30 border-border/50 opacity-80" 
+                  : "bg-background border-border hover:border-primary hover:shadow-xl hover:-translate-y-0.5"
+              }`}
+            >
+              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                <div className="flex-1 min-w-0">
+                  <div className="flex flex-wrap items-center gap-2 mb-2">
+                    <Badge className="bg-primary/10 text-primary border-primary/20 font-black text-[10px] uppercase py-0.5 rounded-lg">
+                      {assignment.subject}
+                    </Badge>
+                    {assignment.status === 'completed' ? (
+                      <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 font-black text-[10px] uppercase py-0.5 rounded-lg flex items-center gap-1">
+                        <CheckCircle2 size={10} /> Completed
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="font-black text-[10px] uppercase py-0.5 rounded-lg">
+                        Pending
+                      </Badge>
+                    )}
+                  </div>
+                  
+                  <h4 className="font-black text-lg sm:text-xl text-foreground mb-1 leading-tight group-hover:text-primary transition-colors">
+                    {assignment.topics.length > 1 ? `${assignment.topics[0]} & More` : assignment.topics[0]}
+                  </h4>
+                  
+                  <div className="flex items-center gap-4 text-xs font-bold text-muted-foreground">
+                    <div className="flex items-center gap-1.5">
+                      <Clock size={14} className="text-primary/60" />
+                      <span>{assignment.duration}m</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Target size={14} className="text-primary/60" />
+                      <span>{assignment.num_questions} Questions</span>
+                    </div>
+                    <div className="hidden sm:flex items-center gap-1.5">
+                      <Calendar size={14} className="text-primary/60" />
+                      <span>{formatDistanceToNow(new Date(assignment.created_at), { addSuffix: true })}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between sm:flex-col sm:items-end gap-3 pt-3 sm:pt-0 border-t sm:border-t-0 border-border/40">
+                  {assignment.status === 'completed' && assignment.score !== undefined && (
+                    <div className="text-right">
+                      <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1">Score</p>
+                      <p className="text-2xl font-black text-primary leading-none tabular-nums">{Math.round(assignment.score)}%</p>
+                    </div>
+                  )}
+                  <Button
+                    variant={assignment.status === 'completed' ? "outline" : "hero"}
+                    size="sm"
+                    className={`font-black rounded-xl px-6 h-11 ${assignment.status === 'completed' ? 'border-2' : 'shadow-lg shadow-primary/20'}`}
+                    onClick={() => handleStart(assignment)}
+                  >
+                    {assignment.status === 'completed' ? "Review" : "Start Task"}
+                  </Button>
                 </div>
               </div>
-              <Badge className={getDifficultyColor(assignment.difficulty)}>
-                {assignment.difficulty}
-              </Badge>
             </div>
-            
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-muted-foreground">
-                {assignment.questions} questions
-                {assignment.completed && assignment.score && (
-                  <span className="ml-2 font-semibold text-primary">
-                    Score: {assignment.score}%
-                  </span>
-                )}
-              </span>
-              <Button
-                variant={assignment.completed ? "outline" : "hero"}
-                size="sm"
-                onClick={() => handleStart(index)}
-              >
-                {assignment.completed ? "Review" : "Start"}
-              </Button>
-            </div>
-          </div>
-        ))}
+          ))
+        )}
       </CardContent>
     </Card>
   );
 };
+
+// Help helper for icons
+import { CheckCircle2 as CheckCircle2Icon } from "lucide-react";
+function CheckCircle2(props: any) {
+    return <CheckCircle2Icon {...props} />
+}

@@ -29,6 +29,7 @@ export default function QuizPage() {
   const { user } = useAuth();
   const subject = searchParams.get("subject");
   const topic = searchParams.get("topic");
+  const assignmentId = searchParams.get("assignmentId");
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -44,31 +45,57 @@ export default function QuizPage() {
       if (!user) return;
 
       try {
-        // Get student's class year
-        const { data: studentData } = await supabase
-          .from("students")
-          .select("class_year")
-          .eq("user_id", user.id)
-          .maybeSingle();
+        let fetchSubject = subject;
+        let fetchTopics: string[] = topic ? [topic] : [];
+        let fetchLimit = 10;
+        let classYear = '';
 
-        if (!studentData?.class_year) {
-          toast.error("Unable to determine your class year");
-          navigate("/dashboard/student");
-          return;
+        // If assignmentId is present, fetch assignment details
+        if (assignmentId) {
+          const { data: assignment, error: assignError } = await supabase
+            .from("practice_assignments")
+            .select("subject, topics, num_questions, student:students(class_year)")
+            .eq("id", assignmentId)
+            .single();
+
+          if (assignError || !assignment) {
+            toast.error("Failed to load assignment details");
+            navigate("/dashboard/student");
+            return;
+          }
+
+          fetchSubject = assignment.subject;
+          fetchTopics = assignment.topics;
+          fetchLimit = assignment.num_questions;
+          classYear = (assignment.student as any)?.class_year;
+        }
+
+        // If not assignment, get student's class year
+        if (!classYear) {
+          const { data: studentData } = await supabase
+            .from("students")
+            .select("class_year")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (!studentData?.class_year) {
+            toast.error("Unable to determine your class year");
+            navigate("/dashboard/student");
+            return;
+          }
+          classYear = studentData.class_year;
         }
 
         // Determine which table to query
-        const tableName = studentData.class_year === 'year_6'
+        const tableName = classYear === 'year_6'
           ? 'quiz_questions_year6'
           : 'quiz_questions_year9';
 
-        const optionsTableName = studentData.class_year === 'year_6'
+        const optionsTableName = classYear === 'year_6'
           ? 'quiz_options_year6'
           : 'quiz_options_year9';
 
-        // Build query with subject and/or topic filter if provided
-        // Include passage data in the select
-        const passageTableName = studentData.class_year === 'year_6'
+        const passageTableName = classYear === 'year_6'
           ? 'comprehension_passages_year6'
           : 'comprehension_passages_year9';
 
@@ -79,15 +106,14 @@ export default function QuizPage() {
             passage:${passageTableName}(title, passage_text)
           `);
 
-        if (subject) {
-          query = query.eq("subject", subject);
+        if (fetchSubject) {
+          query = query.eq("subject", fetchSubject);
         }
 
-        if (topic) {
-          query = query.eq("topic", topic);
+        if (fetchTopics && fetchTopics.length > 0) {
+          query = query.in("topic", fetchTopics);
         }
 
-        // Fetch all questions matching the criteria first
         const { data: allQuestions, error: questionsError } = await query;
 
         if (questionsError) {
@@ -98,15 +124,14 @@ export default function QuizPage() {
         }
 
         if (!allQuestions || allQuestions.length === 0) {
-          toast.error("No questions available for this subject");
+          toast.error("No questions available for this selection");
           navigate("/dashboard/student");
           return;
         }
 
-        // Randomly shuffle and select 10 questions
+        // Randomly shuffle and select questions based on limit
         const shuffled = [...allQuestions].sort(() => Math.random() - 0.5);
-        const questionsData = shuffled.slice(0, Math.min(10, shuffled.length));
-
+        const questionsData = shuffled.slice(0, Math.min(fetchLimit, shuffled.length));
 
         // Fetch options for each question
         const questionsWithOptions = await Promise.all(
@@ -142,7 +167,7 @@ export default function QuizPage() {
     };
 
     fetchQuestions();
-  }, [user, subject, navigate]);
+  }, [user, subject, topic, assignmentId, navigate]);
 
   const question = questions[currentQuestion];
   const progress = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0;
@@ -208,6 +233,17 @@ export default function QuizPage() {
         console.error("Error saving quiz result:", error);
         toast.error("Failed to save quiz results");
       } else {
+        // If it was an assignment, update assignment status
+        if (assignmentId) {
+          await supabase
+            .from("practice_assignments")
+            .update({ 
+               status: 'completed',
+               score: percentage,
+               completed_at: new Date().toISOString()
+            })
+            .eq("id", assignmentId);
+        }
         toast.success("Quiz results saved! 🎉");
       }
     } catch (error) {

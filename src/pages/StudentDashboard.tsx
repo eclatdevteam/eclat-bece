@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { BookOpen, Trophy, TrendingUp, Target, Flame, LogOut, Settings, Menu, Lock } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { CompetitionLeaderboards } from "@/components/CompetitionLeaderboards";
-import { PracticeAssignment } from "@/components/PracticeAssignment";
+import { PracticeAssignment, Assignment } from "@/components/PracticeAssignment";
 import { ProgressReport } from "@/components/ProgressReport";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,8 @@ export default function StudentDashboard() {
   const [currentStreak, setCurrentStreak] = useState(0);
   const [isPremium, setIsPremium] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [assignments, setAssignments] = useState<Assignment[]>([]);
+  const [isLoadingAssignments, setIsLoadingAssignments] = useState(true);
 
   const logo = theme === "dark" ? logoLight : logoDark;
 
@@ -117,12 +119,42 @@ export default function StudentDashboard() {
     }
   };
 
+  const fetchAssignments = async () => {
+    if (!user) return;
+
+    setIsLoadingAssignments(true);
+    try {
+      // First get student ID
+      const { data: studentData } = await supabase
+        .from("students")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (!studentData?.id) return;
+
+      const { data, error } = await supabase
+        .from("practice_assignments")
+        .select("*")
+        .eq("student_id", studentData.id)
+        .order("created_at", { ascending: false });
+
+      if (error) throw error;
+      setAssignments(data as Assignment[]);
+    } catch (error) {
+      console.error("Error fetching assignments:", error);
+    } finally {
+      setIsLoadingAssignments(false);
+    }
+  };
+
   const handleRefresh = async () => {
     setRefreshing(true);
     await Promise.all([
       fetchUserData(),
       fetchQuestionCounts(),
-      fetchStreak()
+      fetchStreak(),
+      fetchAssignments()
     ]);
     setRefreshing(false);
   };
@@ -131,6 +163,7 @@ export default function StudentDashboard() {
     fetchUserData();
     fetchQuestionCounts();
     fetchStreak();
+    fetchAssignments();
   }, [user]);
 
   // Pull to refresh logic
@@ -433,7 +466,11 @@ export default function StudentDashboard() {
 
             {/* Practice Assignments */}
             <div className="md:animate-scale-in" style={{ animationDelay: "0.1s" }}>
-              <PracticeAssignment onStartAssignment={() => navigate("/quiz")} />
+              <PracticeAssignment 
+                assignments={assignments} 
+                isLoading={isLoadingAssignments}
+                onStartAssignment={() => {}} // Component now handles navigation internally
+              />
             </div>
 
             {/* Mobile Progress Summary - Visible on mobile/tablet */}

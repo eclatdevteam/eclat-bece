@@ -21,8 +21,8 @@ export default function ParentDashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [reportOpen, setReportOpen] = useState(false);
+  const [selectedChild, setSelectedChild] = useState<LinkedChild | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
-  const [selectedChild, setSelectedChild] = useState<{ name: string; class: string; avatar: string } | null>(null);
   const [addChildOpen, setAddChildOpen] = useState(false);
   const [linkedChildren, setLinkedChildren] = useState<LinkedChild[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -293,11 +293,11 @@ export default function ParentDashboard() {
                   index={index}
                   analytics={childrenAnalytics.get(child.id)}
                   onViewReport={(c) => {
-                    setSelectedChild({ name: c.profile.full_name || "Unknown", class: c.class_year === "year_6" ? "Year 6" : "Year 9", avatar: c.profile.full_name?.charAt(0).toUpperCase() || "?" });
+                    setSelectedChild(c);
                     setReportOpen(true);
                   }}
                   onAssignPractice={(c) => {
-                    setSelectedChild({ name: c.profile.full_name || "Unknown", class: c.class_year === "year_6" ? "Year 6" : "Year 9", avatar: c.profile.full_name?.charAt(0).toUpperCase() || "?" });
+                    setSelectedChild(c);
                     setAssignOpen(true);
                   }}
                   onUpgradePremium={(c) => {
@@ -337,14 +337,14 @@ export default function ParentDashboard() {
       <StudentReportDialog
         open={reportOpen}
         onOpenChange={setReportOpen}
-        studentName={selectedChild?.name || ""}
-        studentClass={selectedChild?.class || ""}
-        avatar={selectedChild?.avatar}
+        studentName={selectedChild?.profile.full_name || ""}
+        studentClass={selectedChild?.class_year === "year_6" ? "Year 6" : "Year 9"}
+        avatar={selectedChild?.profile.full_name?.charAt(0).toUpperCase() || "?"}
       />
       <AssignPracticeDialog
         open={assignOpen}
         onOpenChange={setAssignOpen}
-        childName={selectedChild?.name}
+        child={selectedChild}
       />
 
       <AddChildDialog
