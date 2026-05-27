@@ -46,20 +46,33 @@ export default function StudentLeaderboardPage() {
 
         const studentId = studentData.id;
 
-        // 3. Fetch all students profiles and schools
-        const { data: studentsData } = await supabase
+        // 3. Fetch all students
+        const { data: studentsData, error: studentsError } = await supabase
           .from("students")
-          .select(`
-            id,
-            user_id,
-            school:schools(school_name),
-            profile:profiles(full_name, username)
-          `);
+          .select("id, user_id, school_id");
 
-        // 4. Fetch all quiz results
-        const { data: quizResults } = await supabase
+        if (studentsError) throw studentsError;
+
+        // 4. Fetch all profiles
+        const { data: profilesData, error: profilesError } = await supabase
+          .from("profiles")
+          .select("id, full_name, username");
+
+        if (profilesError) throw profilesError;
+
+        // 5. Fetch all schools
+        const { data: schoolsData, error: schoolsError } = await supabase
+          .from("schools")
+          .select("id, school_name");
+
+        if (schoolsError) throw schoolsError;
+
+        // 6. Fetch all quiz results
+        const { data: quizResults, error: quizError } = await supabase
           .from("quiz_results")
           .select("student_id, correct_answers, completed_at");
+
+        if (quizError) throw quizError;
 
         // --- CALCULATE REAL POINTS ---
         const now = new Date();
@@ -93,20 +106,36 @@ export default function StudentLeaderboardPage() {
           return avatars[index];
         };
 
+        const profileMap = new Map(profilesData?.map(p => [p.id, p]) || []);
+        const schoolMap = new Map(schoolsData?.map(s => [s.id, s.school_name]) || []);
+
         const realMonthly: LeaderboardStudent[] = [];
         const realAnnual: LeaderboardStudent[] = [];
 
         if (studentsData) {
-          studentsData.forEach((s: any) => {
+          studentsData.forEach((s) => {
             const mPts = monthlyScoresMap.get(s.id) || 0;
             const aPts = annualScoresMap.get(s.id) || 0;
-            const name = s.profile?.full_name || s.profile?.username || "Unknown Student";
-            const schoolName = s.school?.school_name || "Private Study";
             const isCurrentUser = s.user_id === user.id;
+
+            // Resolve name
+            let name = "Unknown Student";
+            if (isCurrentUser) {
+              name = `${rawName} (You)`;
+            } else {
+              const p = profileMap.get(s.user_id);
+              if (p) {
+                name = p.full_name || p.username || "Unknown Student";
+              } else {
+                name = `Learner #${s.id.slice(0, 4)}`;
+              }
+            }
+
+            const schoolName = s.school_id ? (schoolMap.get(s.school_id) || "Private Study") : "Private Study";
 
             realMonthly.push({
               rank: 0,
-              name: isCurrentUser ? `${name} (You)` : name,
+              name,
               school: schoolName,
               points: mPts,
               avatar: isCurrentUser ? "👤" : getEmojiAvatar(s.id),
@@ -115,7 +144,7 @@ export default function StudentLeaderboardPage() {
 
             realAnnual.push({
               rank: 0,
-              name: isCurrentUser ? `${name} (You)` : name,
+              name,
               school: schoolName,
               points: aPts,
               avatar: isCurrentUser ? "👤" : getEmojiAvatar(s.id),
