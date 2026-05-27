@@ -6,137 +6,178 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const usernamePattern = /^[a-z0-9._-]{2,20}$/;
+const allowedClassYears = new Set(["year_6", "year_9"]);
+
+const json = (body: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...corsHeaders },
+  });
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
+
+  let newUserId: string | null = null;
 
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
     const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
-    // Check if the request is authenticated
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization") || "";
+    if (!authHeader.toLowerCase().startsWith("bearer ")) {
+      return json({ error: "Unauthorized" }, 401);
     }
-    const token = authHeader.replace("Bearer ", "");
 
+    const token = authHeader.replace(/^[Bb]earer\s+/, "").trim();
     const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-    const { data: { user: requestingUser }, error: userError } = await userClient.auth.getUser(token);
+    const { data: userData, error: userError } = await userClient.auth.getUser(token);
 
-    if (userError || !requestingUser) {
-      return new Response(JSON.stringify({ error: "Invalid token" }), {
-        status: 401,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+    if (userError || !userData.user) {
+      return json({ error: "Invalid token" }, 401);
     }
 
-    // Verify requesting user is a parent
     const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
     const { data: parentRecord, error: parentError } = await adminClient
       .from("parents")
       .select("id")
-      .eq("user_id", requestingUser.id)
+      .eq("user_id", userData.user.id)
       .single();
 
     if (parentError || !parentRecord) {
-      return new Response(JSON.stringify({ error: "Only parents can create student accounts" }), {
-        status: 403,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      return json({ error: "Only parents can create student accounts" }, 403);
     }
 
     const { fullName, classYear, username, password } = await req.json();
+    const cleanFullName = typeof fullName === "string" ? fullName.trim() : "";
+    const cleanClassYear = typeof classYear === "string" ? classYear.trim() : "";
+    const normalizedUsername = typeof username === "string" ? username.trim().toLowerCase() : "";
+    const cleanPassword = typeof password === "string" ? password : "";
 
-    if (!fullName || !classYear || !username || !password) {
-      return new Response(JSON.stringify({ error: "Missing required fields" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+    if (!cleanFullName || !cleanClassYear || !normalizedUsername || !cleanPassword) {
+      return json({ error: "Missing required fields" }, 400);
     }
 
-    if (username.length < 2 || username.length > 10) {
-      return new Response(JSON.stringify({ error: "Username must be between 2 and 10 characters" }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+    if (cleanFullName.length < 2 || cleanFullName.length > 100) {
+      return json({ error: "Full name must be between 2 and 100 characters" }, 400);
     }
 
-    const dummyEmail = `${username.trim().toLowerCase()}@student.eclat.com`;
+    if (!allowedClassYears.has(cleanClassYear)) {
+      return json({ error: "Invalid class year" }, 400);
+    }
 
-    // 1. Create User via Admin API
+    if (!usernamePattern.test(normalizedUsername)) {
+      return json({
+        error: "Username must be 2-20 characters and may only contain letters, numbers, dots, underscores, or hyphens",
+      }, 400);
+    }
+
+    if (cleanPassword.length < 6 || cleanPassword.length > 100) {
+      return json({ error: "Password must be between 6 and 100 characters" }, 400);
+    }
+
+    const { data: existingProfile, error: usernameError } = await adminClient
+      .from("profiles")
+      .select("id")
+      .eq("username", normalizedUsername)
+      .maybeSingle();
+
+    if (usernameError) {
+      throw usernameError;
+    }
+
+    if (existingProfile) {
+      return json({ error: "Username is already taken" }, 409);
+    }
+
+    const dummyEmail = `${normalizedUsername}@student.eclat.com`;
+
     const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
       email: dummyEmail,
-      password: password,
+      password: cleanPassword,
       email_confirm: true,
       user_metadata: {
         role: "student",
-        full_name: fullName,
+        full_name: cleanFullName,
+        provisioned_by: "parent",
+      },
+      app_metadata: {
+        role: "student",
+        provisioned_by: "parent",
+        parent_id: parentRecord.id,
       },
     });
 
-    if (createError) {
-      console.error("Error creating user:", createError);
-      return new Response(JSON.stringify({ error: createError.message }), {
-        status: 400,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+    if (createError || !newUser.user) {
+      return json({ error: createError?.message || "Failed to create student account" }, 400);
     }
 
-    const newUserId = newUser.user.id;
+    newUserId = newUser.user.id;
 
-    // 2. Insert into user_roles
+    const rollbackUser = async () => {
+      if (newUserId) {
+        await adminClient.auth.admin.deleteUser(newUserId);
+      }
+    };
+
     const { error: roleError } = await adminClient
       .from("user_roles")
-      .insert({ user_id: newUserId, role: "student" });
+      .upsert({ user_id: newUserId, role: "student" }, { onConflict: "user_id,role" });
 
     if (roleError) {
-      console.error("Error setting role:", roleError);
+      await rollbackUser();
+      throw roleError;
     }
 
-    // 3. Update profile with username
     const { error: profileError } = await adminClient
       .from("profiles")
-      .update({ username: username.trim().toLowerCase() })
-      .eq("id", newUserId);
+      .upsert({
+        id: newUserId,
+        email: dummyEmail,
+        full_name: cleanFullName,
+        username: normalizedUsername,
+        email_verified: true,
+      }, { onConflict: "id" });
 
     if (profileError) {
-      console.error("Error updating profile username:", profileError);
+      await rollbackUser();
+      throw profileError;
     }
 
-    // 4. Create student record linked to parent
-    const { error: studentError } = await adminClient
+    const { data: studentRecord, error: studentError } = await adminClient
       .from("students")
       .insert({
         user_id: newUserId,
         parent_id: parentRecord.id,
-        class_year: classYear,
-        onboarding_completed: true, // Auto-complete onboarding since parent provided details
-        is_premium: false
-      });
+        class_year: cleanClassYear,
+        onboarding_completed: true,
+        is_premium: false,
+      })
+      .select("id")
+      .single();
 
     if (studentError) {
-      console.error("Error creating student record:", studentError);
-      return new Response(JSON.stringify({ error: "Failed to link student to parent" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json", ...corsHeaders },
-      });
+      await rollbackUser();
+      console.error("create-student-account student insert error:", studentError);
+      return json({ error: "Failed to link student to parent" }, 500);
     }
 
-    return new Response(JSON.stringify({ success: true, user: newUser.user }), {
-      headers: { "Content-Type": "application/json", ...corsHeaders },
+    return json({
+      success: true,
+      student: {
+        id: studentRecord.id,
+        user_id: newUserId,
+        full_name: cleanFullName,
+        class_year: cleanClassYear,
+        username: normalizedUsername,
+      },
     });
-
   } catch (error) {
-    console.error("Edge function error:", error);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
-      status: 500,
-      headers: { "Content-Type": "application/json", ...corsHeaders },
-    });
+    console.error("create-student-account error:", error);
+    return json({ error: error instanceof Error ? error.message : "Internal server error" }, 500);
   }
 });

@@ -2,203 +2,239 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 const corsHeaders = {
-    "Access-Control-Allow-Origin": "*",
-    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+const usernamePattern = /^[a-z0-9._-]{2,20}$/;
+
+const json = (body: Record<string, unknown>, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { "Content-Type": "application/json", ...corsHeaders },
+  });
+
+const addOneYear = (date: Date) => {
+  const copy = new Date(date);
+  copy.setFullYear(copy.getFullYear() + 1);
+  return copy;
 };
 
 serve(async (req) => {
-    if (req.method === "OPTIONS") {
-        return new Response(null, { headers: corsHeaders });
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    const authHeader = req.headers.get("authorization") || req.headers.get("Authorization") || "";
+    if (!authHeader.toLowerCase().startsWith("bearer ")) {
+      return json({ error: "Unauthorized" }, 401);
     }
 
-    try {
-        const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-        const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-        const SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const token = authHeader.replace(/^[Bb]earer\s+/, "").trim();
+    const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const { data: userData, error: userError } = await userClient.auth.getUser(token);
 
-        // Check if the request is authenticated
-        const authHeader = req.headers.get("Authorization");
-        if (!authHeader) {
-            return new Response(JSON.stringify({ error: "Unauthorized" }), {
-                status: 401,
-                headers: { "Content-Type": "application/json", ...corsHeaders },
-            });
-        }
-        const token = authHeader.replace("Bearer ", "");
-
-        const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-        const { data: { user: requestingUser }, error: userError } = await userClient.auth.getUser(token);
-
-        if (userError || !requestingUser) {
-            return new Response(JSON.stringify({ error: "Invalid token" }), {
-                status: 401,
-                headers: { "Content-Type": "application/json", ...corsHeaders },
-            });
-        }
-
-        const { studentId, action, fullName, password, username } = await req.json();
-
-        if (!studentId || !action) {
-            return new Response(JSON.stringify({ error: "Missing studentId or action" }), {
-                status: 400,
-                headers: { "Content-Type": "application/json", ...corsHeaders },
-            });
-        }
-
-        const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-
-        // 1. Verify the requesting user is the parent of the student
-        const { data: studentRecord, error: studentError } = await adminClient
-            .from("students")
-            .select("id, user_id, parent_id")
-            .eq("id", studentId)
-            .single();
-
-        if (studentError || !studentRecord) {
-            return new Response(JSON.stringify({ error: "Student not found" }), {
-                status: 404,
-                headers: { "Content-Type": "application/json", ...corsHeaders },
-            });
-        }
-
-        const { data: parentRecord, error: parentError } = await adminClient
-            .from("parents")
-            .select("id")
-            .eq("user_id", requestingUser.id)
-            .single();
-
-        if (parentError || !parentRecord || parentRecord.id !== studentRecord.parent_id) {
-            return new Response(JSON.stringify({ error: "Access denied: You are not this student's parent" }), {
-                status: 403,
-                headers: { "Content-Type": "application/json", ...corsHeaders },
-            });
-        }
-
-        const studentUserId = studentRecord.user_id;
-
-        // 2. Perform actions
-        if (action === "edit-name") {
-            if (!fullName) {
-                return new Response(JSON.stringify({ error: "Full name is required" }), {
-                    status: 400,
-                    headers: { "Content-Type": "application/json", ...corsHeaders },
-                });
-            }
-
-            // Update Profile
-            const { error: profileError } = await adminClient
-                .from("profiles")
-                .update({ full_name: fullName })
-                .eq("id", studentUserId);
-
-            if (profileError) {
-                throw profileError;
-            }
-
-            // Update Auth Metadata
-            const { error: authError } = await adminClient.auth.admin.updateUserById(
-                studentUserId,
-                { user_metadata: { full_name: fullName } }
-            );
-
-            if (authError) {
-                console.error("Warning: Failed to update auth metadata:", authError);
-            }
-
-            return new Response(JSON.stringify({ success: true, message: "Name updated successfully" }), {
-                headers: { "Content-Type": "application/json", ...corsHeaders },
-            });
-
-        } else if (action === "change-password") {
-            if (!password) {
-                return new Response(JSON.stringify({ error: "Password is required" }), {
-                    status: 400,
-                    headers: { "Content-Type": "application/json", ...corsHeaders },
-                });
-            }
-
-            const { error: authError } = await adminClient.auth.admin.updateUserById(
-                studentUserId,
-                { password: password }
-            );
-
-            if (authError) {
-                throw authError;
-            }
-
-            return new Response(JSON.stringify({ success: true, message: "Password updated successfully" }), {
-                headers: { "Content-Type": "application/json", ...corsHeaders },
-            });
-
-        } else if (action === "edit-username") {
-            if (!username) {
-                return new Response(JSON.stringify({ error: "Username is required" }), {
-                    status: 400,
-                    headers: { "Content-Type": "application/json", ...corsHeaders },
-                });
-            }
-
-            const normalizedUsername = username.trim().toLowerCase();
-            const newEmail = `${normalizedUsername}@student.eclat.com`;
-
-            // 1. Check if username is already taken in profiles
-            const { data: existingProfile, error: checkError } = await adminClient
-                .from("profiles")
-                .select("id")
-                .eq("username", normalizedUsername)
-                .maybeSingle();
-
-            if (checkError) throw checkError;
-            if (existingProfile && existingProfile.id !== studentUserId) {
-                return new Response(JSON.stringify({ error: "Username is already taken" }), {
-                    status: 400,
-                    headers: { "Content-Type": "application/json", ...corsHeaders },
-                });
-            }
-
-            // 2. Update Auth Email (this is how we handle "username" login)
-            const { error: authError } = await adminClient.auth.admin.updateUserById(
-                studentUserId,
-                { email: newEmail, email_confirm: true }
-            );
-
-            if (authError) {
-                // If the email is already taken in auth, it's likely a sync issue
-                if (authError.message.includes("Email already exists")) {
-                    return new Response(JSON.stringify({ error: "This username is already associated with another account" }), {
-                        status: 400,
-                        headers: { "Content-Type": "application/json", ...corsHeaders },
-                    });
-                }
-                throw authError;
-            }
-
-            // 3. Update Profile Username
-            const { error: profileError } = await adminClient
-                .from("profiles")
-                .update({ username: normalizedUsername })
-                .eq("id", studentUserId);
-
-            if (profileError) {
-                throw profileError;
-            }
-
-            return new Response(JSON.stringify({ success: true, message: "Username updated successfully" }), {
-                headers: { "Content-Type": "application/json", ...corsHeaders },
-            });
-
-        } else {
-            return new Response(JSON.stringify({ error: "Invalid action" }), {
-                status: 400,
-                headers: { "Content-Type": "application/json", ...corsHeaders },
-            });
-        }
-
-    } catch (error: any) {
-        console.error("Edge function error:", error);
-        return new Response(JSON.stringify({ error: error.message || "Internal server error" }), {
-            status: 500,
-            headers: { "Content-Type": "application/json", ...corsHeaders },
-        });
+    if (userError || !userData.user) {
+      return json({ error: "Invalid token" }, 401);
     }
+
+    const { studentId, action, fullName, password, username } = await req.json();
+
+    if (!studentId || !action) {
+      return json({ error: "Missing studentId or action" }, 400);
+    }
+
+    const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+
+    const { data: parentRecord, error: parentError } = await adminClient
+      .from("parents")
+      .select("id")
+      .eq("user_id", userData.user.id)
+      .single();
+
+    if (parentError || !parentRecord) {
+      return json({ error: "Only parents can manage student accounts" }, 403);
+    }
+
+    const { data: studentRecord, error: studentError } = await adminClient
+      .from("students")
+      .select("id, user_id, parent_id, is_premium")
+      .eq("id", studentId)
+      .single();
+
+    if (studentError || !studentRecord) {
+      return json({ error: "Student not found" }, 404);
+    }
+
+    if (studentRecord.parent_id !== parentRecord.id) {
+      return json({ error: "Access denied: You are not this student's parent" }, 403);
+    }
+
+    const studentUserId = studentRecord.user_id;
+
+    if (action === "edit-name") {
+      const cleanFullName = typeof fullName === "string" ? fullName.trim() : "";
+      if (cleanFullName.length < 2 || cleanFullName.length > 100) {
+        return json({ error: "Full name must be between 2 and 100 characters" }, 400);
+      }
+
+      const { error: profileError } = await adminClient
+        .from("profiles")
+        .update({ full_name: cleanFullName })
+        .eq("id", studentUserId);
+
+      if (profileError) throw profileError;
+
+      const { error: authError } = await adminClient.auth.admin.updateUserById(
+        studentUserId,
+        { user_metadata: { full_name: cleanFullName, role: "student", provisioned_by: "parent" } },
+      );
+
+      if (authError) {
+        console.error("manage-student-account auth metadata warning:", authError);
+      }
+
+      return json({ success: true, message: "Name updated successfully" });
+    }
+
+    if (action === "change-password") {
+      const cleanPassword = typeof password === "string" ? password : "";
+      if (cleanPassword.length < 6 || cleanPassword.length > 100) {
+        return json({ error: "Password must be between 6 and 100 characters" }, 400);
+      }
+
+      const { error: authError } = await adminClient.auth.admin.updateUserById(
+        studentUserId,
+        { password: cleanPassword },
+      );
+
+      if (authError) throw authError;
+
+      return json({ success: true, message: "Password updated successfully" });
+    }
+
+    if (action === "edit-username") {
+      const normalizedUsername = typeof username === "string" ? username.trim().toLowerCase() : "";
+      if (!usernamePattern.test(normalizedUsername)) {
+        return json({
+          error: "Username must be 2-20 characters and may only contain letters, numbers, dots, underscores, or hyphens",
+        }, 400);
+      }
+
+      const newEmail = `${normalizedUsername}@student.eclat.com`;
+
+      const { data: existingProfile, error: checkError } = await adminClient
+        .from("profiles")
+        .select("id")
+        .eq("username", normalizedUsername)
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (existingProfile && existingProfile.id !== studentUserId) {
+        return json({ error: "Username is already taken" }, 409);
+      }
+
+      const { error: authError } = await adminClient.auth.admin.updateUserById(
+        studentUserId,
+        { email: newEmail, email_confirm: true },
+      );
+
+      if (authError) {
+        if (authError.message.toLowerCase().includes("email")) {
+          return json({ error: "This username is already associated with another account" }, 409);
+        }
+        throw authError;
+      }
+
+      const { error: profileError } = await adminClient
+        .from("profiles")
+        .update({ username: normalizedUsername, email: newEmail })
+        .eq("id", studentUserId);
+
+      if (profileError) throw profileError;
+
+      return json({ success: true, message: "Username updated successfully" });
+    }
+
+    if (action === "upgrade-premium") {
+      const now = new Date();
+
+      const { data: existingSubscription, error: existingError } = await adminClient
+        .from("subscriptions")
+        .select("id, expires_at")
+        .eq("student_id", studentRecord.id)
+        .eq("status", "active")
+        .maybeSingle();
+
+      if (existingError) throw existingError;
+
+      const existingExpiry = existingSubscription?.expires_at
+        ? new Date(existingSubscription.expires_at)
+        : null;
+      const startsFrom = existingExpiry && existingExpiry > now ? existingExpiry : now;
+      const expiresAt = addOneYear(startsFrom).toISOString();
+
+      if (existingSubscription) {
+        const { error: updateSubscriptionError } = await adminClient
+          .from("subscriptions")
+          .update({
+            plan: "premium_annual",
+            status: "active",
+            amount: 15000,
+            currency: "NGN",
+            expires_at: expiresAt,
+            metadata: {
+              source: "dummy_payment",
+              processed_by_parent_user_id: userData.user.id,
+            },
+          })
+          .eq("id", existingSubscription.id);
+
+        if (updateSubscriptionError) throw updateSubscriptionError;
+      } else {
+        const { error: insertSubscriptionError } = await adminClient
+          .from("subscriptions")
+          .insert({
+            parent_id: parentRecord.id,
+            student_id: studentRecord.id,
+            plan: "premium_annual",
+            status: "active",
+            amount: 15000,
+            currency: "NGN",
+            started_at: now.toISOString(),
+            expires_at: expiresAt,
+            metadata: {
+              source: "dummy_payment",
+              processed_by_parent_user_id: userData.user.id,
+            },
+          });
+
+        if (insertSubscriptionError) throw insertSubscriptionError;
+      }
+
+      const { error: studentUpdateError } = await adminClient
+        .from("students")
+        .update({ is_premium: true })
+        .eq("id", studentRecord.id);
+
+      if (studentUpdateError) throw studentUpdateError;
+
+      return json({
+        success: true,
+        message: "Premium access activated",
+        expires_at: expiresAt,
+      });
+    }
+
+    return json({ error: "Invalid action" }, 400);
+  } catch (error) {
+    console.error("manage-student-account error:", error);
+    return json({ error: error instanceof Error ? error.message : "Internal server error" }, 500);
+  }
 });
