@@ -327,24 +327,33 @@ export default function ParentSettingsPage() {
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-        <TabsList className="bg-muted/40 p-1 rounded-2xl grid grid-cols-3 max-w-md border border-border/40">
-          <TabsTrigger value="profile" className="rounded-xl font-bold py-2.5">
-            <UserIcon className="h-4 w-4 mr-2" />
+        <TabsList className="bg-muted/20 p-1.5 rounded-[1.25rem] flex flex-row flex-nowrap overflow-x-auto no-scrollbar w-full sm:w-fit gap-1.5 border border-border/30 h-auto shrink-0">
+          <TabsTrigger 
+            value="profile" 
+            className="rounded-xl font-bold py-2.5 px-5 flex-1 sm:flex-initial whitespace-nowrap transition-all duration-200 data-[state=active]:!bg-gradient-to-r data-[state=active]:!from-primary data-[state=active]:!to-primary-glow data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-md data-[state=active]:!shadow-primary/20 text-muted-foreground hover:text-foreground hover:bg-muted/10 flex items-center justify-center shrink-0 focus-visible:!ring-0 focus-visible:!ring-offset-0 focus:!outline-none"
+          >
+            <UserIcon className="h-4 w-4 mr-2 shrink-0" />
             Profile
           </TabsTrigger>
-          <TabsTrigger value="security" className="rounded-xl font-bold py-2.5">
-            <Lock className="h-4 w-4 mr-2" />
+          <TabsTrigger 
+            value="security" 
+            className="rounded-xl font-bold py-2.5 px-5 flex-1 sm:flex-initial whitespace-nowrap transition-all duration-200 data-[state=active]:!bg-gradient-to-r data-[state=active]:!from-primary data-[state=active]:!to-primary-glow data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-md data-[state=active]:!shadow-primary/20 text-muted-foreground hover:text-foreground hover:bg-muted/10 flex items-center justify-center shrink-0 focus-visible:!ring-0 focus-visible:!ring-offset-0 focus:!outline-none"
+          >
+            <Lock className="h-4 w-4 mr-2 shrink-0" />
             Security
           </TabsTrigger>
-          <TabsTrigger value="preferences" className="rounded-xl font-bold py-2.5">
-            <Users className="h-4 w-4 mr-2" />
+          <TabsTrigger 
+            value="preferences" 
+            className="rounded-xl font-bold py-2.5 px-5 flex-1 sm:flex-initial whitespace-nowrap transition-all duration-200 data-[state=active]:!bg-gradient-to-r data-[state=active]:!from-primary data-[state=active]:!to-primary-glow data-[state=active]:!text-primary-foreground data-[state=active]:!shadow-md data-[state=active]:!shadow-primary/20 text-muted-foreground hover:text-foreground hover:bg-muted/10 flex items-center justify-center shrink-0 focus-visible:!ring-0 focus-visible:!ring-offset-0 focus:!outline-none"
+          >
+            <Users className="h-4 w-4 mr-2 shrink-0" />
             Children & Preferences
           </TabsTrigger>
         </TabsList>
 
         {/* Profile Details Tab Content */}
         <TabsContent value="profile" className="space-y-6 animate-in fade-in-50 duration-300">
-          <Card className="rounded-[2rem] border-2 border-border/60 overflow-hidden shadow-sm">
+          <Card className="rounded-[2rem] border border-border/40 overflow-hidden shadow-sm bg-background/30 backdrop-blur-md">
             <CardHeader className="pb-4">
               <CardTitle className="text-2xl font-black text-foreground">Profile Details</CardTitle>
               <CardDescription className="font-medium">
@@ -459,7 +468,7 @@ export default function ParentSettingsPage() {
 
         {/* Security Tab Content */}
         <TabsContent value="security" className="space-y-6 animate-in fade-in-50 duration-300">
-          <Card className="rounded-[2rem] border-2 border-border/60 overflow-hidden shadow-sm">
+          <Card className="rounded-[2rem] border border-border/40 overflow-hidden shadow-sm bg-background/30 backdrop-blur-md">
             <CardHeader className="pb-4">
               <CardTitle className="text-2xl font-black text-foreground">Change Password</CardTitle>
               <CardDescription className="font-medium">
@@ -518,7 +527,7 @@ export default function ParentSettingsPage() {
         {/* Children & Preferences Tab Content */}
         <TabsContent value="preferences" className="space-y-6 animate-in fade-in-50 duration-300">
           {/* Connection Code Box */}
-          <Card className="rounded-[2rem] border-2 border-primary/20 bg-primary/3 overflow-hidden shadow-sm relative">
+          <Card className="rounded-[2rem] border border-primary/20 bg-primary/5 overflow-hidden shadow-sm relative backdrop-blur-md">
             <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -translate-y-8 translate-x-8" />
             <CardHeader className="pb-3">
               <CardTitle className="text-2xl font-black text-primary">Your Connection Code</CardTitle>
@@ -543,7 +552,7 @@ export default function ParentSettingsPage() {
           </Card>
 
           {/* Linked Children */}
-          <Card className="rounded-[2rem] border-2 border-border/60 overflow-hidden shadow-sm">
+          <Card className="rounded-[2rem] border border-border/40 overflow-hidden shadow-sm bg-background/30 backdrop-blur-md">
             <CardHeader className="pb-4">
               <CardTitle className="text-2xl font-black text-foreground">Linked Children</CardTitle>
               <CardDescription className="font-medium">
@@ -597,7 +606,7 @@ export default function ParentSettingsPage() {
           </Card>
 
           {/* Preferences */}
-          <Card className="rounded-[2rem] border-2 border-border/60 overflow-hidden shadow-sm">
+          <Card className="rounded-[2rem] border border-border/40 overflow-hidden shadow-sm bg-background/30 backdrop-blur-md">
             <CardHeader className="pb-4">
               <CardTitle className="text-2xl font-black text-foreground">Notification Preferences</CardTitle>
               <CardDescription className="font-medium">
