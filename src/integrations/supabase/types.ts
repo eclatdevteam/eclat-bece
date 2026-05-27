@@ -334,6 +334,66 @@ export type Database = {
           },
         ]
       }
+      practice_assignments: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          duration: number
+          id: string
+          num_questions: number
+          parent_id: string
+          score: number | null
+          status: string
+          student_id: string
+          subject: string
+          topics: string[]
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          duration: number
+          id?: string
+          num_questions: number
+          parent_id: string
+          score?: number | null
+          status?: string
+          student_id: string
+          subject: string
+          topics?: string[]
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          duration?: number
+          id?: string
+          num_questions?: number
+          parent_id?: string
+          score?: number | null
+          status?: string
+          student_id?: string
+          subject?: string
+          topics?: string[]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_assignments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "parents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practice_assignments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       parents: {
         Row: {
           created_at: string
@@ -626,6 +686,66 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          expires_at: string | null
+          id: string
+          metadata: Json
+          parent_id: string
+          plan: string
+          started_at: string
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          expires_at?: string | null
+          id?: string
+          metadata?: Json
+          parent_id: string
+          plan?: string
+          started_at?: string
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          expires_at?: string | null
+          id?: string
+          metadata?: Json
+          parent_id?: string
+          plan?: string
+          started_at?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "parents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       student_streaks: {
         Row: {
           created_at: string
@@ -708,7 +828,21 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "profiles"
             referencedColumns: ["id"]
-          }
+          },
+          {
+            foreignKeyName: "students_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "parents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "students_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
         ]
       }
       system_settings: {
@@ -941,4 +1075,3 @@ export const Constants = {
     },
   },
 } as const
-

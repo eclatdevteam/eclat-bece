@@ -22,3 +22,33 @@ entrypoint = "./functions/create-student-account/index.ts"
 # Specifies static files to be bundled with the function. Supports glob patterns.
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/create-student-account/*.html" ]
+
+[functions.manage-student-account]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/manage-student-account/index.ts"
+
+[functions.delete-student-account]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/delete-student-account/index.ts"
+
+[functions.quiz-utilities]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/quiz-utilities/index.ts"
+
+[functions.create-admin-user]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/create-admin-user/index.ts"
+
+[functions.send-admin-invitation]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/send-admin-invitation/index.ts"
+
+[functions.send-support-email]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/send-support-email/index.ts"
