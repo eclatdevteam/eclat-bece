@@ -58,7 +58,16 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
         if (event === 'SIGNED_OUT') {
           setIsAuthorized(false);
           setIsChecking(false);
-          navigate('/auth');
+          const pathname = window.location.pathname;
+          if (pathname.includes("/parent")) {
+            navigate("/auth?role=parent");
+          } else if (pathname.includes("/school")) {
+            navigate("/auth?role=school");
+          } else if (pathname.includes("/admin")) {
+            navigate("/admin/login");
+          } else {
+            navigate("/auth?role=student");
+          }
         }
       }
     );
@@ -71,7 +80,14 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
       const { data: { session } } = await supabase.auth.getSession();
 
       if (!session?.user) {
-        navigate("/auth");
+        const pathname = window.location.pathname;
+        if (pathname.includes("/parent")) {
+          navigate("/auth?role=parent");
+        } else if (pathname.includes("/school")) {
+          navigate("/auth?role=school");
+        } else {
+          navigate("/auth?role=student");
+        }
         setIsAuthorized(false);
         return;
       }
@@ -145,7 +161,14 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
       setIsAuthorized(true);
     } catch (error) {
       console.error("Auth check error:", error);
-      navigate("/auth");
+      const pathname = window.location.pathname;
+      if (pathname.includes("/parent")) {
+        navigate("/auth?role=parent");
+      } else if (pathname.includes("/school")) {
+        navigate("/auth?role=school");
+      } else {
+        navigate("/auth?role=student");
+      }
     } finally {
       setIsChecking(false);
     }
