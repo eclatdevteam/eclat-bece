@@ -151,19 +151,29 @@ export const CompetitionLeaderboards = ({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="monthly" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 rounded-2xl p-1 bg-muted">
-            <TabsTrigger value="monthly" className="rounded-xl font-black gap-1.5 py-3">
+        <Tabs defaultValue="monthly" className="w-full flex flex-col">
+          <TabsList className="flex w-fit mx-auto gap-2 rounded-full p-1.5 bg-muted/40 border border-border/40 backdrop-blur-sm mb-8">
+            <TabsTrigger 
+              value="monthly" 
+              className="rounded-full font-black gap-2 px-8 py-3 text-sm transition-all duration-300
+                data-[state=active]:!bg-gradient-to-r data-[state=active]:!from-primary data-[state=active]:!to-primary-glow data-[state=active]:!text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20
+                hover:text-foreground/80 focus-visible:!ring-0 focus-visible:!ring-offset-0 focus:!outline-none"
+            >
               <Calendar size={16} />
               Monthly
             </TabsTrigger>
-            <TabsTrigger value="annual" className="rounded-xl font-black gap-1.5 py-3">
+            <TabsTrigger 
+              value="annual" 
+              className="rounded-full font-black gap-2 px-8 py-3 text-sm transition-all duration-300
+                data-[state=active]:!bg-gradient-to-r data-[state=active]:!from-primary data-[state=active]:!to-primary-glow data-[state=active]:!text-primary-foreground data-[state=active]:shadow-lg data-[state=active]:shadow-primary/20
+                hover:text-foreground/80 focus-visible:!ring-0 focus-visible:!ring-offset-0 focus:!outline-none"
+            >
               <Crown size={16} />
               Annual
             </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="monthly" className="mt-6">
+          <TabsContent value="monthly" className="mt-0">
             {renderLeaderboard(
               monthlyLeaders,
               <Trophy className="text-accent animate-bounce" size={20} />,
@@ -173,7 +183,7 @@ export const CompetitionLeaderboards = ({
             )}
           </TabsContent>
 
-          <TabsContent value="annual" className="mt-6">
+          <TabsContent value="annual" className="mt-0">
             {renderLeaderboard(
               annualLeaders,
               <Crown className="text-accent animate-pulse" size={20} />,

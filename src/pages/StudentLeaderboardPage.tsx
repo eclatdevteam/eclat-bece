@@ -26,11 +26,11 @@ export default function StudentLeaderboardPage() {
         // 1. Get current student's name
         const { data: profileData } = await supabase
           .from("profiles")
-          .select("full_name")
+          .select("full_name, username")
           .eq("id", user.id)
           .single();
         
-        const rawName = profileData?.full_name || "You";
+        const rawName = profileData?.full_name || profileData?.username || "You";
         setCurrentUserName(rawName);
 
         // 2. Get student ID
@@ -53,7 +53,7 @@ export default function StudentLeaderboardPage() {
             id,
             user_id,
             school:schools(school_name),
-            profile:profiles(full_name)
+            profile:profiles(full_name, username)
           `);
 
         // 4. Fetch all quiz results
@@ -83,6 +83,16 @@ export default function StudentLeaderboardPage() {
           });
         }
 
+        const avatars = ["🎓", "📚", "🌟", "💫", "🎯", "👑", "🏆", "✨", "💎", "🔥", "🚀", "💪"];
+        const getEmojiAvatar = (id: string) => {
+          let hash = 0;
+          for (let i = 0; i < id.length; i++) {
+            hash = id.charCodeAt(i) + ((hash << 5) - hash);
+          }
+          const index = Math.abs(hash) % avatars.length;
+          return avatars[index];
+        };
+
         const realMonthly: LeaderboardStudent[] = [];
         const realAnnual: LeaderboardStudent[] = [];
 
@@ -90,78 +100,50 @@ export default function StudentLeaderboardPage() {
           studentsData.forEach((s: any) => {
             const mPts = monthlyScoresMap.get(s.id) || 0;
             const aPts = annualScoresMap.get(s.id) || 0;
-            const name = s.profile?.full_name || "Unknown Student";
+            const name = s.profile?.full_name || s.profile?.username || "Unknown Student";
             const schoolName = s.school?.school_name || "Private Study";
             const isCurrentUser = s.user_id === user.id;
 
-            if (mPts > 0 || isCurrentUser) {
-              realMonthly.push({
-                rank: 0, // Assigned below
-                name: isCurrentUser ? `${name} (You)` : name,
-                school: schoolName,
-                points: mPts,
-                avatar: isCurrentUser ? "👤" : "🎓",
-                isCurrentUser
-              });
-            }
+            realMonthly.push({
+              rank: 0,
+              name: isCurrentUser ? `${name} (You)` : name,
+              school: schoolName,
+              points: mPts,
+              avatar: isCurrentUser ? "👤" : getEmojiAvatar(s.id),
+              isCurrentUser
+            });
 
-            if (aPts > 0 || isCurrentUser) {
-              realAnnual.push({
-                rank: 0, // Assigned below
-                name: isCurrentUser ? `${name} (You)` : name,
-                school: schoolName,
-                points: aPts,
-                avatar: isCurrentUser ? "👤" : "🎓",
-                isCurrentUser
-              });
-            }
+            realAnnual.push({
+              rank: 0,
+              name: isCurrentUser ? `${name} (You)` : name,
+              school: schoolName,
+              points: aPts,
+              avatar: isCurrentUser ? "👤" : getEmojiAvatar(s.id),
+              isCurrentUser
+            });
           });
         }
 
-        // --- HYBRID MERGING (Real + Realistic Mock) ---
-
-        // Mock Monthly Leaders
-        const mockMonthly = [
-          { name: "Chidinma Okafor", school: "Corona Secondary School, Lagos", points: 9850, avatar: "🎓" },
-          { name: "Ibrahim Musa", school: "Government College, Abuja", points: 9620, avatar: "📚" },
-          { name: "Blessing Adeyemi", school: "International School, Ibadan", points: 9340, avatar: "🌟" },
-          { name: "Emeka Nwankwo", school: "Enugu State Academy", points: 9180, avatar: "💫" },
-          { name: "Fatima Bello", school: "Capital Science Academy, Kano", points: 8950, avatar: "🎯" },
-        ];
-
-        // Merge and sort
-        const filteredMockMonthly = mockMonthly.filter(m => 
-          !realMonthly.some(r => r.name.replace(" (You)", "") === m.name)
-        );
-        const combinedMonthly = [...realMonthly, ...filteredMockMonthly]
-          .sort((a, b) => b.points - a.points);
-
-        combinedMonthly.forEach((s, idx) => {
+        // Sort by points descending, then by name for stable sorting
+        const sortedMonthly = realMonthly.sort((a, b) => {
+          if (b.points !== a.points) return b.points - a.points;
+          return a.name.localeCompare(b.name);
+        });
+        sortedMonthly.forEach((s, idx) => {
           s.rank = idx + 1;
         });
 
-        // Mock Annual Leaders
-        const mockAnnual = [
-          { name: "Oluwaseun Ajayi", school: "Lagos Preparatory School", points: 98540, avatar: "👑" },
-          { name: "Amina Yusuf", school: "Government Secondary, Kaduna", points: 96780, avatar: "🥇" },
-          { name: "Chukwuemeka Eze", school: "Port Harcourt International", points: 94920, avatar: "🥈" },
-          { name: "Aisha Mohammed", school: "Federal Capital College, Abuja", points: 92650, avatar: "🥉" },
-          { name: "Tunde Williams", school: "Gateway Academy, Ibadan", points: 90340, avatar: "⭐" },
-        ];
-
-        const filteredMockAnnual = mockAnnual.filter(m => 
-          !realAnnual.some(r => r.name.replace(" (You)", "") === m.name)
-        );
-        const combinedAnnual = [...realAnnual, ...filteredMockAnnual]
-          .sort((a, b) => b.points - a.points);
-
-        combinedAnnual.forEach((s, idx) => {
+        const sortedAnnual = realAnnual.sort((a, b) => {
+          if (b.points !== a.points) return b.points - a.points;
+          return a.name.localeCompare(b.name);
+        });
+        sortedAnnual.forEach((s, idx) => {
           s.rank = idx + 1;
         });
 
         // Find current user ranks and points
-        const userMonthlyEntry = combinedMonthly.find(s => s.isCurrentUser);
-        const userAnnualEntry = combinedAnnual.find(s => s.isCurrentUser);
+        const userMonthlyEntry = sortedMonthly.find(s => s.isCurrentUser);
+        const userAnnualEntry = sortedAnnual.find(s => s.isCurrentUser);
 
         const currentRanks = {
           monthly: userMonthlyEntry?.rank || 0,
@@ -173,8 +155,8 @@ export default function StudentLeaderboardPage() {
           annual: userAnnualEntry?.points || 0
         };
 
-        setMonthlyLeaders(combinedMonthly.slice(0, 10)); // Show top 10
-        setAnnualLeaders(combinedAnnual.slice(0, 10));   // Show top 10
+        setMonthlyLeaders(sortedMonthly);
+        setAnnualLeaders(sortedAnnual);
         setCurrentUserRanks(currentRanks);
         setCurrentUserPoints(currentPoints);
 
