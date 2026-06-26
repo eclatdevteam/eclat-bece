@@ -11,6 +11,7 @@ import {
 import { Loader2, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { getEdgeFunctionError } from "@/lib/errorUtils";
 
 const getErrorMessage = (error: unknown, fallback: string) =>
     error instanceof Error ? error.message : fallback;
@@ -43,7 +44,10 @@ export function DummyPaymentModal({
                 body: { studentId, action: "upgrade-premium" },
             });
 
-            if (error) throw error;
+            if (error) {
+                const message = await getEdgeFunctionError(error, "Payment failed. Please try again.");
+                throw new Error(message);
+            }
             if (data?.error) throw new Error(data.error);
 
             toast.success(`${studentName} now has Premium Access!`);
@@ -51,7 +55,7 @@ export function DummyPaymentModal({
             onOpenChange(false);
         } catch (error: unknown) {
             console.error("Error processing payment:", error);
-            toast.error(getErrorMessage(error, "Payment failed. Please try again."));
+            toast.error(error instanceof Error ? error.message : "Payment failed. Please try again.");
         } finally {
             setIsProcessing(false);
         }

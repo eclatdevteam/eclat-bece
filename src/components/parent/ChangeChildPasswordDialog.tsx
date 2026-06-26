@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Key, Eye, EyeOff } from "lucide-react";
+import { getEdgeFunctionError } from "@/lib/errorUtils";
 
 const getErrorMessage = (error: unknown, fallback: string) =>
     error instanceof Error ? error.message : fallback;
@@ -46,7 +47,10 @@ export function ChangeChildPasswordDialog({ open, onOpenChange, child }: ChangeC
                 },
             });
 
-            if (error) throw error;
+            if (error) {
+                const message = await getEdgeFunctionError(error, "Failed to change password");
+                throw new Error(message);
+            }
             if (data?.error) throw new Error(data.error);
 
             toast.success(`Password for ${child.profile.full_name} has been reset`);
@@ -55,7 +59,7 @@ export function ChangeChildPasswordDialog({ open, onOpenChange, child }: ChangeC
             setConfirmPassword("");
         } catch (error: unknown) {
             console.error("Error changing password:", error);
-            toast.error(getErrorMessage(error, "Failed to change password"));
+            toast.error(error instanceof Error ? error.message : "Failed to change password");
         } finally {
             setIsSubmitting(false);
         }

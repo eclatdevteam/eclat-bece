@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Loader2, Fingerprint } from "lucide-react";
+import { getEdgeFunctionError } from "@/lib/errorUtils";
 
 const getErrorMessage = (error: unknown, fallback: string) =>
     error instanceof Error ? error.message : fallback;
@@ -53,7 +54,10 @@ export function EditChildUsernameDialog({ open, onOpenChange, child, onSuccess }
                 },
             });
 
-            if (error) throw error;
+            if (error) {
+                const message = await getEdgeFunctionError(error, "Failed to update username");
+                throw new Error(message);
+            }
             if (data?.error) throw new Error(data.error);
 
             toast.success("Username updated successfully");
@@ -61,7 +65,7 @@ export function EditChildUsernameDialog({ open, onOpenChange, child, onSuccess }
             onOpenChange(false);
         } catch (error: unknown) {
             console.error("Error updating username:", error);
-            toast.error(getErrorMessage(error, "Failed to update username"));
+            toast.error(error instanceof Error ? error.message : "Failed to update username");
         } finally {
             setIsSubmitting(false);
         }

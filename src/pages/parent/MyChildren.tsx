@@ -17,6 +17,7 @@ import { ChangeChildPasswordDialog } from "@/components/parent/ChangeChildPasswo
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LinkedChild, ChildAnalytics, Assignment, QuizResult } from "@/types/parent";
+import { getEdgeFunctionError } from "@/lib/errorUtils";
 
 const getErrorMessage = (error: unknown, fallback: string) =>
     error instanceof Error ? error.message : fallback;
@@ -158,13 +159,16 @@ export default function MyChildren() {
             const { data, error } = await supabase.functions.invoke("delete-student-account", {
                 body: { studentId: selectedChild.id },
             });
-            if (error) throw error;
+            if (error) {
+                const message = await getEdgeFunctionError(error, "Failed to delete account");
+                throw new Error(message);
+            }
             if (data?.error) throw new Error(data.error);
             toast.success(`${selectedChild.profile.full_name}'s account deleted`);
             setDeleteDialogOpen(false);
             if (parentUserId) fetchChildren(parentUserId);
         } catch (error: unknown) {
-            toast.error(getErrorMessage(error, "Failed to delete account"));
+            toast.error(error instanceof Error ? error.message : "Failed to delete account");
         }
     };
 

@@ -5,9 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-
-const getErrorMessage = (error: unknown, fallback: string) =>
-    error instanceof Error ? error.message : fallback;
+import { getEdgeFunctionError } from "@/lib/errorUtils";
 
 interface AddChildDialogProps {
     open: boolean;
@@ -58,22 +56,26 @@ export function AddChildDialog({ open, onOpenChange, parentId, onSuccess }: AddC
             const { data: { session } } = await supabase.auth.getSession();
             if (!session?.access_token) throw new Error("No session found");
 
-            const response = await supabase.functions.invoke("create-student-account", {
+            const { data, error } = await supabase.functions.invoke("create-student-account", {
                 body: newChildData,
                 headers: {
                     Authorization: `Bearer ${session.access_token}`
                 }
             });
 
-            if (response.error) throw response.error;
-            if (response.data?.error) throw new Error(response.data.error);
+            if (error) {
+                const message = await getEdgeFunctionError(error, "Failed to create student account");
+                throw new Error(message);
+            }
+
+            if (data?.error) throw new Error(data.error);
 
             toast.success("Student account created successfully!");
             setCreatedChildCredentials({ username: newChildData.username.trim().toLowerCase(), password: newChildData.password });
             onSuccess();
         } catch (error: unknown) {
             console.error("Error creating student account:", error);
-            toast.error(getErrorMessage(error, "Failed to create student account"));
+            toast.error(error instanceof Error ? error.message : "Failed to create student account");
         } finally {
             setIsAddingChild(false);
         }

@@ -1,3 +1,30 @@
+import { FunctionsHttpError } from "@supabase/supabase-js";
+
+/**
+ * Extracts the real error message from a Supabase Edge Function error.
+ *
+ * When `supabase.functions.invoke()` gets a non-2xx response, it wraps
+ * it in a `FunctionsHttpError` with a generic message. The actual error
+ * message from the edge function's JSON response body is buried inside
+ * `error.context`. This helper digs it out.
+ */
+export async function getEdgeFunctionError(error: unknown, fallback: string): Promise<string> {
+  if (error instanceof FunctionsHttpError) {
+    try {
+      const body = await error.context.json();
+      if (body?.error && typeof body.error === "string") {
+        return body.error;
+      }
+    } catch {
+      // context.json() failed — fall through
+    }
+  }
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return fallback;
+}
+
 /**
  * Maps database and application errors to user-friendly messages
  * while logging the full error details for debugging
