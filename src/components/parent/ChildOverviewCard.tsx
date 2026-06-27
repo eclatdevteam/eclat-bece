@@ -305,7 +305,7 @@ export function ChildOverviewCard({
                                                     tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 10, fontWeight: 700 }}
                                                     dy={10}
                                                 />
-                                                <ChartTooltip cursor={{ fill: 'var(--primary)', opacity: 0.1 }} content={<ChartTooltipContent />} />
+                                                <ChartTooltip cursor={{ fill: 'var(--primary)', opacity: 0.1 }} content={<ChartTooltipContent valueFormatter={(val) => `${val}%`} />} />
                                                 <Bar
                                                     dataKey="avgScore"
                                                     fill="hsl(var(--primary))"
