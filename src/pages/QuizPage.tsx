@@ -181,7 +181,8 @@ export default function QuizPage() {
     };
 
     fetchQuestions();
-  }, [user, subject, topic, assignmentId, navigate]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, subject, topic, assignmentId, navigate]);
 
   const question = questions[currentQuestion];
   const progress = questions.length > 0 ? ((currentQuestion + 1) / questions.length) * 100 : 0;
