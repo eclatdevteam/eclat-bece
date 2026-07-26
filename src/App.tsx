@@ -67,7 +67,7 @@ const App = () => (
         <BrowserRouter>
           <AuthProvider>
             <RankProvider>
-            <Routes>
+              <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
@@ -213,7 +213,7 @@ const App = () => (
               </Route>
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
-            </Routes>
+              </Routes>
             </RankProvider>
           </AuthProvider>
         </BrowserRouter>

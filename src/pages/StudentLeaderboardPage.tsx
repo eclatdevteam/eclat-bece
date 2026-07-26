@@ -10,6 +10,7 @@ export default function StudentLeaderboardPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [currentUserName, setCurrentUserName] = useState("Student");
+  const [studentClassYear, setStudentClassYear] = useState<string | null>(null);
 
   // Ranks state
   const [monthlyLeaders, setMonthlyLeaders] = useState<LeaderboardStudent[]>([]);
@@ -24,7 +25,7 @@ export default function StudentLeaderboardPage() {
       try {
         setLoading(true);
 
-        // Get current student's name
+        // Get current student's name and class year
         const { data: profileData } = await supabase
           .from("profiles")
           .select("full_name, username")
@@ -34,8 +35,18 @@ export default function StudentLeaderboardPage() {
         const rawName = profileData?.full_name || profileData?.username || "You";
         setCurrentUserName(rawName);
 
-        // Fetch leaderboard data using utility function
-        const data = await fetchLeaderboardData(user.id);
+        // Get student's class_year for grade filtering
+        const { data: studentData } = await supabase
+          .from("students")
+          .select("class_year")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        
+        const classYear = studentData?.class_year || null;
+        setStudentClassYear(classYear);
+
+        // Fetch leaderboard data filtered by student's grade
+        const data = await fetchLeaderboardData(user.id, classYear);
 
         setMonthlyLeaders(data.monthlyLeaders);
         setAnnualLeaders(data.annualLeaders);
@@ -69,9 +80,13 @@ export default function StudentLeaderboardPage() {
       <div className="mb-8 animate-fade-in">
         <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight flex items-center gap-2">
           <Trophy className="text-accent" size={32} />
-          National Leaderboards <span className="text-primary">.</span>
+          {studentClassYear ? `${studentClassYear.replace('_', ' ').toUpperCase()} Leaderboards` : 'National Leaderboards'} <span className="text-primary">.</span>
         </h2>
-        <p className="text-muted-foreground font-medium text-sm sm:text-base mt-1">See where you rank among top performers nationwide</p>
+        <p className="text-muted-foreground font-medium text-sm sm:text-base mt-1">
+          {studentClassYear 
+            ? `See where you rank among top ${studentClassYear.replace('_', ' ')} performers nationwide`
+            : 'See where you rank among top performers nationwide'}
+        </p>
       </div>
 
       <div className="animate-scale-in">

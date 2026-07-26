@@ -1,9 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { BookOpen, Trophy, TrendingUp, Target, Flame, LogOut, Settings, Menu, Lock, ShieldCheck, Swords } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { CompetitionLeaderboards } from "@/components/CompetitionLeaderboards";
 import { PracticeAssignment, Assignment } from "@/components/PracticeAssignment";
-import { ProgressReport } from "@/components/ProgressReport";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -42,132 +40,180 @@ export default function StudentDashboard() {
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [isLoadingAssignments, setIsLoadingAssignments] = useState(true);
 
+  // Abort controller ref for cleanup on logout/unmount
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   // Calculate rank difference from 10
   const rankDifference = monthlyRank > 10 ? monthlyRank - 10 : 0;
 
   const logo = theme === "dark" ? logoLight : logoDark;
 
-  const fetchUserData = useCallback(async () => {
+  const fetchUserData = useCallback(async (signal?: AbortSignal) => {
     if (!user) return;
 
-    // Fetch user name
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("full_name")
-      .eq("id", user.id)
-      .single();
+    try {
+      // Fetch user name
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("full_name")
+        .eq("id", user.id)
+        .single();
 
-    if (profileData?.full_name) {
-      const firstName = profileData.full_name.split(" ")[0];
-      setUserName(firstName);
-    }
+      if (signal?.aborted) return;
+      if (profileData?.full_name) {
+        const firstName = profileData.full_name.split(" ")[0];
+        setUserName(firstName);
+      }
 
-    // Fetch student's class year and premium status
-    const { data: studentData } = await supabase
-      .from("students")
-      .select("class_year, is_premium")
-      .eq("user_id", user.id)
-      .single();
+      // Fetch student's class year and premium status
+      const { data: studentData } = await supabase
+        .from("students")
+        .select("class_year, is_premium")
+        .eq("user_id", user.id)
+        .single();
 
-    if (studentData) {
-      if (studentData.class_year) setClassYear(studentData.class_year);
-      setIsPremium(!!studentData.is_premium);
-    }
-  }, [user]);
-
-  const fetchQuestionCounts = useCallback(async () => {
-    if (!user) return;
-
-    // First get the student's class year
-    const { data: studentData } = await supabase
-      .from("students")
-      .select("class_year")
-      .eq("user_id", user.id)
-      .single();
-
-    if (!studentData?.class_year) return;
-
-    // Determine which table to query based on class year
-    const tableName: "quiz_questions_year6" | "quiz_questions_year9" = studentData.class_year === 'year_6'
-      ? 'quiz_questions_year6'
-      : 'quiz_questions_year9';
-
-    const subjectsToFetch = ["Mathematics", "English Language", "Basic Science", "Social Studies"];
-    const counts: Record<string, number> = {};
-    
-    await Promise.all(
-      subjectsToFetch.map(async (subject) => {
-        const { count, error } = await supabase
-          .from(tableName)
-          .select("*", { count: 'exact', head: true })
-          .eq("subject", subject);
-        
-        if (!error && count !== null) {
-          counts[subject] = count;
-        }
-      })
-    );
-    setSubjectCounts(counts);
-  }, [user]);
-
-  const fetchStreak = useCallback(async () => {
-    if (!user) return;
-
-    const { data: studentData } = await supabase
-      .from("students")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    if (!studentData?.id) return;
-
-    const { data: streakData } = await supabase
-      .from("student_streaks")
-      .select("current_streak")
-      .eq("student_id", studentData.id)
-      .maybeSingle();
-
-    if (streakData) {
-      setCurrentStreak(streakData.current_streak);
+      if (signal?.aborted) return;
+      if (studentData) {
+        if (studentData.class_year) setClassYear(studentData.class_year);
+        setIsPremium(!!studentData.is_premium);
+      }
+    } catch (error) {
+      if (signal?.aborted) return;
+      console.error("Error fetching user data:", error);
     }
   }, [user]);
 
-  const fetchProgressStats = useCallback(async () => {
+  const fetchQuestionCounts = useCallback(async (signal?: AbortSignal) => {
     if (!user) return;
 
-    const { data: studentData } = await supabase
-      .from("students")
-      .select("id")
-      .eq("user_id", user.id)
-      .maybeSingle();
+    try {
+      // First get the student's class year
+      const { data: studentData } = await supabase
+        .from("students")
+        .select("class_year")
+        .eq("user_id", user.id)
+        .single();
 
-    if (!studentData?.id) return;
+      if (signal?.aborted) return;
+      if (!studentData?.class_year) return;
 
-    const { data: quizResults } = await supabase
-      .from("quiz_results")
-      .select("total_questions, score")
-      .eq("student_id", studentData.id);
+      // Determine which table to query based on class year
+      const tableName: "quiz_questions_year6" | "quiz_questions_year9" = studentData.class_year === 'year_6'
+        ? 'quiz_questions_year6'
+        : 'quiz_questions_year9';
 
-    if (!quizResults) return;
+      const subjectsToFetch = ["Mathematics", "English Language", "Basic Science", "Social Studies"];
+      const counts: Record<string, number> = {};
+      
+      await Promise.all(
+        subjectsToFetch.map(async (subject) => {
+          if (signal?.aborted) return;
+          const { count, error } = await supabase
+            .from(tableName)
+            .select("*", { count: 'exact', head: true })
+            .eq("subject", subject);
+          
+          if (!error && count !== null) {
+            counts[subject] = count;
+          }
+        })
+      );
 
-    setCompletedQuizzesCount(quizResults.length);
-
-    if (quizResults.length > 0) {
-      const questionsAnswered = quizResults.reduce((sum, result) => sum + result.total_questions, 0);
-      const average = quizResults.reduce((sum, result) => sum + result.score, 0) / quizResults.length;
-      const wins = quizResults.filter((result) => result.score >= 80).length;
-
-      setTotalQuestionsAnswered(questionsAnswered);
-      setAverageScore(Math.round(average));
-      setTotalWins(wins);
-    } else {
-      setTotalQuestionsAnswered(0);
-      setAverageScore(0);
-      setTotalWins(0);
+      if (signal?.aborted) return;
+      setSubjectCounts(counts);
+    } catch (error) {
+      if (signal?.aborted) return;
+      console.error("Error fetching question counts:", error);
     }
   }, [user]);
 
-  const fetchAssignments = useCallback(async () => {
+  const fetchStreak = useCallback(async (signal?: AbortSignal) => {
+    if (!user) return;
+
+    // Abort previous request if exists
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create new abort controller
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    try {
+      const { data: studentData } = await supabase
+        .from("students")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (signal?.aborted) return;
+      if (!studentData?.id) return;
+
+      const { data: streakData } = await supabase
+        .from("student_streaks")
+        .select("current_streak")
+        .eq("student_id", studentData.id)
+        .maybeSingle();
+
+      if (signal?.aborted) return;
+      if (streakData) {
+        setCurrentStreak(streakData.current_streak);
+      }
+    } catch (error) {
+      if (signal?.aborted) return;
+      console.error("Error fetching streak:", error);
+    } finally {
+      if (abortControllerRef.current === controller) {
+        abortControllerRef.current = null;
+      }
+    }
+  }, [user]);
+
+  const fetchProgressStats = useCallback(async (signal?: AbortSignal) => {
+    if (!user) return;
+
+    try {
+      const { data: studentData } = await supabase
+        .from("students")
+        .select("id")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (signal?.aborted) return;
+      if (!studentData?.id) return;
+
+      const { data: quizResults } = await supabase
+        .from("quiz_results")
+        .select("total_questions, score")
+        .eq("student_id", studentData.id);
+
+      if (signal?.aborted) return;
+      if (!quizResults) return;
+
+      setCompletedQuizzesCount(quizResults.length);
+
+      if (quizResults.length > 0) {
+        const questionsAnswered = quizResults.reduce((sum, result) => sum + result.total_questions, 0);
+        const average = quizResults.reduce((sum, result) => sum + result.score, 0) / quizResults.length;
+        const wins = quizResults.filter((result) => result.score >= 80).length;
+
+        if (signal?.aborted) return;
+        setTotalQuestionsAnswered(questionsAnswered);
+        setAverageScore(Math.round(average));
+        setTotalWins(wins);
+      } else {
+        if (signal?.aborted) return;
+        setTotalQuestionsAnswered(0);
+        setAverageScore(0);
+        setTotalWins(0);
+      }
+    } catch (error) {
+      if (signal?.aborted) return;
+      console.error("Error fetching progress stats:", error);
+    }
+  }, [user]);
+
+  const fetchAssignments = useCallback(async (signal?: AbortSignal) => {
     if (!user) return;
 
     setIsLoadingAssignments(true);
@@ -179,6 +225,7 @@ export default function StudentDashboard() {
         .eq("user_id", user.id)
         .maybeSingle();
 
+      if (signal?.aborted) return;
       if (!studentData?.id) return;
 
       const { data, error } = await supabase
@@ -187,9 +234,11 @@ export default function StudentDashboard() {
         .eq("student_id", studentData.id)
         .order("created_at", { ascending: false });
 
+      if (signal?.aborted) return;
       if (error) throw error;
       setAssignments(data as Assignment[]);
     } catch (error) {
+      if (signal?.aborted) return;
       console.error("Error fetching assignments:", error);
     } finally {
       setIsLoadingAssignments(false);
@@ -209,12 +258,49 @@ export default function StudentDashboard() {
   }, [fetchAssignments, fetchProgressStats, fetchQuestionCounts, fetchStreak, fetchUserData]);
 
   useEffect(() => {
-    fetchUserData();
-    fetchQuestionCounts();
-    fetchStreak();
-    fetchProgressStats();
-    fetchAssignments();
+    // Create abort controller for this effect
+    const controller = new AbortController();
+    const signal = controller.signal;
+
+    fetchUserData(signal);
+    fetchQuestionCounts(signal);
+    fetchStreak(signal);
+    fetchProgressStats(signal);
+    fetchAssignments(signal);
+
+    // Cleanup: abort all requests on unmount/logout
+    return () => {
+      controller.abort();
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+    };
   }, [fetchAssignments, fetchProgressStats, fetchQuestionCounts, fetchStreak, fetchUserData]);
+
+  // Cleanup on logout - abort requests and reset state
+  useEffect(() => {
+    if (!user) {
+      // Abort any in-flight requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        abortControllerRef.current = null;
+      }
+      
+      // Reset all state
+      setUserName("Student");
+      setClassYear(null);
+      setSubjectCounts({});
+      setCurrentStreak(0);
+      setCompletedQuizzesCount(0);
+      setTotalQuestionsAnswered(0);
+      setAverageScore(0);
+      setTotalWins(0);
+      setIsPremium(false);
+      setAssignments([]);
+      setIsLoadingAssignments(true);
+    }
+  }, [user]);
 
   // Pull to refresh logic
   useEffect(() => {
@@ -517,55 +603,6 @@ export default function StudentDashboard() {
               <PracticeAssignment 
                 assignments={assignments} 
                 isLoading={isLoadingAssignments}
-              />
-            </div>
-
-            {/* Mobile Progress Summary - Visible on mobile/tablet */}
-            <div className="lg:hidden md:animate-scale-in" style={{ animationDelay: "0.15s" }}>
-              <Card className="border-2">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center gap-2 text-base">
-                    <TrendingUp className="text-accent" size={18} />
-                    Quick Progress Stats
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="flex gap-1 h-12">
-                    {[85, 78, 82, 90, 88].map((score, idx) => (
-                      <div key={idx} className="flex-1 bg-muted rounded overflow-hidden">
-                        <div
-                          className="bg-gradient-accent w-full"
-                          style={{ height: `${score}%`, transition: "all 0.3s" }}
-                        ></div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="flex justify-between items-center text-xs text-muted-foreground">
-                    <span>Last 5 sessions</span>
-                    <span className="font-medium text-accent">↑ 12% improvement</span>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            <Separator className="my-8 opacity-[0.05]" />
-
-            {/* Progress Report */}
-            <div className="animate-scale-in" style={{ animationDelay: "0.2s" }}>
-              <ProgressReport />
-            </div>
-
-            <Separator className="my-8 opacity-[0.05]" />
-
-            {/* Competition Leaderboards */}
-            <div className="md:animate-scale-in" style={{ animationDelay: "0.3s" }}>
-              <CompetitionLeaderboards
-                showCurrentUserPosition={true}
-                currentUserName={userName}
-                currentUserRanks={{ monthly: monthlyRank || 0, annual: 0 }}
-                currentUserPoints={{ monthly: monthlyPoints || 0, annual: 0 }}
-                monthlyLeaders={monthlyLeaders}
-                annualLeaders={annualLeaders}
               />
             </div>
           </div>

@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, ReactNode } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchLeaderboardData, LeaderboardStudent } from "@/utils/leaderboard";
+import { supabase } from "@/integrations/supabase/client";
 
 interface RankContextType {
   monthlyRank: number;
@@ -28,11 +29,33 @@ export const RankProvider = ({ children }: { children: ReactNode }) => {
   const [isLoadingRank, setIsLoadingRank] = useState(false);
   const [isLoadingPoints, setIsLoadingPoints] = useState(false);
   const [error, setError] = useState<Error | null>(null);
+  const [classYear, setClassYear] = useState<string | null>(null);
   
   // Refs for request management
   const abortControllerRef = useRef<AbortController | null>(null);
   const requestPromiseRef = useRef<Promise<void> | null>(null);
   const requestTypeRef = useRef<'rank' | 'points' | 'all' | null>(null);
+
+  // Fetch student's class year
+  const fetchStudentClassYear = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      const { data: studentData } = await supabase
+        .from("students")
+        .select("class_year")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      console.log("Student class year data:", studentData);
+      if (studentData?.class_year) {
+        setClassYear(studentData.class_year);
+        console.log("Set class year to:", studentData.class_year);
+      }
+    } catch (error) {
+      console.error("Error fetching student class year:", error);
+    }
+  }, [user?.id]);
 
   // Consolidated internal fetch function
   const fetchData = useCallback(async (
@@ -44,7 +67,7 @@ export const RankProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      const data = await fetchLeaderboardData(user.id);
+      const data = await fetchLeaderboardData(user.id, classYear);
       
       if (signal.aborted) return;
 
@@ -60,7 +83,7 @@ export const RankProvider = ({ children }: { children: ReactNode }) => {
       if (signal.aborted) return;
       throw err;
     }
-  }, [user?.id]);
+  }, [user?.id, classYear]);
 
   // Coalesced refresh function
   const refresh = useCallback(async (type: 'rank' | 'points' | 'all') => {
@@ -141,7 +164,7 @@ export const RankProvider = ({ children }: { children: ReactNode }) => {
   // Auto-refresh on login, abort on logout
   useEffect(() => {
     if (user?.id) {
-      refreshAll();
+      fetchStudentClassYear();
     } else {
       // Abort any in-flight request on logout
       if (abortControllerRef.current) {
@@ -156,11 +179,19 @@ export const RankProvider = ({ children }: { children: ReactNode }) => {
       setMonthlyPoints(0);
       setMonthlyLeaders([]);
       setAnnualLeaders([]);
+      setClassYear(null);
       setError(null);
       setIsLoadingRank(false);
       setIsLoadingPoints(false);
     }
-  }, [user?.id, refreshAll]);
+  }, [user?.id, fetchStudentClassYear]);
+
+  // Refetch leaderboard when class year changes
+  useEffect(() => {
+    if (user?.id && classYear) {
+      refreshAll();
+    }
+  }, [classYear, user?.id, refreshAll]);
 
   // Abort on unmount
   useEffect(() => {

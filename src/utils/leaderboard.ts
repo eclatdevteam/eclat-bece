@@ -29,12 +29,12 @@ const getEmojiAvatar = (id: string) => {
   return avatars[index];
 };
 
-export const fetchLeaderboardData = async (userId?: string): Promise<LeaderboardData> => {
+export const fetchLeaderboardData = async (userId?: string, classYear?: string): Promise<LeaderboardData> => {
   try {
     // Fetch all students
     const { data: studentsData, error: studentsError } = await supabase
       .from("students")
-      .select("id, user_id, school_id");
+      .select("id, user_id, school_id, class_year");
 
     if (studentsError) throw studentsError;
 
@@ -89,6 +89,10 @@ export const fetchLeaderboardData = async (userId?: string): Promise<Leaderboard
 
     if (studentsData) {
       studentsData.forEach((s) => {
+        // Filter by class_year if classYear parameter is provided
+        if (classYear && s.class_year !== classYear) {
+          return;
+        }
         const mPts = monthlyScoresMap.get(s.id) || 0;
         const aPts = annualScoresMap.get(s.id) || 0;
         const isCurrentUser = userId ? s.user_id === userId : false;
