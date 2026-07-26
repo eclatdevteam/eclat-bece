@@ -1,4 +1,4 @@
-import { Award, BookOpen, Target, MoreVertical, CreditCard, ChevronRight, Trash2, User, Key, Fingerprint, Copy, Check } from "lucide-react";
+import { Award, BookOpen, Target, MoreVertical, CreditCard, ChevronRight, Trash2, User, Key, Fingerprint, Copy, Check, Trophy, Star } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -196,6 +196,28 @@ export function ChildOverviewCard({
             </CardHeader>
 
             <CardContent className="space-y-6 pt-2">
+                {/* Rank and Points Display - Always visible */}
+                <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                    <div className="p-4 rounded-3xl bg-gradient-to-br from-amber-500/10 to-amber-600/10 border border-amber-500/20 transition-all hover:from-amber-500/15 hover:to-amber-600/15 group/rank">
+                        <div className="flex items-center justify-between mb-2">
+                            <p className="text-[10px] font-black text-amber-600 uppercase tracking-widest opacity-70">Rank</p>
+                            <Trophy className="h-4 w-4 text-amber-600 group-hover/rank:scale-110 transition-transform" />
+                        </div>
+                        <p className="text-2xl sm:text-3xl font-black text-foreground tabular-nums">
+                            {child.rank ? `#${child.rank}` : 'N/A'}
+                        </p>
+                    </div>
+                    <div className="p-4 rounded-3xl bg-gradient-to-br from-purple-500/10 to-purple-600/10 border border-purple-500/20 transition-all hover:from-purple-500/15 hover:to-purple-600/15 group/points">
+                        <div className="flex items-center justify-between mb-2">
+                            <p className="text-[10px] font-black text-purple-600 uppercase tracking-widest opacity-70">Points</p>
+                            <Star className="h-4 w-4 text-purple-600 group-hover/points:scale-110 transition-transform" />
+                        </div>
+                        <p className="text-2xl sm:text-3xl font-black text-foreground tabular-nums">
+                            {child.points?.toLocaleString() || '0'}
+                        </p>
+                    </div>
+                </div>
+
                 {/* Homework & Assignments Tracking */}
                 {(assignments.length > 0 || !analytics) && (
                     <div className="space-y-3">

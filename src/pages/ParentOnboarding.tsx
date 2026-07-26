@@ -3,11 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { BookOpen, Loader2, UserCheck } from "lucide-react";
+import { BookOpen, Loader2, UserCheck, Users, ChevronRight, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getSafeErrorMessage } from "@/lib/errorUtils";
 import { Badge } from "@/components/ui/badge";
+import { LoadingState, EmptyState } from "@/components/ui/enhanced-skeleton";
 
 interface LinkedChild {
   id: string;
@@ -130,8 +131,8 @@ export default function ParentOnboarding() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen bg-gradient-to-br from-primary-light/20 via-background to-accent-light/20 flex items-center justify-center p-4">
+        <LoadingState message="Setting up your parent profile..." />
       </div>
     );
   }
@@ -142,7 +143,7 @@ export default function ParentOnboarding() {
         <div className="text-center mb-8 animate-fade-in">
           <div className="inline-flex items-center gap-2 mb-2">
             <BookOpen className="text-primary" size={32} />
-            <h1 className="text-3xl font-bold text-foreground">Eclat</h1>
+            <h1 className="text-3xl font-bold text-foreground">Éclat</h1>
           </div>
           <p className="text-muted-foreground">Complete your parent profile</p>
         </div>
@@ -165,10 +166,10 @@ export default function ParentOnboarding() {
                   {linkedChildren.map((child) => (
                     <div
                       key={child.id}
-                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border"
+                      className="flex items-center justify-between p-3 bg-muted/50 rounded-lg border hover:bg-muted/80 transition-all cursor-pointer group"
                     >
                       <div className="flex-1">
-                        <p className="font-medium">{child.full_name}</p>
+                        <p className="font-medium group-hover:text-primary transition-colors">{child.full_name}</p>
                         <div className="flex gap-2 mt-1">
                           <Badge variant="outline" className="text-xs">
                             Code: {child.unique_id}
@@ -178,23 +179,27 @@ export default function ParentOnboarding() {
                           </Badge>
                         </div>
                       </div>
+                      <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                     </div>
                   ))}
                 </div>
               </div>
             ) : (
-              <div className="bg-muted/50 p-6 rounded-lg text-center">
-                <p className="text-sm text-muted-foreground">
-                  No student accounts have been created yet.
-                </p>
-              </div>
+              <EmptyState
+                icon={<Users className="h-12 w-12" />}
+                title="No students linked yet"
+                description="You can add student accounts from your dashboard after completing setup."
+              />
             )}
 
-            <div className="bg-primary/10 p-4 rounded-lg border border-primary/20">
-              <p className="text-sm">
-                <strong>Note:</strong> Student accounts are created by parents from the dashboard.
-                You can add your first child after completing setup.
-              </p>
+            <div className="bg-primary/10 p-4 rounded-lg border border-primary/20 animate-pulse-soft">
+              <div className="flex items-start gap-3">
+                <Sparkles className="h-5 w-5 text-primary mt-0.5" />
+                <p className="text-sm">
+                  <strong>Quick Start:</strong> Student accounts are created by parents from the dashboard.
+                  You can add your first child after completing setup.
+                </p>
+              </div>
             </div>
 
             <Button
@@ -203,6 +208,7 @@ export default function ParentOnboarding() {
               disabled={isSubmitting}
               className="w-full"
               size="lg"
+              variant="hero"
             >
               {isSubmitting ? (
                 <>
@@ -210,7 +216,10 @@ export default function ParentOnboarding() {
                   Setting up...
                 </>
               ) : (
-                "Continue to Dashboard"
+                <>
+                  Continue to Dashboard
+                  <ChevronRight className="ml-2 h-4 w-4" />
+                </>
               )}
             </Button>
           </CardContent>

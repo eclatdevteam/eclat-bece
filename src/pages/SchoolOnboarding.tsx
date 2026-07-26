@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BookOpen, Loader2 } from "lucide-react";
+import { BookOpen, Loader2, School, ChevronRight, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { getSafeErrorMessage } from "@/lib/errorUtils";
@@ -83,7 +83,10 @@ export default function SchoolOnboarding() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="address">School Address (Optional)</Label>
+                <Label htmlFor="address" className="flex items-center gap-2">
+                  <School className="h-4 w-4" />
+                  School Address (Optional)
+                </Label>
                 <Input
                   id="address"
                   type="text"
@@ -91,6 +94,7 @@ export default function SchoolOnboarding() {
                   value={address}
                   onChange={(e) => setAddress(e.target.value)}
                   maxLength={200}
+                  className="min-h-[44px]"
                 />
               </div>
 
@@ -103,17 +107,21 @@ export default function SchoolOnboarding() {
                   value={contactEmail}
                   onChange={(e) => setContactEmail(e.target.value)}
                   maxLength={255}
+                  className="min-h-[44px]"
                 />
                 <p className="text-xs text-muted-foreground">
                   Alternative email for school communications
                 </p>
               </div>
 
-              <div className="bg-muted/50 p-4 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  <strong>Your School Code:</strong> You'll find your unique school code on your dashboard. 
-                  Share it with students to allow them to join your school.
-                </p>
+              <div className="bg-primary/10 p-4 rounded-lg border border-primary/20 animate-pulse-soft">
+                <div className="flex items-start gap-3">
+                  <Sparkles className="h-5 w-5 text-primary mt-0.5" />
+                  <p className="text-sm">
+                    <strong>Your School Code:</strong> You'll find your unique school code on your dashboard. 
+                    Share it with students to allow them to join your school.
+                  </p>
+                </div>
               </div>
 
               <Button
@@ -128,7 +136,10 @@ export default function SchoolOnboarding() {
                     Setting up...
                   </>
                 ) : (
-                  "Continue to Dashboard"
+                  <>
+                    Continue to Dashboard
+                    <ChevronRight className="ml-2 h-4 w-4" />
+                  </>
                 )}
               </Button>
             </form>

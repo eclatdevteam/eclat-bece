@@ -5,24 +5,25 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 active:scale-95",
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-soft hover:shadow-hover transition-all",
-        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-        outline: "border-2 border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground transition-all",
-        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
-        hero: "bg-gradient-hero text-primary-foreground hover:shadow-hover hover:scale-105 transition-all font-semibold",
-        accent: "bg-gradient-accent text-accent-foreground hover:shadow-glow hover:scale-105 transition-all font-semibold",
+        default: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-soft hover:shadow-hover transition-all min-h-[44px] min-w-[44px]",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 min-h-[44px] min-w-[44px]",
+        outline: "border-2 border-primary bg-transparent text-primary hover:bg-primary hover:text-primary-foreground transition-all min-h-[44px] min-w-[44px]",
+        secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 min-h-[44px] min-w-[44px]",
+        ghost: "hover:bg-accent hover:text-accent-foreground min-h-[44px] min-w-[44px]",
+        link: "text-primary underline-offset-4 hover:underline min-h-[44px]",
+        hero: "bg-gradient-hero text-primary-foreground hover:shadow-hover hover:scale-105 transition-all font-semibold min-h-[52px] min-w-[52px] text-base",
+        accent: "bg-gradient-accent text-accent-foreground hover:shadow-glow hover:scale-105 transition-all font-semibold min-h-[52px] min-w-[52px] text-base",
+        primary: "bg-primary text-primary-foreground hover:bg-primary/90 shadow-soft hover:shadow-hover transition-all font-semibold min-h-[48px] min-w-[48px] text-base",
       },
       size: {
-        default: "h-10 px-4 py-2",
-        sm: "h-9 rounded-md px-3",
-        lg: "h-11 rounded-md px-8",
-        icon: "h-10 w-10",
+        default: "h-10 px-4 py-2 min-h-[44px]",
+        sm: "h-9 rounded-md px-3 min-h-[40px]",
+        lg: "h-11 rounded-md px-8 min-h-[52px] text-base font-semibold",
+        icon: "h-10 w-10 min-h-[44px] min-w-[44px]",
       },
     },
     defaultVariants: {

@@ -1,7 +1,9 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { BookOpen, Trophy, TrendingUp, Target, Flame, LogOut, Settings, Menu, Lock, ShieldCheck, Swords } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { CompetitionLeaderboards } from "@/components/CompetitionLeaderboards";
 import { PracticeAssignment, Assignment } from "@/components/PracticeAssignment";
+import { ProgressReport } from "@/components/ProgressReport";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -39,9 +41,6 @@ export default function StudentDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [assignments, setAssignments] = useState<Assignment[]>([]);
   const [isLoadingAssignments, setIsLoadingAssignments] = useState(true);
-
-  // Abort controller ref for cleanup on logout/unmount
-  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Calculate rank difference from 10
   const rankDifference = monthlyRank > 10 ? monthlyRank - 10 : 0;
@@ -213,7 +212,7 @@ export default function StudentDashboard() {
     }
   }, [user]);
 
-  const fetchAssignments = useCallback(async (signal?: AbortSignal) => {
+  const fetchAssignments = useCallback(async () => {
     if (!user) return;
 
     setIsLoadingAssignments(true);
@@ -225,7 +224,6 @@ export default function StudentDashboard() {
         .eq("user_id", user.id)
         .maybeSingle();
 
-      if (signal?.aborted) return;
       if (!studentData?.id) return;
 
       const { data, error } = await supabase
@@ -234,11 +232,9 @@ export default function StudentDashboard() {
         .eq("student_id", studentData.id)
         .order("created_at", { ascending: false });
 
-      if (signal?.aborted) return;
       if (error) throw error;
       setAssignments(data as Assignment[]);
     } catch (error) {
-      if (signal?.aborted) return;
       console.error("Error fetching assignments:", error);
     } finally {
       setIsLoadingAssignments(false);
@@ -251,56 +247,18 @@ export default function StudentDashboard() {
       fetchUserData(),
       fetchQuestionCounts(),
       fetchStreak(),
-      fetchProgressStats(),
-      fetchAssignments()
+      fetchProgressStats()
     ]);
     setRefreshing(false);
-  }, [fetchAssignments, fetchProgressStats, fetchQuestionCounts, fetchStreak, fetchUserData]);
+  }, [fetchProgressStats, fetchQuestionCounts, fetchStreak, fetchUserData]);
 
   useEffect(() => {
-    // Create abort controller for this effect
-    const controller = new AbortController();
-    const signal = controller.signal;
-
-    fetchUserData(signal);
-    fetchQuestionCounts(signal);
-    fetchStreak(signal);
-    fetchProgressStats(signal);
-    fetchAssignments(signal);
-
-    // Cleanup: abort all requests on unmount/logout
-    return () => {
-      controller.abort();
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-        abortControllerRef.current = null;
-      }
-    };
+    fetchUserData();
+    fetchQuestionCounts();
+    fetchStreak();
+    fetchProgressStats();
+    fetchAssignments();
   }, [fetchAssignments, fetchProgressStats, fetchQuestionCounts, fetchStreak, fetchUserData]);
-
-  // Cleanup on logout - abort requests and reset state
-  useEffect(() => {
-    if (!user) {
-      // Abort any in-flight requests
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-        abortControllerRef.current = null;
-      }
-      
-      // Reset all state
-      setUserName("Student");
-      setClassYear(null);
-      setSubjectCounts({});
-      setCurrentStreak(0);
-      setCompletedQuizzesCount(0);
-      setTotalQuestionsAnswered(0);
-      setAverageScore(0);
-      setTotalWins(0);
-      setIsPremium(false);
-      setAssignments([]);
-      setIsLoadingAssignments(true);
-    }
-  }, [user]);
 
   // Pull to refresh logic
   useEffect(() => {
@@ -598,11 +556,60 @@ export default function StudentDashboard() {
               </CardContent>
             </Card>
 
-            {/* Practice Assignments */}
+            {/* Quick Access Buttons */}
             <div className="md:animate-scale-in" style={{ animationDelay: "0.1s" }}>
               <PracticeAssignment 
                 assignments={assignments} 
                 isLoading={isLoadingAssignments}
+              />
+            </div>
+
+            {/* Mobile Progress Summary - Visible on mobile/tablet */}
+            <div className="lg:hidden md:animate-scale-in" style={{ animationDelay: "0.15s" }}>
+              <Card className="border-2">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <TrendingUp className="text-accent" size={18} />
+                    Quick Progress Stats
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex gap-1 h-12">
+                    {[85, 78, 82, 90, 88].map((score, idx) => (
+                      <div key={idx} className="flex-1 bg-muted rounded overflow-hidden">
+                        <div
+                          className="bg-gradient-accent w-full"
+                          style={{ height: `${score}%`, transition: "all 0.3s" }}
+                        ></div>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-between items-center text-xs text-muted-foreground">
+                    <span>Last 5 sessions</span>
+                    <span className="font-medium text-accent">↑ 12% improvement</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <Separator className="my-8 opacity-[0.05]" />
+
+            {/* Progress Report */}
+            <div className="animate-scale-in" style={{ animationDelay: "0.2s" }}>
+              <ProgressReport />
+            </div>
+
+            <Separator className="my-8 opacity-[0.05]" />
+
+            {/* Competition Leaderboards */}
+            <div className="md:animate-scale-in" style={{ animationDelay: "0.3s" }}>
+              <CompetitionLeaderboards
+                showCurrentUserPosition={true}
+                currentUserName={userName}
+                currentUserRanks={{ monthly: monthlyRank || 0, annual: 0 }}
+                currentUserPoints={{ monthly: monthlyPoints || 0, annual: 0 }}
+                monthlyLeaders={monthlyLeaders}
+                annualLeaders={annualLeaders}
               />
             </div>
           </div>

@@ -42,4 +42,6 @@ export interface LinkedChild {
         username?: string;
     };
     assignments?: Assignment[];
+    rank?: number;
+    points?: number;
 }

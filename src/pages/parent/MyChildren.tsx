@@ -81,7 +81,86 @@ export default function MyChildren() {
 
             if (error) throw error;
             if (data) {
-                setChildren(data as unknown as LinkedChild[]);
+                const children = data as unknown as LinkedChild[];
+                
+                // Calculate real rank and points for each child
+                const childrenWithRankAndPoints = await Promise.all(
+                    children.map(async (child) => {
+                        // Calculate total points from quiz results
+                        const { data: quizResults } = await supabase
+                            .from("quiz_results")
+                            .select("correct_answers")
+                            .eq("student_id", child.id);
+                        
+                        const totalPoints = quizResults 
+                            ? quizResults.reduce((sum, result) => sum + (result.correct_answers * 100), 0)
+                            : 0;
+
+                        // Calculate monthly rank (matching the leaderboard logic)
+                        const now = new Date();
+                        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+                        
+                        const { data: monthlyResults } = await supabase
+                            .from("quiz_results")
+                            .select("student_id, correct_answers")
+                            .gte("completed_at", firstDayOfMonth);
+                        
+                        let rank = null;
+                        if (monthlyResults) {
+                            const { data: allStudents } = await supabase
+                                .from("students")
+                                .select("id, user_id");
+                                
+                            const { data: allProfiles } = await supabase
+                                .from("profiles")
+                                .select("id, full_name, username");
+                            
+                            if (allStudents && allProfiles) {
+                                const profileMap = new Map(allProfiles.map(p => [p.id, p]));
+                                const studentPointsMap = new Map<string, number>();
+                                const studentNamesMap = new Map<string, string>();
+                                
+                                allStudents.forEach(s => {
+                                    studentPointsMap.set(s.id, 0);
+                                    const p = profileMap.get(s.user_id);
+                                    const name = p?.full_name || p?.username || "Unknown Student";
+                                    studentNamesMap.set(s.id, name);
+                                });
+                                
+                                monthlyResults.forEach(result => {
+                                    const currentPoints = studentPointsMap.get(result.student_id) || 0;
+                                    studentPointsMap.set(result.student_id, currentPoints + (result.correct_answers * 100));
+                                });
+                                
+                                const rankings = Array.from(studentPointsMap.entries()).map(([studentId, points]) => ({
+                                    studentId,
+                                    points,
+                                    name: studentNamesMap.get(studentId) || ""
+                                }));
+                                
+                                // Sort by points descending, then by name for stable sorting
+                                rankings.sort((a, b) => {
+                                    if (b.points !== a.points) return b.points - a.points;
+                                    return a.name.localeCompare(b.name);
+                                });
+                                
+                                const calculatedRank = rankings.findIndex(s => s.studentId === child.id) + 1;
+                                if (calculatedRank > 0) {
+                                    rank = calculatedRank;
+                                }
+                            }
+                        }
+
+                        return {
+                            ...child,
+                            rank: rank || null, // null if not ranked yet
+                            points: totalPoints,
+                        };
+                    })
+                );
+
+                setChildren(childrenWithRankAndPoints);
+                
                 data.forEach((child) => {
                     fetchAnalytics(child.id);
                     fetchAssignments(child.id);
