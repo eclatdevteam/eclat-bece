@@ -69,12 +69,8 @@ const Index = () => {
     navigate("/auth/login/role-selection");
   };
 
-    const handleSignUpAction = () => {
+  const handleSignUpAction = () => {
     navigate("/auth/signup/role-selection");
-  };
-
-    const handleSignUpAction = () => {
-    navigate("/signup/role-selection");
   };
 
   if (isCheckingAuth) {
@@ -88,7 +84,7 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navigation onLoginClick={handleLoginAction} onGetStartedClick={handleSignUpAction} />
-      <Hero onGetStartedClick={handleSignUpAction} onViewLeaderboardClick={scrollToLeaderboard} />
+      <Hero onGetStartedClick={handleSignUpAction} />
       <Features />
       <About />
       <Pricing onGetStartedClick={handleSignUpAction} />
