@@ -107,10 +107,10 @@ export default function PasswordResetPage() {
 
       toast({
         title: "Password Updated!",
-        description: "Your password has been successfully reset.",
+        description: "Your password has been successfully reset. You can now log in.",
       });
 
-      navigate("/auth");
+      navigate("/parent-login");
     } catch (error: any) {
       if (error instanceof z.ZodError) {
         toast({
@@ -232,7 +232,7 @@ export default function PasswordResetPage() {
                 <p className="text-sm text-muted-foreground">
                   We've sent a password reset link to your email address. Click the link to create a new password.
                 </p>
-                <Button variant="outline" onClick={() => navigate("/auth")} className="w-full">
+                <Button variant="outline" onClick={() => navigate("/auth/login/role-selection")} className="w-full">
                   Back to Login
                 </Button>
               </div>
@@ -267,7 +267,7 @@ export default function PasswordResetPage() {
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={() => navigate("/auth")}
+                  onClick={() => navigate("/auth/login/role-selection")}
                   className="w-full"
                 >
                   Back to Login

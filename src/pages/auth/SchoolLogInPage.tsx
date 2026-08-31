@@ -271,7 +271,7 @@ export default function SchoolLogInPage() {
                 type="button"
                 variant="outline"
                 className="w-full"
-                onClick={() => navigate("/login/role-selection")}
+                onClick={() => navigate("/auth/login/role-selection")}
                 disabled={isLoading}
               >
                 Back to Login Selection Page

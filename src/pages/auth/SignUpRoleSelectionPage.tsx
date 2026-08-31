@@ -80,13 +80,24 @@ export default function SignUpRoleSelectionPage() {
           </Card>
         </div>
 
-        <div className="text-center mt-8">
-          <button
-            onClick={() => navigate("/")}
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            ← Back to Home
-          </button>
+        <div className="text-center mt-8 space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <button
+              onClick={() => navigate("/auth/login/role-selection")}
+              className="text-primary font-semibold hover:underline"
+            >
+              Log In
+            </button>
+          </p>
+          <div>
+            <button
+              onClick={() => navigate("/")}
+              className="text-muted-foreground hover:text-foreground text-sm transition-colors"
+            >
+              ← Back to Home
+            </button>
+          </div>
         </div>
       </div>
     </div>

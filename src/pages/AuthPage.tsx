@@ -216,7 +216,7 @@ export default function AuthPage() {
                     </p>
                     <Button
                       variant="outline"
-                      onClick={() => navigate(`/auth?role=student`)}
+                      onClick={() => navigate(`/student-login`)}
                       className="mt-4"
                     >
                       Return to Login
@@ -362,11 +362,22 @@ export default function AuthPage() {
                       </svg>
                       Continue with Google
                     </Button>
+
+                    <p className="text-sm text-center text-muted-foreground pt-2">
+                      Already have an account?{" "}
+                      <button
+                        type="button"
+                        onClick={() => navigate(role === "parent" ? "/parent-login" : role === "school" ? "/school-login" : "/auth/login/role-selection")}
+                        className="text-primary font-semibold hover:underline"
+                      >
+                        Sign In
+                      </button>
+                    </p>
                   </form>
                 )}
 
             <div className="mt-6 text-center">
-              <Button variant="ghost" onClick={() => navigate("/signup/role-selection")} className="text-sm">
+              <Button variant="ghost" onClick={() => navigate("/auth/signup/role-selection")} className="text-sm">
                 ← Back to Role Selection
               </Button>
             </div>

@@ -22,7 +22,7 @@ export default function AuthCallback() {
             description: "Unable to complete Google sign-in",
             variant: "destructive",
           });
-          navigate("/role-selection");
+          navigate("/auth/login/role-selection");
           return;
         }
 
@@ -60,7 +60,7 @@ export default function AuthCallback() {
             description: "Please choose Parent or School before using Google sign-in.",
             variant: "destructive",
           });
-          navigate("/role-selection");
+          navigate("/auth/login/role-selection");
           return;
         }
 
@@ -86,7 +86,7 @@ export default function AuthCallback() {
             description: "Unable to complete account setup",
             variant: "destructive",
           });
-          navigate("/role-selection");
+          navigate("/auth/login/role-selection");
           return;
         }
 
@@ -106,7 +106,7 @@ export default function AuthCallback() {
         } else if (role === "school") {
           navigate("/onboarding/school");
         } else {
-          navigate("/role-selection");
+          navigate("/auth/login/role-selection");
         }
 
       } catch (error) {
@@ -116,7 +116,7 @@ export default function AuthCallback() {
           description: "An unexpected error occurred",
           variant: "destructive",
         });
-        navigate("/role-selection");
+        navigate("/auth/login/role-selection");
       } finally {
         setIsProcessing(false);
       }

@@ -4,7 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BookOpen, Loader2, Eye, EyeOff } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { BookOpen, Loader2, Eye, EyeOff, KeyRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -19,6 +20,7 @@ export default function StudentLogInPage() {
   const navigate = useNavigate();
   const [isLoading, setIsLoading] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showForgotDialog, setShowForgotDialog] = useState(false);
   const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -191,25 +193,77 @@ export default function StudentLogInPage() {
                 type="button"
                 variant="outline"
                 className="w-full"
-                onClick={() => navigate("/auth?role=student")}
+                onClick={() => navigate("/auth/login/role-selection")}
                 disabled={isLoading}
               >
-                Back to Full Auth Page
+                Back to Login Selection Page
               </Button>
 
               <p className="text-sm text-center text-muted-foreground">
                 Forgot your password?{" "}
                 <button
                   type="button"
-                  onClick={() => navigate("/password-reset")}
-                  className="text-primary hover:underline"
+                  onClick={() => setShowForgotDialog(true)}
+                  className="text-primary hover:underline font-semibold"
                 >
-                  Reset here
+                  Get help
                 </button>
               </p>
             </form>
           </CardContent>
         </Card>
+
+        {/* Student Password Help Dialog */}
+        <Dialog open={showForgotDialog} onOpenChange={setShowForgotDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2 text-primary">
+                <KeyRound className="h-6 w-6" />
+              </div>
+              <DialogTitle className="text-center text-xl">Student Password Reset</DialogTitle>
+              <DialogDescription className="text-center text-sm pt-2 text-muted-foreground">
+                Student accounts are created and managed by parents. To change or reset your password, please ask your parent to:
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="bg-muted/50 rounded-xl p-4 text-sm space-y-2 border border-border/50 text-foreground">
+              <div className="flex items-start gap-2">
+                <span className="font-bold text-primary">1.</span>
+                <span>Log into their Éclat <strong>Parent Account</strong>.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="font-bold text-primary">2.</span>
+                <span>Go to <strong>My Children</strong> in their dashboard.</span>
+              </div>
+              <div className="flex items-start gap-2">
+                <span className="font-bold text-primary">3.</span>
+                <span>Click the settings menu next to your name and choose <strong>Change Password</strong>.</span>
+              </div>
+            </div>
+
+            <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  setShowForgotDialog(false);
+                  navigate("/parent-login");
+                }}
+                className="w-full sm:w-auto"
+              >
+                Go to Parent Login
+              </Button>
+              <Button
+                type="button"
+                variant="hero"
+                onClick={() => setShowForgotDialog(false)}
+                className="w-full sm:w-auto"
+              >
+                Got It
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
