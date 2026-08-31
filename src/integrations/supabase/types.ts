@@ -7,30 +7,10 @@ export type Json =
   | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -72,6 +52,53 @@ export type Database = {
           {
             foreignKeyName: "admin_audit_log_admin_id_fkey"
             columns: ["admin_id"]
+            isOneToOne: false
+            referencedRelation: "admins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      admin_invitations: {
+        Row: {
+          accepted_at: string | null
+          created_at: string
+          expires_at: string
+          full_name: string
+          id: string
+          invited_by: string
+          is_super_admin: boolean
+          status: string
+          target_email: string
+          token: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          created_at?: string
+          expires_at: string
+          full_name: string
+          id?: string
+          invited_by: string
+          is_super_admin?: boolean
+          status?: string
+          target_email: string
+          token: string
+        }
+        Update: {
+          accepted_at?: string | null
+          created_at?: string
+          expires_at?: string
+          full_name?: string
+          id?: string
+          invited_by?: string
+          is_super_admin?: boolean
+          status?: string
+          target_email?: string
+          token?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_invitations_invited_by_fkey"
+            columns: ["invited_by"]
             isOneToOne: false
             referencedRelation: "admins"
             referencedColumns: ["id"]
@@ -169,6 +196,90 @@ export type Database = {
           },
         ]
       }
+      comprehension_passages_year6: {
+        Row: {
+          created_at: string | null
+          id: string
+          passage_text: string
+          subject: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          passage_text: string
+          subject?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          passage_text?: string
+          subject?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      comprehension_passages_year9: {
+        Row: {
+          created_at: string | null
+          id: string
+          passage_text: string
+          subject: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          passage_text: string
+          subject?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          passage_text?: string
+          subject?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      email_verification_codes: {
+        Row: {
+          code: string
+          created_at: string
+          expires_at: string
+          failed_attempts: number | null
+          id: string
+          user_id: string
+          verified: boolean | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          expires_at: string
+          failed_attempts?: number | null
+          id?: string
+          user_id: string
+          verified?: boolean | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          expires_at?: string
+          failed_attempts?: number | null
+          id?: string
+          user_id?: string
+          verified?: boolean | null
+        }
+        Relationships: []
+      }
       flagged_questions: {
         Row: {
           class_year: string
@@ -217,110 +328,20 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "flagged_questions_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "flagged_questions_student_id_fkey"
             columns: ["student_id"]
             isOneToOne: false
             referencedRelation: "students"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "flagged_questions_resolved_by_fkey"
-            columns: ["resolved_by"]
-            isOneToOne: false
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          }
         ]
-      }
-      comprehension_passages_year6: {
-        Row: {
-          created_at: string | null
-          id: string
-          passage_text: string
-          subject: string | null
-          title: string | null
-          topic: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          passage_text: string
-          subject?: string | null
-          title?: string | null
-          topic?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          passage_text?: string
-          subject?: string | null
-          title?: string | null
-          topic?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      comprehension_passages_year9: {
-        Row: {
-          created_at: string | null
-          id: string
-          passage_text: string
-          subject: string | null
-          title: string | null
-          topic: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          id?: string
-          passage_text: string
-          subject?: string | null
-          title?: string | null
-          topic?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          id?: string
-          passage_text?: string
-          subject?: string | null
-          title?: string | null
-          topic?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      email_verification_codes: {
-        Row: {
-          code: string
-          created_at: string
-          expires_at: string
-          failed_attempts: number | null
-          id: string
-          user_id: string
-          verified: boolean | null
-        }
-        Insert: {
-          code: string
-          created_at?: string
-          expires_at: string
-          failed_attempts?: number | null
-          id?: string
-          user_id: string
-          verified?: boolean | null
-        }
-        Update: {
-          code?: string
-          created_at?: string
-          expires_at?: string
-          failed_attempts?: number | null
-          id?: string
-          user_id?: string
-          verified?: boolean | null
-        }
-        Relationships: []
       }
       notifications: {
         Row: {
@@ -397,66 +418,6 @@ export type Database = {
           },
         ]
       }
-      practice_assignments: {
-        Row: {
-          completed_at: string | null
-          created_at: string
-          duration: number
-          id: string
-          num_questions: number
-          parent_id: string
-          score: number | null
-          status: string
-          student_id: string
-          subject: string
-          topics: string[]
-          updated_at: string
-        }
-        Insert: {
-          completed_at?: string | null
-          created_at?: string
-          duration: number
-          id?: string
-          num_questions: number
-          parent_id: string
-          score?: number | null
-          status?: string
-          student_id: string
-          subject: string
-          topics?: string[]
-          updated_at?: string
-        }
-        Update: {
-          completed_at?: string | null
-          created_at?: string
-          duration?: number
-          id?: string
-          num_questions?: number
-          parent_id?: string
-          score?: number | null
-          status?: string
-          student_id?: string
-          subject?: string
-          topics?: string[]
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "practice_assignments_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "parents"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "practice_assignments_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       parents: {
         Row: {
           created_at: string
@@ -478,6 +439,73 @@ export type Database = {
         }
         Relationships: []
       }
+      practice_assignments: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          duration: number
+          id: string
+          num_questions: number
+          parent_id: string | null
+          school_id: string | null
+          score: number | null
+          status: string
+          student_id: string
+          subject: string
+          topics: string[]
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          duration: number
+          id?: string
+          num_questions: number
+          parent_id?: string | null
+          school_id?: string | null
+          score?: number | null
+          status?: string
+          student_id: string
+          subject: string
+          topics: string[]
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          duration?: number
+          id?: string
+          num_questions?: number
+          parent_id?: string | null
+          school_id?: string | null
+          score?: number | null
+          status?: string
+          student_id?: string
+          subject?: string
+          topics?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "practice_assignments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "parents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practice_assignments_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practice_assignments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -488,8 +516,8 @@ export type Database = {
           full_name: string | null
           id: string
           unique_id: string
-          username: string | null
           updated_at: string
+          username: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -500,8 +528,8 @@ export type Database = {
           full_name?: string | null
           id: string
           unique_id?: string
-          username?: string | null
           updated_at?: string
+          username?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -512,8 +540,8 @@ export type Database = {
           full_name?: string | null
           id?: string
           unique_id?: string
-          username?: string | null
           updated_at?: string
+          username?: string | null
         }
         Relationships: []
       }
@@ -736,6 +764,8 @@ export type Database = {
       }
       schools: {
         Row: {
+          address: string | null
+          contact_email: string | null
           created_at: string
           id: string
           school_code: string
@@ -744,6 +774,8 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          address?: string | null
+          contact_email?: string | null
           created_at?: string
           id?: string
           school_code?: string
@@ -752,6 +784,8 @@ export type Database = {
           user_id: string
         }
         Update: {
+          address?: string | null
+          contact_email?: string | null
           created_at?: string
           id?: string
           school_code?: string
@@ -760,66 +794,6 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
-      }
-      subscriptions: {
-        Row: {
-          amount: number
-          created_at: string
-          currency: string
-          expires_at: string | null
-          id: string
-          metadata: Json
-          parent_id: string
-          plan: string
-          started_at: string
-          status: string
-          student_id: string
-          updated_at: string
-        }
-        Insert: {
-          amount?: number
-          created_at?: string
-          currency?: string
-          expires_at?: string | null
-          id?: string
-          metadata?: Json
-          parent_id: string
-          plan?: string
-          started_at?: string
-          status?: string
-          student_id: string
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          created_at?: string
-          currency?: string
-          expires_at?: string | null
-          id?: string
-          metadata?: Json
-          parent_id?: string
-          plan?: string
-          started_at?: string
-          status?: string
-          student_id?: string
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "subscriptions_parent_id_fkey"
-            columns: ["parent_id"]
-            isOneToOne: false
-            referencedRelation: "parents"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "subscriptions_student_id_fkey"
-            columns: ["student_id"]
-            isOneToOne: false
-            referencedRelation: "students"
-            referencedColumns: ["id"]
-          },
-        ]
       }
       student_streaks: {
         Row: {
@@ -865,10 +839,10 @@ export type Database = {
           created_at: string
           date_of_birth: string | null
           id: string
+          is_premium: boolean | null
           onboarding_completed: boolean | null
           parent_id: string | null
           school_id: string | null
-          is_premium: boolean | null
           updated_at: string
           user_id: string
         }
@@ -877,10 +851,10 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           id?: string
+          is_premium?: boolean | null
           onboarding_completed?: boolean | null
           parent_id?: string | null
           school_id?: string | null
-          is_premium?: boolean | null
           updated_at?: string
           user_id: string
         }
@@ -889,21 +863,14 @@ export type Database = {
           created_at?: string
           date_of_birth?: string | null
           id?: string
+          is_premium?: boolean | null
           onboarding_completed?: boolean | null
           parent_id?: string | null
           school_id?: string | null
-          is_premium?: boolean | null
           updated_at?: string
           user_id?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "students_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: true
-            referencedRelation: "profiles"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "students_parent_id_fkey"
             columns: ["parent_id"]
@@ -912,10 +879,67 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
-            foreignKeyName: "students_school_id_fkey"
-            columns: ["school_id"]
+            foreignKeyName: "students_user_id_profiles_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          expires_at: string | null
+          id: string
+          parent_id: string
+          plan: string
+          started_at: string
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          expires_at?: string | null
+          id?: string
+          parent_id: string
+          plan?: string
+          started_at?: string
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          expires_at?: string | null
+          id?: string
+          parent_id?: string
+          plan?: string
+          started_at?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_parent_id_fkey"
+            columns: ["parent_id"]
             isOneToOne: false
-            referencedRelation: "schools"
+            referencedRelation: "parents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subscriptions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
             referencedColumns: ["id"]
           },
         ]
@@ -975,11 +999,37 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      topic_question_counts_year6: {
+        Row: {
+          questions_count: number | null
+          subject: string | null
+          topic: string | null
+        }
+        Relationships: []
+      }
+      topic_question_counts_year9: {
+        Row: {
+          questions_count: number | null
+          subject: string | null
+          topic: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
+      create_admin_from_invitation: {
+        Args: { _password: string; _token: string }
+        Returns: Json
+      }
+      expire_old_invitations: { Args: never; Returns: number }
+      finalize_admin_creation: {
+        Args: { _invitation_id: string; _user_id: string }
+        Returns: Json
+      }
+      generate_invitation_token: { Args: never; Returns: string }
       generate_unique_id: { Args: never; Returns: string }
       get_admin_id: { Args: { _user_id: string }; Returns: string }
+      get_invitation_details: { Args: { _token: string }; Returns: Json }
       get_user_unique_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
@@ -1028,121 +1078,118 @@ type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
 
 export type Tables<
   DefaultSchemaTableNameOrOptions extends
-  | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-  : never = never,
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-    DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
-  ? R
-  : never
+    ? R
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])
-  ? (DefaultSchema["Tables"] &
-    DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
-      Row: infer R
-    }
-  ? R
-  : never
-  : never
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
 
 export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
+      Insert: infer I
+    }
+    ? I
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Insert: infer I
-  }
-  ? I
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
 
 export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
-  | keyof DefaultSchema["Tables"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
   TableName extends DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
-    Update: infer U
-  }
-  ? U
-  : never
+      Update: infer U
+    }
+    ? U
+    : never
   : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-  ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
-    Update: infer U
-  }
-  ? U
-  : never
-  : never
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
 
 export type Enums<
   DefaultSchemaEnumNameOrOptions extends
-  | keyof DefaultSchema["Enums"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
   EnumName extends DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
   : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-  ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
-  : never
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
 
 export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
-  | keyof DefaultSchema["CompositeTypes"]
-  | { schema: keyof DatabaseWithoutInternals },
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
   CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-  ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-  : never = never,
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
   ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
   : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
-  ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
-  : never
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       app_role: ["student", "parent", "school", "admin"],
