@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import logo from "@/assets/logo.png";
 import logoLight from "@/assets/logo-light.png";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useTheme } from "next-themes";
 
 interface NavigationProps {
@@ -15,14 +15,19 @@ interface NavigationProps {
 export const Navigation = ({ onLoginClick, onGetStartedClick }: NavigationProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
   const { theme } = useTheme();
 
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      element.scrollIntoView({ behavior: "smooth" });
-      setMobileMenuOpen(false);
+  const handleNavClick = (path: string, sectionId: string) => {
+    setMobileMenuOpen(false);
+    if (location.pathname === "/") {
+      const element = document.getElementById(sectionId);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth" });
+        return;
+      }
     }
+    navigate(path);
   };
 
   return (
@@ -43,28 +48,28 @@ export const Navigation = ({ onLoginClick, onGetStartedClick }: NavigationProps)
           {/* Desktop Navigation */}
           <div className="hidden lg:flex flex-1 items-center justify-center gap-6 xl:gap-8">
             <button
-              onClick={() => scrollToSection("about")}
+              onClick={() => handleNavClick("/about", "about")}
               className="relative text-[#40D3F2] hover:text-[#40D3F2] transition-all duration-300 font-bold text-sm xl:text-base tracking-tight hover:scale-110 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-gradient-to-r after:from-primary after:to-accent after:transition-all after:duration-300 hover:after:w-full pb-1"
             >
               About
             </button>
             <button
-              onClick={() => scrollToSection("features")}
+              onClick={() => handleNavClick("/features", "features")}
               className="relative text-[#40D3F2] hover:text-[#40D3F2] transition-all duration-300 font-bold text-sm xl:text-base tracking-tight hover:scale-110 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-gradient-to-r after:from-primary after:to-accent after:transition-all after:duration-300 hover:after:w-full pb-1"
             >
               Features
             </button>
             <button
-              onClick={() => scrollToSection("pricing")}
+              onClick={() => handleNavClick("/pricing", "pricing")}
               className="relative text-[#40D3F2] hover:text-[#40D3F2] transition-all duration-300 font-bold text-sm xl:text-base tracking-tight hover:scale-110 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-gradient-to-r after:from-primary after:to-accent after:transition-all after:duration-300 hover:after:w-full pb-1"
             >
               Pricing
             </button>
             <button
-              onClick={() => scrollToSection("contact")}
+              onClick={() => handleNavClick("/leaderboard", "leaderboard")}
               className="relative text-[#40D3F2] hover:text-[#40D3F2] transition-all duration-300 font-bold text-sm xl:text-base tracking-tight hover:scale-110 after:absolute after:bottom-0 after:left-0 after:w-0 after:h-0.5 after:bg-gradient-to-r after:from-primary after:to-accent after:transition-all after:duration-300 hover:after:w-full pb-1"
             >
-              Contact
+              Leaderboard
             </button>
           </div>
 
@@ -101,38 +106,50 @@ export const Navigation = ({ onLoginClick, onGetStartedClick }: NavigationProps)
         {mobileMenuOpen && (
           <div className="md:hidden py-4 sm:py-6 space-y-1 sm:space-y-2 border-t border-border/50 animate-fade-in bg-background">
             <button
-              onClick={() => scrollToSection("about")}
+              onClick={() => handleNavClick("/about", "about")}
               className="block w-full text-left px-4 sm:px-5 py-3 sm:py-3.5 text-[#40D3F2] hover:text-[#40D3F2] hover:bg-accent/50 rounded-lg transition-all duration-200 font-semibold text-sm sm:text-[15px]"
             >
               About
             </button>
             <button
-              onClick={() => scrollToSection("features")}
+              onClick={() => handleNavClick("/features", "features")}
               className="block w-full text-left px-4 sm:px-5 py-3 sm:py-3.5 text-[#40D3F2] hover:text-[#40D3F2] hover:bg-accent/50 rounded-lg transition-all duration-200 font-semibold text-sm sm:text-[15px]"
             >
               Features
             </button>
             <button
-              onClick={() => scrollToSection("pricing")}
+              onClick={() => handleNavClick("/pricing", "pricing")}
               className="block w-full text-left px-4 sm:px-5 py-3 sm:py-3.5 text-[#40D3F2] hover:text-[#40D3F2] hover:bg-accent/50 rounded-lg transition-all duration-200 font-semibold text-sm sm:text-[15px]"
             >
               Pricing
             </button>
             <button
-              onClick={() => scrollToSection("contact")}
+              onClick={() => handleNavClick("/leaderboard", "leaderboard")}
               className="block w-full text-left px-4 sm:px-5 py-3 sm:py-3.5 text-[#40D3F2] hover:text-[#40D3F2] hover:bg-accent/50 rounded-lg transition-all duration-200 font-semibold text-sm sm:text-[15px]"
             >
-              Contact
+              Leaderboard
             </button>
-            <div className="px-3 sm:px-4 pt-4 sm:pt-6 space-y-2 sm:space-y-3 border-t border-border/50 mt-2 sm:mt-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-foreground">Theme</span>
-                <ThemeToggle />
-              </div>
-              <Button variant="outline" className="w-full font-semibold text-sm sm:text-[15px] h-10 sm:h-11" onClick={onLoginClick}>
+            
+            {/* Mobile CTA Buttons */}
+            <div className="pt-4 space-y-2 px-4 sm:px-5">
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onLoginClick();
+                }} 
+                className="w-full font-bold text-sm h-10 border-2"
+              >
                 Login
               </Button>
-              <Button variant="hero" className="w-full font-semibold text-sm sm:text-[15px] h-10 sm:h-11 shadow-lg bg-gradient-to-r from-primary to-accent" onClick={onGetStartedClick}>
+              <Button 
+                variant="hero" 
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  onGetStartedClick();
+                }} 
+                className="w-full font-bold text-sm h-10 bg-gradient-to-r from-primary to-accent"
+              >
                 Get Started
               </Button>
             </div>

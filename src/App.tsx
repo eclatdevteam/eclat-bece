@@ -53,6 +53,10 @@ import FlagReportsPage from "./pages/admin/FlagReportsPage";
 import { AuthProvider } from "./components/AuthProvider";
 import { PrivacyPolicy } from "./components/PrivacyPolicy";
 import { TermsOfService } from "./components/TermsOfService";
+import AboutPage from "./pages/AboutPage";
+import PricingPage from "./pages/PricingPage";
+import FeaturesPage from "./pages/FeaturesPage";
+import PublicLeaderboardPage from "./pages/PublicLeaderboardPage";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +70,10 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/pricing" element={<PricingPage />} />
+              <Route path="/features" element={<FeaturesPage />} />
+              <Route path="/leaderboard" element={<PublicLeaderboardPage />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/role-selection" element={<Navigate to="/auth/login/role-selection" replace />} />

@@ -1,4 +1,4 @@
-import {  Mail, Phone, } from "lucide-react";
+import { Mail, Phone } from "lucide-react";
 import { LinkedInIcon } from "@/components/icons/LinkedInIcon";
 import { Link } from "react-router-dom";
 import logo from "@/assets/logo.png";
@@ -10,7 +10,9 @@ export const Footer = () => {
         <div className="grid md:grid-cols-4 gap-8 mb-8">
           {/* Logo & Description */}
           <div className="md:col-span-2">
-            <img src={logo} alt="Éclat Logo" className="h-12 w-auto mb-4 brightness-0 invert" />
+            <Link to="/">
+              <img src={logo} alt="Éclat Logo" className="h-12 w-auto mb-4 brightness-0 invert" />
+            </Link>
             <p className="text-background/80 max-w-md leading-relaxed">
               Éclat transforms exam preparation into an exciting competition. Join thousands of students learning smarter and winning rewards.
             </p>
@@ -21,24 +23,24 @@ export const Footer = () => {
             <h3 className="font-bold text-lg mb-4">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <a href="#about" className="text-background/80 hover:text-background transition-colors">
+                <Link to="/about" className="text-background/80 hover:text-background transition-colors">
                   About Us
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#features" className="text-background/80 hover:text-background transition-colors">
+                <Link to="/features" className="text-background/80 hover:text-background transition-colors">
                   Features
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#pricing" className="text-background/80 hover:text-background transition-colors">
+                <Link to="/pricing" className="text-background/80 hover:text-background transition-colors">
                   Pricing
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#leaderboard" className="text-background/80 hover:text-background transition-colors">
+                <Link to="/leaderboard" className="text-background/80 hover:text-background transition-colors">
                   Leaderboard
-                </a>
+                </Link>
               </li>
             </ul>
           </div>
@@ -66,7 +68,7 @@ export const Footer = () => {
         {/* Social Links & Copyright */}
         <div className="pt-8 border-t border-background/20 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-background/60 text-sm">
-            © 2025 Éclat. All rights reserved.
+            © 2026 Éclat. All rights reserved.
           </p>
           
           <div className="flex items-center gap-6">
