@@ -77,10 +77,6 @@ export default function LoginRoleSelectionPage() {
       {/* Main Container */}
       <main className="max-w-5xl mx-auto w-full my-auto py-8">
         <div className="text-center mb-10 animate-fade-in max-w-2xl mx-auto">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-bold mb-3">
-            <Sparkles size={12} />
-            <span>Éclat Authentication Hub</span>
-          </div>
           <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
             Choose Your Login Portal
           </h1>

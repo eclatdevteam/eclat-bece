@@ -71,10 +71,6 @@ export default function SignUpRoleSelectionPage() {
       {/* Main Container */}
       <main className="max-w-4xl mx-auto w-full my-auto py-8">
         <div className="text-center mb-10 animate-fade-in max-w-2xl mx-auto">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-primary/10 text-primary border border-primary/20 text-xs font-bold mb-3">
-            <Sparkles size={12} />
-            <span>Join Éclat Today</span>
-          </div>
           <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
             Choose Your Account Type
           </h1>
@@ -135,15 +131,25 @@ export default function SignUpRoleSelectionPage() {
           })}
         </div>
 
-        {/* Student Notice Banner */}
-        <div className="mt-8 p-4 rounded-2xl bg-primary/10 border border-primary/20 max-w-2xl mx-auto flex items-center gap-3 text-xs text-muted-foreground">
-          <BookOpen size={20} className="text-primary flex-shrink-0" />
-          <span>
-            <strong>Looking for a Student account?</strong> Student accounts are created and managed by parents. Ask your parent to sign up above or{" "}
-            <Link to="/student-login" className="font-bold text-primary hover:underline">
-              log in with your student username
-            </Link>.
-          </span>
+        {/* Student Notice Banner - Professional & Crisp */}
+        <div className="mt-8 p-4 sm:p-5 rounded-2xl bg-card border-2 border-border/80 shadow-md max-w-2xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-sm">
+          <div className="flex items-center gap-3.5">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center flex-shrink-0">
+              <BookOpen size={20} />
+            </div>
+            <div className="text-left">
+              <p className="font-bold text-foreground text-sm">Are you a student?</p>
+              <p className="text-xs text-muted-foreground">Student accounts are set up by parents. Ask your parent to sign up, or sign in below.</p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => navigate("/student-login")}
+            className="h-9 px-4 text-xs font-bold rounded-xl border-2 border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground flex-shrink-0 self-start sm:self-auto transition-all"
+          >
+            Student Login →
+          </Button>
         </div>
 
         {/* Footer info */}
