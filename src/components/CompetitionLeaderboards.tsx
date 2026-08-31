@@ -1,6 +1,8 @@
-import { Trophy, Calendar, Crown } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { Trophy, Calendar, Crown, ChevronLeft, ChevronRight } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 
 export interface LeaderboardStudent {
   rank: number;
@@ -26,6 +28,8 @@ interface CompetitionLeaderboardsProps {
   };
 }
 
+const ITEMS_PER_PAGE = 10;
+
 export const CompetitionLeaderboards = ({
   showCurrentUserPosition = false,
   currentUserName = "Alex",
@@ -34,17 +38,27 @@ export const CompetitionLeaderboards = ({
   currentUserRanks = { monthly: 12, annual: 8 },
   currentUserPoints = { monthly: 0, annual: 0 },
 }: CompetitionLeaderboardsProps) => {
+  const [monthlyPage, setMonthlyPage] = useState(1);
+  const [annualPage, setAnnualPage] = useState(1);
 
   const renderLeaderboard = (
     leaders: LeaderboardStudent[], 
     icon: React.ReactNode, 
     prizeInfo: string,
     currentRank: number,
-    currentPoints: number
+    currentPoints: number,
+    currentPage: number,
+    onPageChange: (page: number) => void
   ) => {
     // Check if the current user is in the list
     const isUserInList = leaders.some(s => s.isCurrentUser);
     const showUserPositionCard = showCurrentUserPosition && !isUserInList && currentRank > 0;
+
+    const totalPages = Math.max(1, Math.ceil(leaders.length / ITEMS_PER_PAGE));
+    const safeCurrentPage = Math.min(currentPage, totalPages);
+    const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const paginatedLeaders = leaders.slice(startIndex, endIndex);
 
     return (
       <div className="space-y-4">
@@ -90,9 +104,9 @@ export const CompetitionLeaderboards = ({
               No students ranked yet. Be the first to quiz!
             </div>
           ) : (
-            leaders.map((student, index) => (
+            paginatedLeaders.map((student, index) => (
               <Card
-                key={index}
+                key={student.rank || index}
                 className={`border-2 rounded-2xl transition-all duration-300 hover:shadow-md hover:border-primary/30 ${
                   student.isCurrentUser 
                     ? "border-primary bg-primary/5" 
@@ -138,6 +152,59 @@ export const CompetitionLeaderboards = ({
             ))
           )}
         </div>
+
+        {/* Pagination Controls (Only displayed when items exceed 10) */}
+        {totalPages > 1 && (
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 pb-2 px-2 border-t border-border/40">
+            <div className="text-xs font-semibold text-muted-foreground">
+              Showing <span className="text-foreground font-bold">{startIndex + 1}</span>–
+              <span className="text-foreground font-bold">{Math.min(endIndex, leaders.length)}</span> of{" "}
+              <span className="text-foreground font-bold">{leaders.length}</span> students
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onPageChange(Math.max(1, safeCurrentPage - 1))}
+                disabled={safeCurrentPage === 1}
+                className="h-8 px-2.5 gap-1 text-xs font-bold rounded-lg border-border"
+              >
+                <ChevronLeft className="h-4 w-4" />
+                <span>Prev</span>
+              </Button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+                  <Button
+                    key={pageNum}
+                    variant={pageNum === safeCurrentPage ? "default" : "ghost"}
+                    size="sm"
+                    onClick={() => onPageChange(pageNum)}
+                    className={`h-8 w-8 p-0 text-xs font-bold rounded-lg ${
+                      pageNum === safeCurrentPage
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {pageNum}
+                  </Button>
+                ))}
+              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onPageChange(Math.min(totalPages, safeCurrentPage + 1))}
+                disabled={safeCurrentPage === totalPages}
+                className="h-8 px-2.5 gap-1 text-xs font-bold rounded-lg border-border"
+              >
+                <span>Next</span>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        )}
       </div>
     );
   };
@@ -173,7 +240,9 @@ export const CompetitionLeaderboards = ({
               <Trophy className="text-accent animate-bounce" size={20} />,
               "Win ₦50,000 Cash Prize!",
               currentUserRanks.monthly,
-              currentUserPoints.monthly
+              currentUserPoints.monthly,
+              monthlyPage,
+              setMonthlyPage
             )}
           </TabsContent>
 
@@ -183,7 +252,9 @@ export const CompetitionLeaderboards = ({
               <Crown className="text-accent animate-pulse" size={20} />,
               "Grand Prize: ₦1,500,000 Cash!",
               currentUserRanks.annual,
-              currentUserPoints.annual
+              currentUserPoints.annual,
+              annualPage,
+              setAnnualPage
             )}
           </TabsContent>
         </Tabs>
