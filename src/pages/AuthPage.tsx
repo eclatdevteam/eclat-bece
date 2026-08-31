@@ -10,7 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { getSafeErrorMessage } from "@/lib/errorUtils";
 import { Separator } from "@/components/ui/separator";
-
+import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
 
 const signupSchema = z.object({
   fullName: z.string().trim().min(2, "Name must be at least 2 characters").max(100),
@@ -24,6 +24,7 @@ const signupSchema = z.object({
 
 export default function AuthPage() {
   const navigate = useNavigate();
+  useRedirectIfAuthenticated();
   const [searchParams] = useSearchParams();
   const role = searchParams.get("role") || "student";
   const [isLoading, setIsLoading] = useState(false);

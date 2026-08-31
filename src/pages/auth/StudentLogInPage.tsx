@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { getSafeErrorMessage } from "@/lib/errorUtils";
+import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
 
 const loginSchema = z.object({
   username: z.string().trim().min(2, "Username must be at least 2 characters").max(100),
@@ -18,6 +19,7 @@ const loginSchema = z.object({
 
 export default function StudentLogInPage() {
   const navigate = useNavigate();
+  useRedirectIfAuthenticated();
   const [isLoading, setIsLoading] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showForgotDialog, setShowForgotDialog] = useState(false);

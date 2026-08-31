@@ -1,9 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BookOpen, GraduationCap, Users, School } from "lucide-react";
+import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
 
 export default function LoginRoleSelectionPage() {
   const navigate = useNavigate();
+  useRedirectIfAuthenticated();
 
   const roles = [
     {

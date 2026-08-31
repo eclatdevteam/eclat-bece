@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { getSafeErrorMessage } from "@/lib/errorUtils";
 import { Separator } from "@/components/ui/separator";
+import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
 
 const loginSchema = z.object({
   email: z.string().trim().email("Invalid email address").max(255),
@@ -18,6 +19,7 @@ const loginSchema = z.object({
 
 export default function SchoolLogInPage() {
   const navigate = useNavigate();
+  useRedirectIfAuthenticated();
   const [isLoading, setIsLoading] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const { toast } = useToast();
