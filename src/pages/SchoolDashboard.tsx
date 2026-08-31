@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { School, Users, TrendingUp, AlertCircle, FileDown, Plus, LogOut, Settings, Trophy, Copy, Check, Sparkles, BookOpen } from "lucide-react";
+import { School, Users, TrendingUp, AlertCircle, FileDown, Plus, LogOut, Settings, Trophy, Copy, Check, Sparkles, BookOpen, ChevronRight } from "lucide-react";
 import { CompetitionLeaderboards, LeaderboardStudent } from "@/components/CompetitionLeaderboards";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -32,6 +33,7 @@ interface StudentRecord {
   quizCount: number;
   progress: number;
   rank: number;
+  points?: number;
 }
 
 const avatars = ["👩‍🎓", "👨‍🎓", "👧", "👦", "🌟", "💫", "🎯", "🎓"];
@@ -293,7 +295,73 @@ export default function SchoolDashboard() {
     ? Math.round(activeStudents.reduce((acc, s) => acc + s.avgScore, 0) / activeStudents.length)
     : 0;
   const atRiskCount = activeStudents.filter((s) => s.avgScore < 65).length;
-  const topPerformers = [...students].filter((s) => s.quizCount > 0).slice(0, 5);
+
+  // Top 3 Scholars Computations (Strictly limited to Top 3 based on Competition Points)
+  const now = new Date();
+  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const firstDayOfYear = new Date(now.getFullYear(), 0, 1);
+
+  // Group quiz results by period for school students
+  const monthlyStatsMap: Record<string, { totalScore: number; count: number; points: number }> = {};
+  const annualStatsMap: Record<string, { totalScore: number; count: number; points: number }> = {};
+
+  quizResults.forEach((q) => {
+    const d = q.completed_at ? new Date(q.completed_at) : null;
+    const pts = (q.correct_answers || 0) * 100;
+
+    // Monthly
+    if (d && d >= firstDayOfMonth) {
+      if (!monthlyStatsMap[q.student_id]) {
+        monthlyStatsMap[q.student_id] = { totalScore: 0, count: 0, points: 0 };
+      }
+      monthlyStatsMap[q.student_id].totalScore += q.score;
+      monthlyStatsMap[q.student_id].count += 1;
+      monthlyStatsMap[q.student_id].points += pts;
+    }
+
+    // Annual
+    if (d && d >= firstDayOfYear) {
+      if (!annualStatsMap[q.student_id]) {
+        annualStatsMap[q.student_id] = { totalScore: 0, count: 0, points: 0 };
+      }
+      annualStatsMap[q.student_id].totalScore += q.score;
+      annualStatsMap[q.student_id].count += 1;
+      annualStatsMap[q.student_id].points += pts;
+    }
+  });
+
+  const monthlyTop3 = students
+    .filter((s) => monthlyStatsMap[s.id] && monthlyStatsMap[s.id].count > 0)
+    .map((s) => {
+      const stats = monthlyStatsMap[s.id];
+      const avgScore = Math.round(stats.totalScore / stats.count);
+      return {
+        ...s,
+        avgScore,
+        quizCount: stats.count,
+        points: stats.points,
+      };
+    })
+    .sort((a, b) => (b.points || 0) - (a.points || 0) || b.avgScore - a.avgScore)
+    .slice(0, 3);
+
+  const annualTop3 = students
+    .filter((s) => annualStatsMap[s.id] && annualStatsMap[s.id].count > 0)
+    .map((s) => {
+      const stats = annualStatsMap[s.id];
+      const avgScore = Math.round(stats.totalScore / stats.count);
+      return {
+        ...s,
+        avgScore,
+        quizCount: stats.count,
+        points: stats.points,
+      };
+    })
+    .sort((a, b) => (b.points || 0) - (a.points || 0) || b.avgScore - a.avgScore)
+    .slice(0, 3);
+
+  const [performersTab, setPerformersTab] = useState<"monthly" | "annual">("monthly");
+  const currentTop3 = performersTab === "monthly" ? monthlyTop3 : annualTop3;
 
   const currentSelectedStudents = selectedCohort === "year_6" ? year6Students : year9Students;
   const currentSelectedName = selectedCohort === "year_6" ? "Year 6 / Primary 6 (Common Entrance)" : "Year 9 / JSS 3 (BECE)";
@@ -320,73 +388,59 @@ export default function SchoolDashboard() {
               variant="outline"
               size="sm"
               onClick={() => setSettingsOpen(true)}
-              className="gap-2 hidden sm:flex"
+              className="gap-2 hidden sm:flex font-bold"
             >
               <Settings size={16} />
               Settings
             </Button>
             <Button
               variant="ghost"
-              size="icon"
-              onClick={() => setSettingsOpen(true)}
-              className="sm:hidden"
+              size="sm"
+              onClick={signOut}
+              className="gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 font-bold"
             >
-              <Settings size={20} />
-            </Button>
-            <Button variant="ghost" size="icon" onClick={signOut} title="Sign Out">
-              <LogOut size={20} />
+              <LogOut size={16} />
+              <span className="hidden sm:inline">Log out</span>
             </Button>
           </div>
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8">
+      {/* Main Content */}
+      <main className="container mx-auto px-4 py-8">
         {!selectedCohort ? (
           <>
-            {/* Welcome Section */}
-            <div className="mb-8 animate-fade-in flex flex-col md:flex-row md:items-center justify-between gap-4">
+            {/* School Greeting & Subtitle */}
+            <div className="mb-6 animate-fade-in flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div>
-                <h2 className="text-3xl font-black text-foreground mb-1 flex items-center gap-2">
-                  <span>{school?.school_name || "School Dashboard"}</span>
-                  <Sparkles className="h-6 w-6 text-accent" />
-                </h2>
-                <p className="text-muted-foreground text-sm">
-                  Real-time exam preparation diagnostics, class cohorts, and national performance standings
+                <h1 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight">
+                  {school?.school_name || "School Dashboard"}
+                </h1>
+                <p className="text-muted-foreground mt-1 text-sm sm:text-base">
+                  Track student cohort performance, assign curriculum quizzes, and manage exam readiness.
                 </p>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Button
-                  variant="hero"
-                  onClick={() => setAssignOpen(true)}
-                  disabled={students.length === 0}
-                  className="gap-2 shadow-md"
-                >
-                  <Plus size={18} />
-                  Assign Practice Quiz
-                </Button>
               </div>
             </div>
 
-            {/* Overview Stats */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8 animate-slide-up">
+            {/* Overview KPI Cards */}
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 animate-fade-in">
               <Card className="border-2 hover:shadow-hover transition-all">
-                <CardContent className="p-6">
+                <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Exam Cohorts</p>
-                      <p className="text-3xl font-black text-primary">2</p>
-                      <p className="text-[11px] text-muted-foreground mt-1">Year 6 & Year 9</p>
+                      <p className="text-3xl font-black text-foreground">2</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">Year 6 & Year 9 levels</p>
                     </div>
                     <div className="p-3 bg-primary/10 rounded-2xl text-primary">
-                      <School size={28} />
+                      <School size={26} />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="border-2 hover:shadow-hover transition-all">
-                <CardContent className="p-6">
+                <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Enrolled Students</p>
@@ -394,14 +448,14 @@ export default function SchoolDashboard() {
                       <p className="text-[11px] text-muted-foreground mt-1">{activeStudents.length} active quiz-takers</p>
                     </div>
                     <div className="p-3 bg-primary/10 rounded-2xl text-primary">
-                      <Users size={28} />
+                      <Users size={26} />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="border-2 hover:shadow-hover transition-all">
-                <CardContent className="p-6">
+                <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">School Avg Score</p>
@@ -409,14 +463,14 @@ export default function SchoolDashboard() {
                       <p className="text-[11px] text-muted-foreground mt-1">Across all completed quizzes</p>
                     </div>
                     <div className="p-3 bg-accent/10 rounded-2xl text-accent">
-                      <TrendingUp size={28} />
+                      <TrendingUp size={26} />
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
               <Card className="border-2 hover:shadow-hover transition-all border-accent/40">
-                <CardContent className="p-6">
+                <CardContent className="p-5">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">At-Risk Students</p>
@@ -424,178 +478,219 @@ export default function SchoolDashboard() {
                       <p className="text-[11px] text-muted-foreground mt-1">Scoring &lt; 65% average</p>
                     </div>
                     <div className="p-3 bg-destructive/10 rounded-2xl text-destructive">
-                      <AlertCircle size={28} />
+                      <AlertCircle size={26} />
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
 
-            <div className="grid lg:grid-cols-3 gap-8">
-              {/* Classes List */}
-              <div className="lg:col-span-2 space-y-6">
-                <Card className="border-2 animate-scale-in">
-                  <CardHeader className="flex flex-row items-center justify-between pb-3">
-                    <div>
-                      <CardTitle className="text-xl font-bold">Class Cohorts</CardTitle>
-                      <CardDescription>Track performance across curriculum levels</CardDescription>
-                    </div>
-                    <Button
-                      variant="hero"
-                      size="sm"
-                      onClick={() => setAssignOpen(true)}
-                      disabled={students.length === 0}
-                      className="gap-1.5"
-                    >
-                      <Plus size={16} />
-                      Assign Quiz
-                    </Button>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    {classes.map((cls) => (
-                      <div
-                        key={cls.id}
-                        className="p-5 border-2 rounded-2xl hover:border-primary hover:shadow-soft transition-all bg-card cursor-pointer"
-                        onClick={() => setSelectedCohort(cls.id)}
-                      >
-                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-black text-lg text-foreground">{cls.name}</h4>
-                              <Badge variant="secondary" className="text-xs font-semibold">
-                                {cls.badge}
-                              </Badge>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-0.5">
-                              {cls.subjects.join(" • ")}
-                            </p>
-                          </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedCohort(cls.id);
-                              }}
-                            >
-                              View Students
-                            </Button>
-                            <Button
-                              variant="default"
-                              size="sm"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setAnalyticsCohort(cls.id);
-                                setAnalyticsOpen(true);
-                              }}
-                            >
-                              View Analytics
-                            </Button>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border/50">
-                          <div>
-                            <p className="text-xs font-semibold text-muted-foreground uppercase">Students</p>
-                            <p className="text-2xl font-black text-primary">{cls.studentsCount}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs font-semibold text-muted-foreground uppercase">Cohort Avg Score</p>
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
-                                <div
-                                  className="h-full bg-gradient-hero rounded-full"
-                                  style={{ width: `${cls.avgScore}%` }}
-                                ></div>
-                              </div>
-                              <span className="text-lg font-black text-accent">{cls.avgScore}%</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
+            {/* Quick Action & School Connection Bar */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-4 rounded-2xl bg-gradient-to-r from-primary/10 via-background to-accent/10 border-2 border-primary/20 shadow-sm animate-fade-in mb-8">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-background border border-primary/30 shadow-xs">
+                  <School className="h-4 w-4 text-primary" />
+                  <span className="text-xs font-semibold text-muted-foreground">School Code:</span>
+                  <span className="font-mono font-black text-sm tracking-wider text-primary">
+                    {school?.school_code || "—"}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8 gap-1.5 text-xs font-bold rounded-lg border-primary/30 hover:bg-primary/10"
+                  onClick={handleCopyCode}
+                >
+                  {copiedCode ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+                  {copiedCode ? "Copied" : "Copy Code"}
+                </Button>
+                <span className="hidden md:inline text-xs text-muted-foreground">
+                  Share this code with students to link them to your school portal
+                </span>
               </div>
 
-              {/* Sidebar */}
-              <div className="space-y-6">
-                {/* School Connection Code Card */}
-                <Card className="border-2 border-primary/50 shadow-sm animate-scale-in">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-bold flex items-center gap-2">
-                      <School className="h-5 w-5 text-primary" />
-                      School Connection Code
-                    </CardTitle>
-                    <CardDescription className="text-xs">
-                      Share with your students so they can connect their accounts
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="p-4 bg-primary/10 rounded-2xl text-center border border-primary/20">
-                      <p className="text-xs text-muted-foreground uppercase font-semibold mb-1">
-                        Unique School Code
-                      </p>
-                      <p className="text-3xl font-black text-primary tracking-widest font-mono">
-                        {school?.school_code || "—"}
-                      </p>
-                    </div>
-                    <Button
-                      variant="outline"
-                      className="w-full gap-2 font-bold"
-                      onClick={handleCopyCode}
-                    >
-                      {copiedCode ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
-                      {copiedCode ? "Copied to Clipboard" : "Copy School Code"}
-                    </Button>
-                    <p className="text-[11px] text-muted-foreground text-center">
-                      Students go to <strong>Settings → School Connection</strong> and enter this code.
-                    </p>
-                  </CardContent>
-                </Card>
+              <Button
+                variant="hero"
+                size="sm"
+                onClick={() => setAssignOpen(true)}
+                disabled={students.length === 0}
+                className="gap-1.5 h-9 font-bold px-5 bg-gradient-to-r from-primary to-accent shadow-md"
+              >
+                <Plus size={16} />
+                Assign Practice Quiz
+              </Button>
+            </div>
 
-                {/* Top Performers Card */}
-                <Card className="border-2 animate-scale-in">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base font-bold flex items-center gap-2">
-                      <Trophy className="text-accent h-5 w-5" />
-                      School Top Performers
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {topPerformers.length === 0 ? (
-                      <p className="text-xs text-muted-foreground text-center py-6">
-                        No student quiz scores recorded yet.
-                      </p>
-                    ) : (
-                      <div className="space-y-2.5">
-                        {topPerformers.map((student, idx) => (
-                          <div
-                            key={student.id}
-                            className="flex items-center gap-3 p-2.5 rounded-xl bg-muted/40 hover:bg-muted/70 transition-colors cursor-pointer"
+            {/* 2-Column Balanced Architecture: Class Cohorts Grid (2 cols on lg) vs Top 3 Scholars (1 col on lg) */}
+            <div className="grid lg:grid-cols-3 gap-8 mb-10">
+              {/* Class Cohorts */}
+              <div className="lg:col-span-2 space-y-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-xl font-black text-foreground flex items-center gap-2">
+                      <BookOpen className="h-5 w-5 text-primary" />
+                      Academic Class Cohorts
+                    </h3>
+                    <p className="text-xs text-muted-foreground">Curriculum cohorts and exam readiness tracking</p>
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-4">
+                  {classes.map((cls) => (
+                    <Card
+                      key={cls.id}
+                      className="border-2 rounded-2xl hover:border-primary hover:shadow-md transition-all bg-card flex flex-col justify-between"
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <Badge variant="outline" className="text-[11px] font-bold border-primary/40 text-primary mb-1.5">
+                              {cls.badge}
+                            </Badge>
+                            <CardTitle className="text-base font-bold text-foreground leading-snug">{cls.name}</CardTitle>
+                          </div>
+                        </div>
+                        <CardDescription className="text-xs text-muted-foreground line-clamp-1 mt-1">
+                          {cls.subjects.join(" • ")}
+                        </CardDescription>
+                      </CardHeader>
+
+                      <CardContent className="space-y-4 pt-0">
+                        {/* Stat Pills */}
+                        <div className="grid grid-cols-2 gap-2 p-2.5 rounded-xl bg-muted/40 border border-border/40">
+                          <div>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase">Enrolled</p>
+                            <p className="text-lg font-black text-primary">{cls.studentsCount} students</p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-muted-foreground uppercase">Avg Score</p>
+                            <p className="text-lg font-black text-accent">{cls.avgScore}%</p>
+                          </div>
+                        </div>
+
+                        {/* Score Progress Bar */}
+                        <div className="space-y-1">
+                          <div className="flex justify-between text-xs font-semibold text-muted-foreground">
+                            <span>Curriculum Mastery</span>
+                            <span className="font-bold text-foreground">{cls.avgScore}%</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-gradient-hero rounded-full transition-all duration-500"
+                              style={{ width: `${cls.avgScore}%` }}
+                            />
+                          </div>
+                        </div>
+
+                        {/* Action Buttons */}
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-border/40">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full text-xs font-bold h-9"
+                            onClick={() => setSelectedCohort(cls.id)}
+                          >
+                            View Students
+                          </Button>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="w-full text-xs font-bold h-9"
                             onClick={() => {
-                              setSelectedStudent({
-                                id: student.id,
-                                name: student.name,
-                                class: student.class_year === "year_6" ? "Year 6" : "Year 9",
-                                avatar: student.avatar,
-                              });
-                              setReportOpen(true);
+                              setAnalyticsCohort(cls.id);
+                              setAnalyticsOpen(true);
                             }}
                           >
-                            <span className="text-2xl">{student.avatar}</span>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-bold text-sm truncate">{student.name}</p>
-                              <p className="text-[11px] text-muted-foreground">
-                                {student.class_year === "year_6" ? "Year 6" : "Year 9"} • #{idx + 1}
-                              </p>
+                            Class Analytics
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </div>
+
+              {/* School Top Performers (Strictly Top 3 with Monthly / Annual Tabs) */}
+              <div className="space-y-4">
+                <Card className="border-2 rounded-2xl shadow-sm bg-card flex flex-col h-full">
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <CardTitle className="text-base font-bold flex items-center gap-2">
+                        <Trophy className="text-accent h-5 w-5" />
+                        Top 3 Scholars
+                      </CardTitle>
+                      <Tabs value={performersTab} onValueChange={(v) => setPerformersTab(v as "monthly" | "annual")}>
+                        <TabsList className="h-8 p-0.5 bg-muted/60 rounded-lg">
+                          <TabsTrigger value="monthly" className="text-xs px-2.5 h-7 font-bold rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                            Monthly
+                          </TabsTrigger>
+                          <TabsTrigger value="annual" className="text-xs px-2.5 h-7 font-bold rounded-md data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+                            Annual
+                          </TabsTrigger>
+                        </TabsList>
+                      </Tabs>
+                    </div>
+                    <CardDescription className="text-xs">
+                      {performersTab === "monthly" ? "Top 3 performing students this month" : "Top 3 performing students this academic year"}
+                    </CardDescription>
+                  </CardHeader>
+
+                  <CardContent className="flex-1 flex flex-col justify-between space-y-3">
+                    {currentTop3.length === 0 ? (
+                      <div className="flex flex-col items-center justify-center py-10 text-center">
+                        <span className="text-3xl mb-2">🎯</span>
+                        <p className="text-xs text-muted-foreground font-semibold">No quiz scores recorded for this period yet.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2.5">
+                        {currentTop3.map((student, idx) => {
+                          const medalIcons = ["🥇", "🥈", "🥉"];
+                          const medalStyles = [
+                            "border-accent/60 bg-accent/10 shadow-xs",
+                            "border-slate-400/40 bg-slate-400/5",
+                            "border-amber-700/30 bg-amber-700/5",
+                          ];
+                          return (
+                            <div
+                              key={student.id}
+                              className={`flex items-center gap-3 p-3 rounded-xl border-2 transition-all hover:scale-[1.02] cursor-pointer ${medalStyles[idx] || "border-border bg-card"}`}
+                              onClick={() => {
+                                setSelectedStudent({
+                                  id: student.id,
+                                  name: student.name,
+                                  class: student.class_year === "year_6" ? "Year 6" : "Year 9",
+                                  avatar: student.avatar,
+                                });
+                                setReportOpen(true);
+                              }}
+                            >
+                              <div className="relative flex-shrink-0">
+                                <span className="text-2xl">{student.avatar}</span>
+                                <span className="absolute -top-2 -right-2 text-sm">{medalIcons[idx]}</span>
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-bold text-sm text-foreground truncate">{student.name}</p>
+                                <p className="text-[11px] font-semibold text-muted-foreground">
+                                  {student.class_year === "year_6" ? "Year 6 / Pri 6" : "Year 9 / JSS 3"} • #{idx + 1}
+                                </p>
+                              </div>
+                              <div className="text-right flex-shrink-0">
+                                <div className="text-base font-black text-primary leading-tight flex items-baseline justify-end gap-1">
+                                  <span>{(student.points || 0).toLocaleString()}</span>
+                                  <span className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">pts</span>
+                                </div>
+                                <p className="text-[10px] font-bold text-muted-foreground mt-0.5">
+                                  {student.avgScore}% avg • {student.quizCount} {student.quizCount === 1 ? 'quiz' : 'quizzes'}
+                                </p>
+                              </div>
                             </div>
-                            <span className="text-base font-black text-primary">{student.avgScore}%</span>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
+                    <p className="text-[10px] text-center text-muted-foreground border-t border-border/30 pt-2">
+                      Click any scholar to inspect their complete diagnostic report.
+                    </p>
                   </CardContent>
                 </Card>
               </div>
@@ -743,7 +838,7 @@ export default function SchoolDashboard() {
             </Card>
           </>
         )}
-      </div>
+      </main>
 
       {/* Dialogs */}
       {selectedStudent && (
