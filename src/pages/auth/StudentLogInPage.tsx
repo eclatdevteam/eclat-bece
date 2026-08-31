@@ -1,16 +1,16 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { BookOpen, Loader2, Eye, EyeOff, KeyRound } from "lucide-react";
+import { Loader2, Eye, EyeOff, KeyRound, User, Lock, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { getSafeErrorMessage } from "@/lib/errorUtils";
 import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
+import { AuthLayout } from "@/components/auth/AuthLayout";
 
 const loginSchema = z.object({
   username: z.string().trim().min(2, "Username must be at least 2 characters").max(100),
@@ -117,156 +117,178 @@ export default function StudentLogInPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-light/20 via-background to-accent-light/20 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8 animate-fade-in">
-          <div className="inline-flex items-center gap-2 mb-2">
-            <BookOpen className="text-primary" size={32} />
-            <h1 className="text-3xl font-bold text-foreground">Éclat</h1>
+    <AuthLayout
+      role="student"
+      badgeText="Student Portal"
+      title="Student Sign In"
+      subtitle="Enter your unique username and password to start practicing"
+    >
+      <form onSubmit={handleLogin} className="space-y-4">
+        {/* Username Field */}
+        <div className="space-y-2">
+          <Label htmlFor="login-username" className="text-sm font-bold text-foreground">
+            Student Username
+          </Label>
+          <div className="relative">
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+              <User size={19} />
+            </div>
+            <Input
+              id="login-username"
+              name="username"
+              type="text"
+              placeholder="e.g. ada.okafor"
+              required
+              minLength={2}
+              maxLength={100}
+              className="pl-11 h-12 bg-background border-2 border-border hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/15 rounded-xl text-base font-medium text-foreground placeholder:text-muted-foreground/60 shadow-xs"
+            />
           </div>
-          <p className="text-muted-foreground">Empowering learning, one quiz at a time</p>
         </div>
 
-        <Card className="border-2 animate-scale-in">
-          <CardHeader>
-            <CardTitle className="text-2xl text-center">Student Sign In</CardTitle>
-            <CardDescription className="text-center">
-              Sign in to your student account
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="login-username">Username</Label>
-                <Input
-                  id="login-username"
-                  name="username"
-                  type="text"
-                  placeholder="e.g. ada.okafor"
-                  required
-                  minLength={2}
-                  maxLength={100}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="login-password">Password</Label>
-                <div className="relative">
-                  <Input
-                    id="login-password"
-                    name="password"
-                    type={showLoginPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    required
-                    minLength={6}
-                    maxLength={100}
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowLoginPassword(!showLoginPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showLoginPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
-              <Button
-                type="submit"
-                variant="hero"
-                className="w-full"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  "Sign In"
-                )}
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => navigate("/auth/login/role-selection")}
-                disabled={isLoading}
-              >
-                Back to Login Selection Page
-              </Button>
-
-              <p className="text-sm text-center text-muted-foreground">
-                Forgot your password?{" "}
-                <button
-                  type="button"
-                  onClick={() => setShowForgotDialog(true)}
-                  className="text-primary hover:underline font-semibold"
-                >
-                  Get help
-                </button>
-              </p>
-            </form>
-          </CardContent>
-        </Card>
-
-        {/* Student Password Help Dialog */}
-        <Dialog open={showForgotDialog} onOpenChange={setShowForgotDialog}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-2 text-primary">
-                <KeyRound className="h-6 w-6" />
-              </div>
-              <DialogTitle className="text-center text-xl">Student Password Reset</DialogTitle>
-              <DialogDescription className="text-center text-sm pt-2 text-muted-foreground">
-                Student accounts are created and managed by parents. To change or reset your password, please ask your parent to:
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="bg-muted/50 rounded-xl p-4 text-sm space-y-2 border border-border/50 text-foreground">
-              <div className="flex items-start gap-2">
-                <span className="font-bold text-primary">1.</span>
-                <span>Log into their Éclat <strong>Parent Account</strong>.</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="font-bold text-primary">2.</span>
-                <span>Go to <strong>My Children</strong> in their dashboard.</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <span className="font-bold text-primary">3.</span>
-                <span>Click the settings menu next to your name and choose <strong>Change Password</strong>.</span>
-              </div>
+        {/* Password Field */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="login-password" className="text-sm font-bold text-foreground">
+              Password
+            </Label>
+            <button
+              type="button"
+              onClick={() => setShowForgotDialog(true)}
+              className="text-xs text-primary hover:underline font-bold"
+            >
+              Forgot password?
+            </button>
+          </div>
+          <div className="relative">
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+              <Lock size={19} />
             </div>
+            <Input
+              id="login-password"
+              name="password"
+              type={showLoginPassword ? "text" : "password"}
+              placeholder="••••••••"
+              required
+              minLength={6}
+              maxLength={100}
+              className="pl-11 pr-11 h-12 bg-background border-2 border-border hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/15 rounded-xl text-base font-medium text-foreground placeholder:text-muted-foreground/60 shadow-xs"
+            />
+            <button
+              type="button"
+              onClick={() => setShowLoginPassword(!showLoginPassword)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+            >
+              {showLoginPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </button>
+          </div>
+        </div>
 
-            <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowForgotDialog(false);
-                  navigate("/parent-login");
-                }}
-                className="w-full sm:w-auto"
-              >
-                Go to Parent Login
-              </Button>
-              <Button
-                type="button"
-                variant="hero"
-                onClick={() => setShowForgotDialog(false)}
-                className="w-full sm:w-auto"
-              >
-                Got It
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </div>
-    </div>
+        {/* Action Button */}
+        <Button
+          type="submit"
+          variant="hero"
+          className="w-full h-12 text-base font-extrabold shadow-md rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-95 text-white transition-all mt-3"
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Signing in...
+            </>
+          ) : (
+            <>
+              Sign In to Practice <ArrowRight className="ml-1.5 h-4 w-4" />
+            </>
+          )}
+        </Button>
+
+        {/* Portal Switcher & Back Links */}
+        <div className="space-y-3 pt-4 border-t border-border/60 text-center">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-11 text-xs font-bold rounded-xl border-2 border-border hover:bg-muted/70 text-foreground"
+            onClick={() => navigate("/auth/login/role-selection")}
+            disabled={isLoading}
+          >
+            Switch to Another Role
+          </Button>
+
+          <div className="flex items-center justify-center gap-3 text-xs font-medium text-muted-foreground pt-1">
+            <span>Are you a parent?</span>
+            <Link to="/parent-login" className="font-bold text-primary hover:underline">
+              Parent Login
+            </Link>
+            <span>•</span>
+            <Link to="/school-login" className="font-bold text-primary hover:underline">
+              School Login
+            </Link>
+          </div>
+        </div>
+      </form>
+
+      {/* Student Password Help Dialog */}
+      <Dialog open={showForgotDialog} onOpenChange={setShowForgotDialog}>
+        <DialogContent className="sm:max-w-md rounded-2xl border-2">
+          <DialogHeader>
+            <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-2 text-primary border border-primary/20">
+              <KeyRound className="h-6 w-6" />
+            </div>
+            <DialogTitle className="text-center text-xl font-bold">Student Password Reset</DialogTitle>
+            <DialogDescription className="text-center text-xs pt-1 text-muted-foreground">
+              Student accounts are managed by parents. To reset your password, please follow these steps:
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="bg-muted/50 rounded-2xl p-4 text-xs space-y-3 border border-border/50 text-foreground">
+            <div className="flex items-start gap-2.5">
+              <span className="w-5 h-5 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-[11px] flex-shrink-0">
+                1
+              </span>
+              <span>Ask your parent to log into their <strong>Parent Account</strong>.</span>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <span className="w-5 h-5 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-[11px] flex-shrink-0">
+                2
+              </span>
+              <span>Go to the <strong>My Children</strong> section in their dashboard.</span>
+            </div>
+            <div className="flex items-start gap-2.5">
+              <span className="w-5 h-5 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center text-[11px] flex-shrink-0">
+                3
+              </span>
+              <span>Click the settings menu next to your name and choose <strong>Change Password</strong>.</span>
+            </div>
+          </div>
+
+          <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowForgotDialog(false);
+                navigate("/parent-login");
+              }}
+              className="w-full sm:w-auto text-xs font-bold rounded-xl"
+            >
+              Go to Parent Login
+            </Button>
+            <Button
+              type="button"
+              variant="hero"
+              onClick={() => setShowForgotDialog(false)}
+              className="w-full sm:w-auto text-xs font-bold rounded-xl"
+            >
+              Understood
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </AuthLayout>
   );
 }

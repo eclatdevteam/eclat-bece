@@ -1,16 +1,16 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BookOpen, Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { getSafeErrorMessage } from "@/lib/errorUtils";
 import { Separator } from "@/components/ui/separator";
 import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
+import { AuthLayout } from "@/components/auth/AuthLayout";
 
 const loginSchema = z.object({
   email: z.string().trim().email("Invalid email address").max(255),
@@ -127,17 +127,15 @@ export default function ParentSignInPage() {
   const handleGoogleLogin = async () => {
     try {
       setIsLoading(true);
-
-      // Store role in localStorage before OAuth redirect
-      localStorage.setItem('pendingRole', 'parent');
+      localStorage.setItem("pendingRole", "parent");
 
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
+        provider: "google",
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
           queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
+            access_type: "offline",
+            prompt: "consent",
           },
         },
       });
@@ -161,138 +159,160 @@ export default function ParentSignInPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-light/20 via-background to-accent-light/20 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8 animate-fade-in">
-          <div className="inline-flex items-center gap-2 mb-2">
-            <BookOpen className="text-primary" size={32} />
-            <h1 className="text-3xl font-bold text-foreground">Éclat</h1>
+    <AuthLayout
+      role="parent"
+      badgeText="Parent Portal"
+      title="Parent Sign In"
+      subtitle="Sign in to monitor your children's quizzes and performance"
+      footerLink={{
+        text: "Don't have a parent account?",
+        actionText: "Create Account",
+        to: "/auth?role=parent",
+      }}
+    >
+      <form onSubmit={handleLogin} className="space-y-4">
+        {/* Email Field */}
+        <div className="space-y-2">
+          <Label htmlFor="login-email" className="text-sm font-bold text-foreground">
+            Parent Email Address
+          </Label>
+          <div className="relative">
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+              <Mail size={19} />
+            </div>
+            <Input
+              id="login-email"
+              name="email"
+              type="email"
+              placeholder="parent@example.com"
+              required
+              maxLength={255}
+              className="pl-11 h-12 bg-background border-2 border-border hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/15 rounded-xl text-base font-medium text-foreground placeholder:text-muted-foreground/60 shadow-xs"
+            />
           </div>
-          <p className="text-muted-foreground">Empowering learning, one quiz at a time</p>
         </div>
 
-        <Card className="border-2 animate-scale-in">
-          <CardHeader>
-            <CardTitle className="text-2xl text-center">Parent Sign In</CardTitle>
-            <CardDescription className="text-center">
-              Sign in to your parent account
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="login-email">Email</Label>
-                <Input
-                  id="login-email"
-                  name="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  required
-                  maxLength={255}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="login-password">Password</Label>
-                <div className="relative">
-                  <Input
-                    id="login-password"
-                    name="password"
-                    type={showLoginPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    required
-                    minLength={6}
-                    maxLength={100}
-                    className="pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowLoginPassword(!showLoginPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  >
-                    {showLoginPassword ? (
-                      <EyeOff className="h-4 w-4" />
-                    ) : (
-                      <Eye className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
-              <Button
-                type="submit"
-                variant="hero"
-                className="w-full"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Signing in...
-                  </>
-                ) : (
-                  "Sign In"
-                )}
-              </Button>
+        {/* Password Field */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Label htmlFor="login-password" className="text-sm font-bold text-foreground">
+              Password
+            </Label>
+            <Link
+              to="/password-reset"
+              className="text-xs text-primary hover:underline font-bold"
+            >
+              Forgot password?
+            </Link>
+          </div>
+          <div className="relative">
+            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+              <Lock size={19} />
+            </div>
+            <Input
+              id="login-password"
+              name="password"
+              type={showLoginPassword ? "text" : "password"}
+              placeholder="••••••••"
+              required
+              minLength={6}
+              maxLength={100}
+              className="pl-11 pr-11 h-12 bg-background border-2 border-border hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/15 rounded-xl text-base font-medium text-foreground placeholder:text-muted-foreground/60 shadow-xs"
+            />
+            <button
+              type="button"
+              onClick={() => setShowLoginPassword(!showLoginPassword)}
+              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+            >
+              {showLoginPassword ? (
+                <EyeOff className="h-4 w-4" />
+              ) : (
+                <Eye className="h-4 w-4" />
+              )}
+            </button>
+          </div>
+        </div>
 
-              <div className="relative my-4">
-                <Separator />
-                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-                  OR
-                </span>
-              </div>
+        {/* Sign In Button */}
+        <Button
+          type="submit"
+          variant="hero"
+          className="w-full h-12 text-base font-extrabold shadow-md rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-95 text-white transition-all mt-3"
+          disabled={isLoading}
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Signing in...
+            </>
+          ) : (
+            <>
+              Sign In to Parent Portal <ArrowRight className="ml-1.5 h-4 w-4" />
+            </>
+          )}
+        </Button>
 
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={handleGoogleLogin}
-                disabled={isLoading}
-              >
-                <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
-                  <path
-                    fill="currentColor"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    fill="currentColor"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  />
-                </svg>
-                Continue with Google
-              </Button>
+        {/* Divider */}
+        <div className="relative my-3">
+          <Separator />
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
+            OR
+          </span>
+        </div>
 
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => navigate("/auth/login/role-selection")}
-                disabled={isLoading}
-              >
-                Back to Login Selection Page
-              </Button>
+        {/* Google OAuth Button */}
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full h-12 rounded-xl border-2 border-border font-bold text-sm gap-3 hover:bg-muted/70 text-foreground"
+          onClick={handleGoogleLogin}
+          disabled={isLoading}
+        >
+          <svg className="h-5 w-5" viewBox="0 0 24 24">
+            <path
+              fill="#4285F4"
+              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+            />
+            <path
+              fill="#34A853"
+              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+            />
+            <path
+              fill="#FBBC05"
+              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
+            />
+            <path
+              fill="#EA4335"
+              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+            />
+          </svg>
+          Continue with Google
+        </Button>
 
-              <p className="text-sm text-center text-muted-foreground">
-                Forgot your password?{" "}
-                <button
-                  type="button"
-                  onClick={() => navigate("/password-reset")}
-                  className="text-primary hover:underline"
-                >
-                  Reset here
-                </button>
-              </p>
-            </form>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
+        {/* Portal Switcher */}
+        <div className="space-y-3 pt-4 border-t border-border/60 text-center">
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full h-11 text-xs font-bold rounded-xl border-2 border-border hover:bg-muted/70 text-foreground"
+            onClick={() => navigate("/auth/login/role-selection")}
+            disabled={isLoading}
+          >
+            Switch to Another Role
+          </Button>
+
+          <div className="flex items-center justify-center gap-3 text-xs font-medium text-muted-foreground pt-1">
+            <span>Are you a student?</span>
+            <Link to="/student-login" className="font-bold text-primary hover:underline">
+              Student Login
+            </Link>
+            <span>•</span>
+            <Link to="/school-login" className="font-bold text-primary hover:underline">
+              School Login
+            </Link>
+          </div>
+        </div>
+      </form>
+    </AuthLayout>
   );
 }
