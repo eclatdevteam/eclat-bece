@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Users, Plus, LayoutDashboard, Search, Filter } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,57 +43,7 @@ export default function MyChildren() {
     const [selectedChild, setSelectedChild] = useState<LinkedChild | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
 
-    useEffect(() => {
-        const fetchParentData = async () => {
-            if (!user) return;
-            try {
-                const { data: parentData } = await supabase
-                    .from("parents")
-                    .select("id")
-                    .eq("user_id", user.id)
-                    .single();
-
-                if (parentData) {
-                    setParentUserId(parentData.id);
-                    await fetchChildren(parentData.id);
-                }
-            } catch (error) {
-                console.error("Error fetching parent data:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchParentData();
-    }, [user]);
-
-    const fetchChildren = async (parentId: string) => {
-        try {
-            const { data, error } = await supabase
-                .from("students")
-                .select(`
-          id,
-          user_id,
-          class_year,
-          is_premium,
-          profile:profiles(full_name, unique_id, username)
-        `)
-                .eq("parent_id", parentId);
-
-            if (error) throw error;
-            if (data) {
-                setChildren(data as unknown as LinkedChild[]);
-                data.forEach((child) => {
-                    fetchAnalytics(child.id);
-                    fetchAssignments(child.id);
-                });
-            }
-        } catch (error) {
-            console.error("Error fetching children:", error);
-            toast.error("Failed to load students");
-        }
-    };
-
-    const fetchAnalytics = async (studentId: string) => {
+    const fetchAnalytics = useCallback(async (studentId: string) => {
         try {
             const { data: quizResults } = await supabase
                 .from("quiz_results")
@@ -130,28 +80,91 @@ export default function MyChildren() {
         } catch (error) {
             console.error("Error fetching child analytics:", error);
         }
-    };
+    }, []);
 
-    const fetchAssignments = async (studentId: string) => {
+    const fetchAssignments = useCallback(async (studentId: string) => {
         try {
             const { data, error } = await supabase
                 .from("practice_assignments")
                 .select("*")
                 .eq("student_id", studentId)
-                .order("created_at", { ascending: false })
-                .limit(5);
+                .order("created_at", { ascending: false });
 
             if (error) throw error;
-
-            setChildren((prev) =>
-                prev.map((child) =>
-                    child.id === studentId ? { ...child, assignments: data as Assignment[] } : child
-                )
-            );
+            if (data) {
+                setChildrenAnalytics((prev) => {
+                    const current = prev.get(studentId) || {
+                        studentId,
+                        averageScore: 0,
+                        totalQuizzes: 0,
+                        subjectPerformance: [],
+                        recentQuizzes: [],
+                        pendingAssignments: 0,
+                        completedAssignments: 0,
+                    };
+                    const pending = data.filter((a) => a.status === "pending").length;
+                    const completed = data.filter((a) => a.status === "completed").length;
+                    return new Map(prev).set(studentId, {
+                        ...current,
+                        pendingAssignments: pending,
+                        completedAssignments: completed,
+                    });
+                });
+            }
         } catch (error) {
             console.error("Error fetching child assignments:", error);
         }
-    };
+    }, []);
+
+    const fetchChildren = useCallback(async (parentId: string) => {
+        try {
+            const { data, error } = await supabase
+                .from("students")
+                .select(`
+          id,
+          user_id,
+          class_year,
+          is_premium,
+          profile:profiles(full_name, unique_id, username)
+        `)
+                .eq("parent_id", parentId);
+
+            if (error) throw error;
+            if (data) {
+                setChildren(data as unknown as LinkedChild[]);
+                data.forEach((child) => {
+                    fetchAnalytics(child.id);
+                    fetchAssignments(child.id);
+                });
+            }
+        } catch (error) {
+            console.error("Error fetching children:", error);
+            toast.error("Failed to load students");
+        }
+    }, [fetchAnalytics, fetchAssignments]);
+
+    useEffect(() => {
+        const fetchParentData = async () => {
+            if (!user) return;
+            try {
+                const { data: parentData } = await supabase
+                    .from("parents")
+                    .select("id")
+                    .eq("user_id", user.id)
+                    .single();
+
+                if (parentData) {
+                    setParentUserId(parentData.id);
+                    await fetchChildren(parentData.id);
+                }
+            } catch (error) {
+                console.error("Error fetching parent data:", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchParentData();
+    }, [user, fetchChildren]);
 
     const handleDeleteChild = async () => {
         if (!selectedChild) return;

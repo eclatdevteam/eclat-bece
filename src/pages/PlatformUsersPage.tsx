@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
     Table,
     TableBody,
@@ -43,9 +43,7 @@ interface Student extends Profile {
     school_id?: string;
 }
 
-interface Parent extends Profile {
-    // Parent specific fields if any
-}
+type Parent = Profile;
 
 interface SchoolUser extends Profile {
     school_name: string;
@@ -61,29 +59,7 @@ export default function PlatformUsersPage() {
     const [parents, setParents] = useState<Parent[]>([]);
     const [schools, setSchools] = useState<SchoolUser[]>([]);
 
-    useEffect(() => {
-        fetchUsers();
-    }, [activeTab]);
-
-    const fetchUsers = async () => {
-        setLoading(true);
-        try {
-            if (activeTab === "students") {
-                await fetchStudents();
-            } else if (activeTab === "parents") {
-                await fetchParents();
-            } else if (activeTab === "schools") {
-                await fetchSchools();
-            }
-        } catch (error) {
-            console.error("Error fetching users:", error);
-            toast.error("Failed to load users");
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const fetchStudents = async () => {
+    const fetchStudents = useCallback(async () => {
         // 1. Fetch students table
         const { data: studentsData, error: studentsError } = await supabase
             .from("students")
@@ -121,9 +97,9 @@ export default function PlatformUsersPage() {
         });
 
         setStudents(mergedStudents);
-    };
+    }, []);
 
-    const fetchParents = async () => {
+    const fetchParents = useCallback(async () => {
         const { data: parentsData, error: parentsError } = await supabase
             .from("parents")
             .select("*")
@@ -158,9 +134,9 @@ export default function PlatformUsersPage() {
         });
 
         setParents(mergedParents);
-    };
+    }, []);
 
-    const fetchSchools = async () => {
+    const fetchSchools = useCallback(async () => {
         const { data: schoolsData, error: schoolsError } = await supabase
             .from("schools")
             .select("*")
@@ -195,7 +171,29 @@ export default function PlatformUsersPage() {
         });
 
         setSchools(mergedSchools);
-    };
+    }, []);
+
+    const fetchUsers = useCallback(async () => {
+        setLoading(true);
+        try {
+            if (activeTab === "students") {
+                await fetchStudents();
+            } else if (activeTab === "parents") {
+                await fetchParents();
+            } else if (activeTab === "schools") {
+                await fetchSchools();
+            }
+        } catch (error) {
+            console.error("Error fetching users:", error);
+            toast.error("Failed to load users");
+        } finally {
+            setLoading(false);
+        }
+    }, [activeTab, fetchParents, fetchSchools, fetchStudents]);
+
+    useEffect(() => {
+        fetchUsers();
+    }, [fetchUsers]);
 
     const filterUsers = (users: any[]) => {
         if (!searchQuery) return users;

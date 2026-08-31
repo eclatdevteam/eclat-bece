@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
     Table,
     TableBody,
@@ -78,21 +78,7 @@ export default function QuestionBankPage() {
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
 
-    // Debounce search
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setCurrentPage(1); // Reset to first page on search
-            fetchQuestions();
-        }, 500);
-
-        return () => clearTimeout(timer);
-    }, [searchQuery]);
-
-    useEffect(() => {
-        fetchQuestions();
-    }, [classYear, subjectFilter, currentPage]);
-
-    const fetchQuestions = async () => {
+    const fetchQuestions = useCallback(async () => {
         setLoading(true);
         try {
             const tableName = classYear === 'year_6' ? 'quiz_questions_year6' : 'quiz_questions_year9';
@@ -107,6 +93,10 @@ export default function QuestionBankPage() {
 
             if (subjectFilter !== "all") {
                 query = query.eq("subject", subjectFilter);
+            }
+
+            if (difficultyFilter !== "all") {
+                query = query.eq("difficulty", difficultyFilter);
             }
 
             if (searchQuery) {
@@ -129,7 +119,20 @@ export default function QuestionBankPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [classYear, currentPage, difficultyFilter, searchQuery, subjectFilter]);
+
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            fetchQuestions();
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [fetchQuestions]);
+
+    useEffect(() => {
+        fetchQuestions();
+    }, [fetchQuestions]);
 
     const handleDelete = async () => {
         if (!deleteId || !user) return;

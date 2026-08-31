@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -42,7 +42,7 @@ export default function FlagReportsPage() {
     const [reasonFilter, setReasonFilter] = useState<string>("all");
     const [selectedQuestion, setSelectedQuestion] = useState<{ id: string; classYear: "year_6" | "year_9" } | null>(null);
 
-    const fetchFlags = async () => {
+    const fetchFlags = useCallback(async () => {
         setLoading(true);
         try {
             let query = supabase
@@ -76,11 +76,11 @@ export default function FlagReportsPage() {
         } finally {
             setLoading(false);
         }
-    };
+    }, [statusFilter, classYearFilter, reasonFilter]);
 
     useEffect(() => {
         fetchFlags();
-    }, [statusFilter, classYearFilter, reasonFilter]);
+    }, [fetchFlags]);
 
     const handleResolve = async (flagId: string, actionType: "resolved" | "dismissed") => {
         if (!user) return;

@@ -56,7 +56,7 @@ serve(async (req) => {
 
         // 2. Check if email already exists
         const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers()
-        const emailExists = existingUser.users.some((u: any) => u.email === invitation.target_email)
+        const emailExists = existingUser?.users?.some((u: { email?: string }) => u.email === invitation.target_email)
 
         if (emailExists) {
             console.error('Step 2 failed - Email already exists')

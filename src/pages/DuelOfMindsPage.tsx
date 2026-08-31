@@ -4,6 +4,7 @@ import { ChallengeSettings } from "@/components/ChallengeSettings";
 import { SendChallenge } from "@/components/SendChallenge";
 import { ChallengeConfirmation } from "@/components/ChallengeConfirmation";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 type Step = 'settings' | 'send' | 'confirmation' | 'sent';
 
@@ -46,13 +47,13 @@ export default function DuelOfMindsPage() {
 
     setIsSending(true);
     try {
-      // TODO: Integrate with backend when challenge tables are created
-      // For now, simulate the challenge sending
+      // Simulation of challenge sending until multiplayer backend is ready
       await new Promise(resolve => setTimeout(resolve, 1000));
       setStep('sent');
+      toast.success("Challenge sent successfully!");
     } catch (error) {
       console.error('Error sending challenge:', error);
-      alert('Failed to send challenge. Please try again.');
+      toast.error('Failed to send challenge. Please try again.');
     } finally {
       setIsSending(false);
     }
