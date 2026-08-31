@@ -2,7 +2,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
@@ -17,7 +17,6 @@ import StudentLogInPage from "./pages/auth/StudentLogInPage";
 import AuthCallback from "./pages/AuthCallback";
 import PasswordResetPage from "./pages/PasswordResetPage";
 import EmailVerificationPage from "./pages/EmailVerificationPage";
-// import StudentOnboarding from "./pages/StudentOnboarding";
 import ParentOnboarding from "./pages/ParentOnboarding";
 import SchoolOnboarding from "./pages/SchoolOnboarding";
 import StudentDashboardOverview from "./pages/StudentDashboardOverview";
@@ -25,6 +24,7 @@ import StudentPractice from "./pages/StudentPractice";
 import StudentAssignments from "./pages/StudentAssignments";
 import StudentProgressPage from "./pages/StudentProgressPage";
 import StudentLeaderboardPage from "./pages/StudentLeaderboardPage";
+import StudentSettingsPage from "./pages/StudentSettingsPage";
 import DuelOfMindsPage from "./pages/DuelOfMindsPage";
 import ParentDashboard from "./pages/ParentDashboard";
 import MyChildren from "./pages/parent/MyChildren";
@@ -68,6 +68,7 @@ const App = () => (
               <Route path="/" element={<Index />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
+              <Route path="/role-selection" element={<Navigate to="/auth/login/role-selection" replace />} />
               <Route path="/auth/login/role-selection" element={<LoginRoleSelectionPage />} />
               <Route path="/auth/signup/role-selection" element={<SignUpRoleSelectionPage />} />
               <Route path="/auth" element={<AuthPage />} />
@@ -122,6 +123,14 @@ const App = () => (
                   </StudentLayout>
                 </ProtectedRoute>
               } />
+              <Route path="/dashboard/student/settings" element={
+                <ProtectedRoute requiredRole="student">
+                  <StudentLayout>
+                    <StudentSettingsPage />
+                  </StudentLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/settings" element={<Navigate to="/dashboard/student/settings" replace />} />
               <Route path="/dashboard/student/duel-of-minds" element={
                 <ProtectedRoute requiredRole="student">
                   <StudentLayout>
@@ -189,7 +198,11 @@ const App = () => (
               {/* Admin Routes */}
               <Route path="/admin/login" element={<AdminLoginPage />} />
               <Route path="/admin/setup/:token" element={<AdminPasswordSetupPage />} />
-              <Route path="/admin" element={<AdminLayout />}>
+              <Route path="/admin" element={
+                <AdminProtectedRoute>
+                  <AdminLayout />
+                </AdminProtectedRoute>
+              }>
                 <Route index element={<AdminDashboard />} />
                 <Route path="users" element={<AdminUsersPage />} />
                 <Route path="platform-users" element={<PlatformUsersPage />} />

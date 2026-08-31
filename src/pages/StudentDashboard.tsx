@@ -267,7 +267,7 @@ export default function StudentDashboard() {
             {/* Desktop: Show all buttons */}
             <div className="hidden md:flex items-center gap-4">
               <ThemeToggle />
-              <Button variant="ghost" size="icon" className="h-10 w-10">
+              <Button variant="ghost" size="icon" className="h-10 w-10" onClick={() => navigate("/dashboard/student/settings")}>
                 <Settings size={20} />
               </Button>
               <Button variant="ghost" size="icon" className="h-10 w-10" onClick={signOut}>
@@ -285,7 +285,7 @@ export default function StudentDashboard() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => navigate("/settings")}>
+                  <DropdownMenuItem onClick={() => navigate("/dashboard/student/settings")}>
                     <Settings className="mr-2 h-4 w-4" />
                     Settings
                   </DropdownMenuItem>
