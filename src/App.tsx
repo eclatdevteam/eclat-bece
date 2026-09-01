@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { ProtectedRoute } from "@/components/ProtectedRoute";
 import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
+import { AdminPermissionGuard } from "@/components/AdminPermissionGuard";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import LoginRoleSelectionPage from "./pages/auth/LoginRoleSelectionPage";
@@ -212,15 +213,47 @@ const App = () => (
                 </AdminProtectedRoute>
               }>
                 <Route index element={<AdminDashboard />} />
-                <Route path="users" element={<AdminUsersPage />} />
-                <Route path="platform-users" element={<PlatformUsersPage />} />
-                <Route path="questions" element={<QuestionBankPage />} />
-                <Route path="passages" element={<PassagesPage />} />
-                <Route path="analytics" element={<AdminAnalyticsPage />} />
-                <Route path="competitions" element={<AdminCompetitionsPage />} />
-                <Route path="reports" element={<AdminReportsPage />} />
+                <Route path="users" element={
+                  <AdminPermissionGuard requiresSuperAdmin={true} resourceName="Admin Users">
+                    <AdminUsersPage />
+                  </AdminPermissionGuard>
+                } />
+                <Route path="platform-users" element={
+                  <AdminPermissionGuard requiredPermission="canManageUsers" resourceName="Platform Users">
+                    <PlatformUsersPage />
+                  </AdminPermissionGuard>
+                } />
+                <Route path="questions" element={
+                  <AdminPermissionGuard requiredPermission="canManageQuestions" resourceName="Question Bank">
+                    <QuestionBankPage />
+                  </AdminPermissionGuard>
+                } />
+                <Route path="passages" element={
+                  <AdminPermissionGuard requiredPermission="canManageQuestions" resourceName="Passages">
+                    <PassagesPage />
+                  </AdminPermissionGuard>
+                } />
+                <Route path="flags" element={
+                  <AdminPermissionGuard requiredPermission="canManageFlags" resourceName="Flag Reports">
+                    <FlagReportsPage />
+                  </AdminPermissionGuard>
+                } />
+                <Route path="competitions" element={
+                  <AdminPermissionGuard requiredPermission="canManageCompetitions" resourceName="Competitions">
+                    <AdminCompetitionsPage />
+                  </AdminPermissionGuard>
+                } />
+                <Route path="analytics" element={
+                  <AdminPermissionGuard requiredPermission="canViewAnalytics" resourceName="Analytics">
+                    <AdminAnalyticsPage />
+                  </AdminPermissionGuard>
+                } />
+                <Route path="reports" element={
+                  <AdminPermissionGuard requiredPermission="canViewAnalytics" resourceName="Reports">
+                    <AdminReportsPage />
+                  </AdminPermissionGuard>
+                } />
                 <Route path="settings" element={<AdminSettingsPage />} />
-                <Route path="flags" element={<FlagReportsPage />} />
               </Route>
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
