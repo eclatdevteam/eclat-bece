@@ -42,6 +42,7 @@ import { ParentLayout } from "./components/parent/ParentLayout";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminLoginPage from "./pages/AdminLoginPage";
 import AdminPasswordSetupPage from "./pages/AdminPasswordSetupPage";
+import AdminPasswordResetPage from "./pages/AdminPasswordResetPage";
 import AdminUsersPage from "./pages/AdminUsersPage";
 import PlatformUsersPage from "./pages/PlatformUsersPage";
 import QuestionBankPage from "./pages/QuestionBankPage";
@@ -207,6 +208,7 @@ const App = () => (
               {/* Admin Routes */}
               <Route path="/admin/login" element={<AdminLoginPage />} />
               <Route path="/admin/setup/:token" element={<AdminPasswordSetupPage />} />
+              <Route path="/admin/reset-password" element={<AdminPasswordResetPage />} />
               <Route path="/admin" element={
                 <AdminProtectedRoute>
                   <AdminLayout />

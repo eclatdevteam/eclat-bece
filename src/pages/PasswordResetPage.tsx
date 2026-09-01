@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +31,28 @@ export default function PasswordResetPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const isUpdateMode = searchParams.get("type") === "recovery";
+  // Detect recovery mode from query param, hash fragment, or auth state
+  const initialIsUpdateMode =
+    searchParams.get("type") === "recovery" ||
+    window.location.hash.includes("type=recovery") ||
+    window.location.hash.includes("access_token");
+
+  const [isUpdateMode, setIsUpdateMode] = useState(initialIsUpdateMode);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event) => {
+        if (
+          event === "PASSWORD_RECOVERY" ||
+          (event === "SIGNED_IN" && window.location.hash.includes("type=recovery"))
+        ) {
+          setIsUpdateMode(true);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   const handleSendResetEmail = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -43,17 +64,22 @@ export default function PasswordResetPage() {
 
       const validated = resetEmailSchema.parse({ email });
 
-      const { error } = await supabase.auth.resetPasswordForEmail(validated.email, {
-        redirectTo: `${window.location.origin}/password-reset?type=recovery`,
+      // Dispatch via Origin-Aware send-password-reset Edge Function with Resend
+      const { data, error } = await supabase.functions.invoke("send-password-reset", {
+        body: {
+          email: validated.email,
+          siteUrl: window.location.origin,
+          role: "general",
+        },
       });
 
       if (error) {
-        toast({
-          title: "Error",
-          description: getSafeErrorMessage(error),
-          variant: "destructive",
-        });
-        return;
+        throw new Error(error.message || "Failed to send reset email");
+      }
+
+      const result = data as any;
+      if (result && result.success === false) {
+        throw new Error(result.error || "Failed to send reset email");
       }
 
       setEmailSent(true);
@@ -71,7 +97,7 @@ export default function PasswordResetPage() {
       } else {
         toast({
           title: "Error",
-          description: "An unexpected error occurred",
+          description: getSafeErrorMessage(error),
           variant: "destructive",
         });
       }

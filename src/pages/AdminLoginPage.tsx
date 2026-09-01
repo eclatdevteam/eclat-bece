@@ -132,7 +132,7 @@ export default function AdminLoginPage() {
               Master Password
             </Label>
             <Link
-              to="/password-reset"
+              to="/admin/reset-password"
               className="text-xs text-primary hover:underline font-bold"
             >
               Forgot password?
