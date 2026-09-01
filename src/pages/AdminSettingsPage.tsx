@@ -65,10 +65,12 @@ export default function AdminSettingsPage() {
     }
   }, [admin]);
 
-  // Load system settings
+  // Load system settings only for Super Admins
   useEffect(() => {
-    fetchSettings();
-  }, []);
+    if (isSuperAdmin) {
+      fetchSettings();
+    }
+  }, [isSuperAdmin]);
 
   const fetchSettings = async () => {
     setLoadingSettings(true);
@@ -258,25 +260,29 @@ export default function AdminSettingsPage() {
           Settings
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Manage your personal account credentials and global platform configurations.
+          {isSuperAdmin
+            ? "Manage your personal account credentials and global platform configurations."
+            : "Manage your personal account credentials and security settings."}
         </p>
       </div>
 
       <Tabs defaultValue="personal" className="space-y-6">
-        <TabsList className="bg-muted/60 border p-1 rounded-2xl grid grid-cols-2 max-w-md">
-          <TabsTrigger
-            value="personal"
-            className="rounded-xl font-bold text-xs gap-2 py-2 data-[state=active]:bg-card data-[state=active]:shadow-sm"
-          >
-            <User className="h-4 w-4" /> Personal Profile
-          </TabsTrigger>
-          <TabsTrigger
-            value="general"
-            className="rounded-xl font-bold text-xs gap-2 py-2 data-[state=active]:bg-card data-[state=active]:shadow-sm"
-          >
-            <Sliders className="h-4 w-4" /> General Configuration
-          </TabsTrigger>
-        </TabsList>
+        {isSuperAdmin && (
+          <TabsList className="bg-muted/60 border p-1 rounded-2xl grid grid-cols-2 max-w-md">
+            <TabsTrigger
+              value="personal"
+              className="rounded-xl font-bold text-xs gap-2 py-2 data-[state=active]:bg-card data-[state=active]:shadow-sm"
+            >
+              <User className="h-4 w-4" /> Personal Profile
+            </TabsTrigger>
+            <TabsTrigger
+              value="general"
+              className="rounded-xl font-bold text-xs gap-2 py-2 data-[state=active]:bg-card data-[state=active]:shadow-sm"
+            >
+              <Sliders className="h-4 w-4" /> General Configuration
+            </TabsTrigger>
+          </TabsList>
+        )}
 
         {/* ========================================================= */}
         {/* TAB 1: PERSONAL TAB (PROFILE & CREDENTIALS)               */}
@@ -505,85 +511,87 @@ export default function AdminSettingsPage() {
         </TabsContent>
 
         {/* ========================================================= */}
-        {/* TAB 2: GENERAL CONFIGURATION                             */}
+        {/* TAB 2: GENERAL CONFIGURATION (SUPER ADMINS ONLY)          */}
         {/* ========================================================= */}
-        <TabsContent value="general" className="space-y-6 mt-0">
-          <Card className="rounded-3xl border-2 shadow-sm overflow-hidden">
-            <CardHeader className="bg-muted/30 pb-4 border-b">
-              <CardTitle className="text-xl font-bold flex items-center gap-2">
-                <Sliders className="h-5 w-5 text-primary" />
-                General Configuration
-              </CardTitle>
-              <CardDescription className="text-xs sm:text-sm mt-0.5">
-                Control core system behaviors, public announcements, and platform maintenance mode.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-6 space-y-6">
-              {loadingSettings ? (
-                <div className="flex items-center justify-center py-12">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                </div>
-              ) : settings.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">
-                  No system settings found.
-                </p>
-              ) : (
-                <div className="space-y-6">
-                  {settings.map((setting) => (
-                    <div
-                      key={setting.key}
-                      className="flex flex-col space-y-2 p-4 rounded-2xl bg-card border-2"
-                    >
-                      <div className="flex items-center justify-between">
-                        <Label htmlFor={setting.key} className="text-sm font-bold text-foreground">
-                          {setting.key
-                            .split("_")
-                            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-                            .join(" ")}
-                        </Label>
-                        {typeof setting.value === "boolean" && (
-                          <Switch
+        {isSuperAdmin && (
+          <TabsContent value="general" className="space-y-6 mt-0">
+            <Card className="rounded-3xl border-2 shadow-sm overflow-hidden">
+              <CardHeader className="bg-muted/30 pb-4 border-b">
+                <CardTitle className="text-xl font-bold flex items-center gap-2">
+                  <Sliders className="h-5 w-5 text-primary" />
+                  General Configuration
+                </CardTitle>
+                <CardDescription className="text-xs sm:text-sm mt-0.5">
+                  Control core system behaviors, public announcements, and platform maintenance mode.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 space-y-6">
+                {loadingSettings ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  </div>
+                ) : settings.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    No system settings found.
+                  </p>
+                ) : (
+                  <div className="space-y-6">
+                    {settings.map((setting) => (
+                      <div
+                        key={setting.key}
+                        className="flex flex-col space-y-2 p-4 rounded-2xl bg-card border-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <Label htmlFor={setting.key} className="text-sm font-bold text-foreground">
+                            {setting.key
+                              .split("_")
+                              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+                              .join(" ")}
+                          </Label>
+                          {typeof setting.value === "boolean" && (
+                            <Switch
+                              id={setting.key}
+                              checked={setting.value}
+                              onCheckedChange={(checked) =>
+                                handleSettingChange(setting.key, checked)
+                              }
+                            />
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {setting.description}
+                        </p>
+
+                        {typeof setting.value !== "boolean" && (
+                          <Input
                             id={setting.key}
-                            checked={setting.value}
-                            onCheckedChange={(checked) =>
-                              handleSettingChange(setting.key, checked)
+                            value={setting.value || ""}
+                            onChange={(e) =>
+                              handleSettingChange(setting.key, e.target.value)
                             }
+                            className="h-10 text-sm bg-background border-2 rounded-xl max-w-md mt-1"
                           />
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {setting.description}
-                      </p>
+                    ))}
 
-                      {typeof setting.value !== "boolean" && (
-                        <Input
-                          id={setting.key}
-                          value={setting.value || ""}
-                          onChange={(e) =>
-                            handleSettingChange(setting.key, e.target.value)
-                          }
-                          className="h-10 text-sm bg-background border-2 rounded-xl max-w-md mt-1"
-                        />
-                      )}
+                    <div className="pt-2 flex justify-end">
+                      <Button
+                        onClick={handleSaveGeneralSettings}
+                        disabled={savingSettings}
+                        variant="hero"
+                        className="font-bold text-xs rounded-xl h-10 px-5 gap-1.5"
+                      >
+                        {savingSettings && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        <Save size={14} /> Save System Settings
+                      </Button>
                     </div>
-                  ))}
-
-                  <div className="pt-2 flex justify-end">
-                    <Button
-                      onClick={handleSaveGeneralSettings}
-                      disabled={savingSettings}
-                      variant="hero"
-                      className="font-bold text-xs rounded-xl h-10 px-5 gap-1.5"
-                    >
-                      {savingSettings && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      <Save size={14} /> Save System Settings
-                    </Button>
                   </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        )}
       </Tabs>
     </div>
   );
