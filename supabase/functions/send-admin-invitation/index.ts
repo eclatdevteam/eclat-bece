@@ -10,6 +10,7 @@ const corsHeaders = {
 
 interface InvitationEmailRequest {
   invitationId: string
+  siteUrl?: string
 }
 
 serve(async (req) => {
@@ -29,8 +30,8 @@ serve(async (req) => {
       }
     )
 
-    // Get the invitation ID from the request
-    const { invitationId } = await req.json() as InvitationEmailRequest
+    // Get the invitation ID and optional siteUrl from the request
+    const { invitationId, siteUrl: payloadSiteUrl } = await req.json() as InvitationEmailRequest
 
     // Fetch invitation details
     const { data: invitation, error: invitationError } = await supabaseClient
@@ -58,9 +59,10 @@ serve(async (req) => {
 
     if (inviterError) throw inviterError
 
-    // Generate invitation link
-    const siteUrl = Deno.env.get('PUBLIC_SITE_URL') ?? 'https://eclat-bece.vercel.app'
-    const invitationLink = `${siteUrl}/admin/setup/${invitation.token}`
+    // Generate invitation link dynamically
+    const headerOrigin = req.headers.get('origin')
+    const siteUrl = payloadSiteUrl || headerOrigin || Deno.env.get('PUBLIC_SITE_URL') || 'https://eclat-bece.vercel.app'
+    const invitationLink = `${siteUrl.replace(/\/+$/, '')}/admin/setup/${invitation.token}`
 
     // Format expiration date
     const expiresAt = new Date(invitation.expires_at)
