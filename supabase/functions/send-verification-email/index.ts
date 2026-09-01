@@ -127,38 +127,76 @@ serve(async (req) => {
     }
 
     // Send the email via Resend
-    const emailResponse = await resend.emails.send({
-      from: "Éclat <noreply@bece.eclatapp.xyz>",
-      to: [toEmail],
-      subject: "Your Éclat verification code",
-      text: `Your Éclat verification code is ${code}. It expires in 10 minutes.`,
-      html: `
-        <!DOCTYPE html>
-        <html>
-          <head>
-            <meta charset="utf-8" />
-            <meta http-equiv="x-ua-compatible" content="ie=edge" />
-            <meta name="viewport" content="width=device-width, initial-scale=1" />
-            <title>Verify your email</title>
-            <style>
-              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; }
-              .container { max-width: 600px; margin: 0 auto; padding: 32px 16px; }
-              .code-box { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 8px; padding: 24px; text-align: center; margin: 24px 0; }
-              .code { font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #111827; font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; }
-              .muted { color: #6b7280; font-size: 14px; }
-            </style>
-          </head>
-          <body>
-            <div class="container">
-              <h1>Verify your email</h1>
-              <p>Welcome to Éclat! Use the code below to verify your email address.</p>
-              <div class="code-box"><div class="code">${code}</div></div>
-              <p class="muted">This code expires in 10 minutes. If you didn't request this, you can safely ignore this email.</p>
-            </div>
-          </body>
-        </html>
-      `,
-    });
+    let emailResponse: any;
+    try {
+      emailResponse = await resend.emails.send({
+        from: "Éclat <noreply@eclatapp.xyz>",
+        to: [toEmail],
+        subject: "Your Éclat verification code",
+        text: `Your Éclat verification code is ${code}. It expires in 10 minutes.`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8" />
+              <meta http-equiv="x-ua-compatible" content="ie=edge" />
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
+              <title>Verify your email</title>
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; }
+                .container { max-width: 600px; margin: 0 auto; padding: 32px 16px; }
+                .code-box { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 8px; padding: 24px; text-align: center; margin: 24px 0; }
+                .code { font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #111827; font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; }
+                .muted { color: #6b7280; font-size: 14px; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h1>Verify your email</h1>
+                <p>Welcome to Éclat! Use the code below to verify your email address.</p>
+                <div class="code-box"><div class="code">${code}</div></div>
+                <p class="muted">This code expires in 10 minutes. If you didn't request this, you can safely ignore this email.</p>
+              </div>
+            </body>
+          </html>
+        `,
+      });
+      if (emailResponse.error) throw emailResponse.error;
+    } catch (e: any) {
+      console.warn("Retrying with fallback sender domain...", e.message);
+      emailResponse = await resend.emails.send({
+        from: "Éclat <noreply@bece.eclatapp.xyz>",
+        to: [toEmail],
+        subject: "Your Éclat verification code",
+        text: `Your Éclat verification code is ${code}. It expires in 10 minutes.`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8" />
+              <meta http-equiv="x-ua-compatible" content="ie=edge" />
+              <meta name="viewport" content="width=device-width, initial-scale=1" />
+              <title>Verify your email</title>
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; }
+                .container { max-width: 600px; margin: 0 auto; padding: 32px 16px; }
+                .code-box { background: #f7f7f7; border: 1px solid #e5e5e5; border-radius: 8px; padding: 24px; text-align: center; margin: 24px 0; }
+                .code { font-size: 32px; font-weight: 700; letter-spacing: 8px; color: #111827; font-family: 'SFMono-Regular', Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace; }
+                .muted { color: #6b7280; font-size: 14px; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <h1>Verify your email</h1>
+                <p>Welcome to Éclat! Use the code below to verify your email address.</p>
+                <div class="code-box"><div class="code">${code}</div></div>
+                <p class="muted">This code expires in 10 minutes. If you didn't request this, you can safely ignore this email.</p>
+              </div>
+            </body>
+          </html>
+        `,
+      });
+    }
 
     console.log("Verification email sent for user", user_id, emailResponse);
 

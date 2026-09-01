@@ -45,19 +45,19 @@ serve(async (req) => {
 
     const cleanEmail = email.trim().toLowerCase()
     const headerOrigin = req.headers.get('origin')
-    const siteUrl = (payloadSiteUrl || headerOrigin || Deno.env.get('PUBLIC_SITE_URL') || 'https://bece.eclatapp.xyz').replace(/\/+$/, '')
+    const siteUrl = (payloadSiteUrl || headerOrigin || Deno.env.get('PUBLIC_SITE_URL') || 'https://eclatapp.xyz').replace(/\/+$/, '')
 
     const isAdmin = role === 'admin'
-    const targetRedirectUrl = isAdmin
-      ? `${siteUrl}/admin/reset-password?type=recovery`
-      : `${siteUrl}/password-reset?type=recovery`
+    const targetRedirectBase = isAdmin
+      ? `${siteUrl}/admin/reset-password`
+      : `${siteUrl}/password-reset`
 
     // Generate recovery link using Supabase Admin API
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
       email: cleanEmail,
       options: {
-        redirectTo: targetRedirectUrl,
+        redirectTo: `${targetRedirectBase}?type=recovery`,
       },
     })
 
@@ -73,10 +73,13 @@ serve(async (req) => {
       )
     }
 
-    const actionLink = linkData?.properties?.action_link
-    if (!actionLink) {
-      throw new Error('Failed to generate secure recovery action link')
-    }
+    const hashedToken = linkData?.properties?.hashed_token
+    const emailOtp = linkData?.properties?.email_otp
+
+    // Construct DIRECT application link (bypassing raw Supabase internal project URL)
+    const directActionLink = hashedToken
+      ? `${targetRedirectBase}?token_hash=${hashedToken}&type=recovery`
+      : (linkData?.properties?.action_link || `${targetRedirectBase}?type=recovery`)
 
     // Check if user is an admin in database
     let adminName = 'Administrator'
@@ -133,7 +136,7 @@ serve(async (req) => {
 
       <!-- CTA Button -->
       <div style="text-align: center; margin: 32px 0;">
-        <a href="${actionLink}" 
+        <a href="${directActionLink}" 
            style="background: ${isAdmin ? '#0f172a' : '#0284c7'}; color: #ffffff; padding: 14px 32px; border-radius: 12px; text-decoration: none; font-weight: 700; font-size: 15px; display: inline-block; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);">
           ${isAdmin ? 'Configure New Admin Password →' : 'Reset My Password →'}
         </a>
@@ -147,7 +150,7 @@ serve(async (req) => {
 
       <p style="font-size: 12px; color: #94a3b8; line-height: 1.5; margin-bottom: 0;">
         If the button above does not work, copy and paste this link into your browser:<br>
-        <a href="${actionLink}" style="color: #0284c7; word-break: break-all; font-size: 11px;">${actionLink}</a>
+        <a href="${directActionLink}" style="color: #0284c7; word-break: break-all; font-size: 11px;">${directActionLink}</a>
       </p>
     </div>
 
@@ -162,28 +165,48 @@ serve(async (req) => {
 </html>
     `
 
-    // Send email via Resend API
-    const resendResponse = await fetch('https://api.resend.com/emails', {
+    // Attempt sending email via Resend (try eclatapp.xyz first, fallback to bece.eclatapp.xyz if domain unverified)
+    let resendResponse = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'Éclat Security <noreply@bece.eclatapp.xyz>',
+        from: 'Éclat Security <noreply@eclatapp.xyz>',
         to: [cleanEmail],
         subject: subject,
         html: emailHtml,
       }),
     })
 
-    const resendResult = await resendResponse.json()
+    let resendResult = await resendResponse.json()
+
+    // Fallback if domain is configured under bece.eclatapp.xyz in Resend
+    if (!resendResponse.ok && (resendResult.message?.includes('domain') || resendResult.message?.includes('verify'))) {
+      console.warn('Retrying with fallback sender domain...', resendResult.message)
+      resendResponse = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${RESEND_API_KEY}`,
+        },
+        body: JSON.stringify({
+          from: 'Éclat Security <noreply@bece.eclatapp.xyz>',
+          to: [cleanEmail],
+          subject: subject,
+          html: emailHtml,
+        }),
+      })
+      resendResult = await resendResponse.json()
+    }
+
     if (!resendResponse.ok) {
       console.error('Resend dispatch error:', resendResult)
       throw new Error(resendResult.message || 'Failed to dispatch email through Resend')
     }
 
-    // Optional audit log for admin password reset requests
+    // Audit log for admin password reset requests
     if (isAdmin && adminId) {
       try {
         await supabaseAdmin.rpc('log_admin_action', {
@@ -194,6 +217,7 @@ serve(async (req) => {
           _details: {
             email: cleanEmail,
             origin: siteUrl,
+            direct_link_used: !!hashedToken,
           },
         })
       } catch (logErr) {

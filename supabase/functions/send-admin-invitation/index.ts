@@ -61,7 +61,7 @@ serve(async (req) => {
 
     // Generate invitation link dynamically
     const headerOrigin = req.headers.get('origin')
-    const siteUrl = payloadSiteUrl || headerOrigin || Deno.env.get('PUBLIC_SITE_URL') || 'https://eclat-bece.vercel.app'
+    const siteUrl = payloadSiteUrl || headerOrigin || Deno.env.get('PUBLIC_SITE_URL') || 'https://eclatapp.xyz'
     const invitationLink = `${siteUrl.replace(/\/+$/, '')}/admin/setup/${invitation.token}`
 
     // Format expiration date
@@ -76,14 +76,14 @@ serve(async (req) => {
     })
 
     // Send email via Resend
-    const res = await fetch('https://api.resend.com/emails', {
+    let res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: 'Éclat <noreply@bece.eclatapp.xyz>',
+        from: 'Éclat <noreply@eclatapp.xyz>',
         to: [invitation.target_email],
         subject: 'You\'ve been invited to join Éclat Platform as an Administrator',
         html: `
@@ -150,7 +150,25 @@ serve(async (req) => {
       }),
     })
 
-    const data = await res.json()
+    let data = await res.json()
+
+    if (!res.ok && (data.message?.includes('domain') || data.message?.includes('verify'))) {
+      console.warn('Retrying invitation with fallback domain...', data.message)
+      res = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${RESEND_API_KEY}`,
+        },
+        body: JSON.stringify({
+          from: 'Éclat <noreply@bece.eclatapp.xyz>',
+          to: [invitation.target_email],
+          subject: 'You\'ve been invited to join Éclat Platform as an Administrator',
+          html: emailHtml,
+        }),
+      })
+      data = await res.json()
+    }
 
     if (!res.ok) {
       throw new Error(`Resend API error: ${JSON.stringify(data)}`)

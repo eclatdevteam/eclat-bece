@@ -58,12 +58,14 @@ serve(async (req) => {
     const senderEmail = profile.email;
 
     // Send the email via Resend to support@eclatapp.xyz
-    const emailResponse = await resend.emails.send({
-      from: "Éclat Support Desk <support@bece.eclatapp.xyz>",
-      to: ["support@eclatapp.xyz"],
-      subject: `[Support Query] from ${senderName}`,
-      text: `Support Message from ${senderName} (${senderEmail}):\n\n${message}`,
-      html: `
+    let emailResponse: any;
+    try {
+      emailResponse = await resend.emails.send({
+        from: "Éclat Support Desk <support@eclatapp.xyz>",
+        to: ["support@eclatapp.xyz"],
+        subject: `[Support Query] from ${senderName}`,
+        text: `Support Message from ${senderName} (${senderEmail}):\n\n${message}`,
+        html: `
         <!DOCTYPE html>
         <html>
           <head>
@@ -92,6 +94,44 @@ serve(async (req) => {
         </html>
       `,
     });
+      if (emailResponse.error) throw emailResponse.error;
+    } catch (e: any) {
+      console.warn("Retrying support email with fallback domain...", e.message);
+      emailResponse = await resend.emails.send({
+        from: "Éclat Support Desk <support@bece.eclatapp.xyz>",
+        to: ["support@eclatapp.xyz"],
+        subject: `[Support Query] from ${senderName}`,
+        text: `Support Message from ${senderName} (${senderEmail}):\n\n${message}`,
+        html: `
+          <!DOCTYPE html>
+          <html>
+            <head>
+              <meta charset="utf-8" />
+              <title>New Support Query</title>
+              <style>
+                body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif; line-height: 1.5; color: #333; }
+                .container { max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 8px; }
+                .header { background-color: #f8f9fa; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid #0891b2; }
+                .message-box { background-color: #f1f3f5; padding: 15px; border-radius: 6px; border-left: 4px solid #0891b2; font-style: italic; white-space: pre-wrap; margin-top: 10px; }
+                p { margin: 8px 0; }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h2 style="margin-top: 0; color: #0891b2;">New Support Ticket</h2>
+                  <p><strong>From:</strong> ${senderName} (<a href="mailto:${senderEmail}">${senderEmail}</a>)</p>
+                  <p><strong>Role:</strong> Parent Account</p>
+                  <p><strong>Date:</strong> ${new Date().toLocaleString()}</p>
+                </div>
+                <p><strong>Message from Parent:</strong></p>
+                <div class="message-box">${message}</div>
+              </div>
+            </body>
+          </html>
+        `,
+      });
+    }
 
     console.log("Support email sent successfully for user:", user_id, "Response:", emailResponse);
 
