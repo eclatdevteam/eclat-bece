@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 export const useAuth = () => {
   const { user, session, loading } = useAuthContext();
 
-  const handleSignOut = async () => {
+  const handleSignOut = async (redirectTo?: string) => {
     // Preserve user theme preference
     const savedTheme = localStorage.getItem("theme");
 
@@ -24,8 +24,13 @@ export const useAuth = () => {
       localStorage.setItem("theme", savedTheme);
     }
 
+    // Determine redirect destination
+    const targetUrl =
+      redirectTo ||
+      (window.location.pathname.startsWith("/admin") ? "/admin/login" : "/");
+
     // Use window.location.href to force a full page reload and clear any cached state
-    window.location.href = "/";
+    window.location.href = targetUrl;
   };
 
   return { user, session, loading, signOut: handleSignOut };

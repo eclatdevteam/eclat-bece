@@ -38,8 +38,7 @@ export const AdminLayout = () => {
 
   const handleLogout = async () => {
     try {
-      await signOut();
-      toast.success("Logged out successfully");
+      await signOut("/admin/login");
     } catch (error) {
       console.error("Logout error:", error);
       toast.error("Failed to log out");
