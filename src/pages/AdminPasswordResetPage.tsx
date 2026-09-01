@@ -15,13 +15,16 @@ import {
   Shield,
   KeyRound,
   AlertCircle,
-  AlertTriangle,
   RotateCcw,
+  UserCheck,
+  LogOut,
+  Sliders,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
 import { AuthLayout } from "@/components/auth/AuthLayout";
+import { useAuth } from "@/hooks/useAuth";
 
 const emailSchema = z.object({
   email: z.string().trim().email("Invalid administrator email address"),
@@ -30,14 +33,18 @@ const emailSchema = z.object({
 export default function AdminPasswordResetPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { signOut } = useAuth();
 
   const tokenHash = searchParams.get("token_hash");
   const hasTokenInUrl = Boolean(tokenHash);
 
-  // If there's a token_hash, we must verify it first before allowing update mode
+  // State
   const [isVerifyingToken, setIsVerifyingToken] = useState(hasTokenInUrl);
   const [tokenInvalid, setTokenInvalid] = useState(false);
   const [isUpdateMode, setIsUpdateMode] = useState(false);
+  const [activeUser, setActiveUser] = useState<{ email?: string; fullName?: string } | null>(null);
+  const [showOverrideForm, setShowOverrideForm] = useState(false);
+
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -54,6 +61,15 @@ export default function AdminPasswordResetPage() {
     if (tokenHash) {
       setIsVerifyingToken(true);
       setTokenInvalid(false);
+
+      // Best Practice: Purge any lingering stale session storage to prevent cross-account contamination
+      sessionStorage.clear();
+      Object.keys(localStorage).forEach((key) => {
+        if (key !== "theme" && (key.startsWith("sb-") || key.includes("supabase") || key === "pendingRole")) {
+          localStorage.removeItem(key);
+        }
+      });
+
       supabase.auth
         .verifyOtp({
           token_hash: tokenHash,
@@ -79,18 +95,25 @@ export default function AdminPasswordResetPage() {
           setErrorMsg("Failed to verify security token. Please request a new recovery link.");
         });
     } else {
-      // If no token_hash, check if we arrived with hash fragment or recovery session
-      const hasRecoveryHash =
-        window.location.hash.includes("type=recovery") ||
-        window.location.hash.includes("access_token");
+      // If no token_hash, check if user is already signed in or has an active session
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          // If we arrived with a recovery hash
+          const hasRecoveryHash =
+            window.location.hash.includes("type=recovery") ||
+            window.location.hash.includes("access_token");
 
-      if (hasRecoveryHash) {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-          if (session) {
+          if (hasRecoveryHash) {
             setIsUpdateMode(true);
+          } else {
+            // Active session direct visit
+            setActiveUser({
+              email: session.user.email,
+              fullName: session.user.user_metadata?.full_name || "Administrator",
+            });
           }
-        });
-      }
+        }
+      });
     }
   }, [tokenHash]);
 
@@ -101,6 +124,7 @@ export default function AdminPasswordResetPage() {
         if (event === "PASSWORD_RECOVERY" && session) {
           setIsUpdateMode(true);
           setTokenInvalid(false);
+          setActiveUser(null);
         }
       }
     );
@@ -157,7 +181,7 @@ export default function AdminPasswordResetPage() {
     }
   };
 
-  // Step 2: Set New Admin Password
+  // Step 2: Set New Admin Password (with OWASP ASVS 2.8 Clean Termination)
   const handleUpdatePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
@@ -195,7 +219,10 @@ export default function AdminPasswordResetPage() {
         console.warn("Could not log recovery password update:", logErr);
       }
 
-      toast.success("Administrator password updated successfully! Please sign in.");
+      // OWASP ASVS 2.8: Sign out of recovery session so the user must authenticate cleanly
+      await supabase.auth.signOut();
+
+      toast.success("Administrator password updated successfully! Please sign in with your new credentials.");
       navigate("/admin/login", { replace: true });
     } catch (err: any) {
       console.error("Admin password update error:", err);
@@ -209,8 +236,16 @@ export default function AdminPasswordResetPage() {
     setTokenInvalid(false);
     setIsUpdateMode(false);
     setEmailSent(false);
+    setActiveUser(null);
+    setShowOverrideForm(true);
     setErrorMsg("");
     navigate("/admin/reset-password", { replace: true });
+  };
+
+  const handleSignOutToRecover = async () => {
+    await signOut("/admin/reset-password");
+    setActiveUser(null);
+    setShowOverrideForm(true);
   };
 
   return (
@@ -222,6 +257,8 @@ export default function AdminPasswordResetPage() {
           ? "Link Expired or Invalid"
           : isUpdateMode
           ? "Configure New Password"
+          : activeUser && !showOverrideForm
+          ? "Already Signed In"
           : "Admin Password Reset"
       }
       subtitle={
@@ -229,6 +266,8 @@ export default function AdminPasswordResetPage() {
           ? "This recovery link is no longer valid. Please request a fresh reset link."
           : isUpdateMode
           ? "Set up a new secure password for your administrator account."
+          : activeUser && !showOverrideForm
+          ? `You are currently signed in as ${activeUser.email}.`
           : emailSent
           ? "Check your email for authorized recovery instructions."
           : "Enter your staff email address to receive an authorized password recovery link."
@@ -239,7 +278,7 @@ export default function AdminPasswordResetPage() {
         to: "/admin/login",
       }}
     >
-      {/* Error Alert (only if not showing the dedicated tokenInvalid card) */}
+      {/* Error Alert */}
       {errorMsg && !tokenInvalid && (
         <div className="mb-4 bg-destructive/10 border border-destructive/30 rounded-xl p-3.5 flex items-start gap-2.5 text-xs text-destructive animate-fade-in">
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
@@ -259,7 +298,7 @@ export default function AdminPasswordResetPage() {
           </p>
         </div>
       ) : tokenInvalid ? (
-        /* State 2: Invalid / Expired Token Error Screen */
+        /* State 2: Invalid / Expired Token Screen */
         <div className="text-center space-y-4 py-3 animate-fade-in">
           <div className="w-14 h-14 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive flex items-center justify-center mx-auto">
             <XCircle size={32} />
@@ -290,7 +329,7 @@ export default function AdminPasswordResetPage() {
           </div>
         </div>
       ) : isUpdateMode ? (
-        /* State 3: Valid Token -> Update Password Form */
+        /* State 3: Valid Recovery Token -> Update Password Form */
         <form onSubmit={handleUpdatePassword} className="space-y-4">
           {/* New Password */}
           <div className="space-y-2">
@@ -400,8 +439,47 @@ export default function AdminPasswordResetPage() {
             )}
           </Button>
         </form>
+      ) : activeUser && !showOverrideForm ? (
+        /* State 4: Smart Prompt for Already Signed-In User */
+        <div className="text-center space-y-4 py-3 animate-fade-in">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto">
+            <UserCheck size={32} />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-base font-bold text-foreground">
+              You are currently logged in
+            </h3>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed px-2">
+              You are logged in as <strong>{activeUser.email}</strong>. To update your password, you can change it directly in your Admin Settings tab.
+            </p>
+          </div>
+
+          <div className="pt-2 space-y-2">
+            <Button
+              variant="hero"
+              onClick={() => navigate("/admin/settings")}
+              className="w-full h-11 text-xs font-bold rounded-xl gap-1.5 shadow-md"
+            >
+              <Sliders size={14} /> Go to Admin Settings (Change Password)
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleSignOutToRecover}
+              className="w-full h-10 text-xs font-bold rounded-xl border-2 gap-1.5 text-muted-foreground hover:text-destructive hover:border-destructive/30"
+            >
+              <LogOut size={14} /> Sign Out to Recover Another Account
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setShowOverrideForm(true)}
+              className="w-full h-9 text-[11px] font-semibold text-muted-foreground hover:text-foreground"
+            >
+              Request Reset Link Anyway →
+            </Button>
+          </div>
+        </div>
       ) : emailSent ? (
-        /* State 4: Email Sent Confirmation Screen */
+        /* State 5: Email Sent Screen */
         <div className="text-center space-y-4 py-3 animate-fade-in">
           <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto">
             <CheckCircle2 size={32} />
@@ -423,7 +501,7 @@ export default function AdminPasswordResetPage() {
           </div>
         </div>
       ) : (
-        /* State 5: Email Request Input Form */
+        /* State 6: Request Reset Link Form */
         <form onSubmit={handleSendResetEmail} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="admin-email" className="text-sm font-bold text-foreground">

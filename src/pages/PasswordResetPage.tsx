@@ -3,12 +3,26 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Eye, EyeOff, Mail, Lock, CheckCircle2, XCircle, ArrowRight, RotateCcw } from "lucide-react";
+import {
+  Loader2,
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  CheckCircle2,
+  XCircle,
+  ArrowRight,
+  RotateCcw,
+  UserCheck,
+  LogOut,
+  LayoutDashboard,
+} from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { getSafeErrorMessage } from "@/lib/errorUtils";
 import { AuthLayout } from "@/components/auth/AuthLayout";
+import { useAuth } from "@/hooks/useAuth";
 
 const resetEmailSchema = z.object({
   email: z.string().trim().email("Invalid email address").max(255),
@@ -26,6 +40,7 @@ export default function PasswordResetPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+  const { signOut } = useAuth();
 
   const tokenHash = searchParams.get("token_hash");
   const hasTokenInUrl = Boolean(tokenHash);
@@ -33,6 +48,9 @@ export default function PasswordResetPage() {
   const [isVerifyingToken, setIsVerifyingToken] = useState(hasTokenInUrl);
   const [tokenInvalid, setTokenInvalid] = useState(false);
   const [isUpdateMode, setIsUpdateMode] = useState(false);
+  const [activeUser, setActiveUser] = useState<{ email?: string; role?: string } | null>(null);
+  const [showOverrideForm, setShowOverrideForm] = useState(false);
+
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -43,6 +61,15 @@ export default function PasswordResetPage() {
     if (tokenHash) {
       setIsVerifyingToken(true);
       setTokenInvalid(false);
+
+      // Best Practice: Purge any lingering stale session storage to prevent cross-account contamination
+      sessionStorage.clear();
+      Object.keys(localStorage).forEach((key) => {
+        if (key !== "theme" && (key.startsWith("sb-") || key.includes("supabase") || key === "pendingRole")) {
+          localStorage.removeItem(key);
+        }
+      });
+
       supabase.auth
         .verifyOtp({
           token_hash: tokenHash,
@@ -74,17 +101,22 @@ export default function PasswordResetPage() {
           setIsUpdateMode(false);
         });
     } else {
-      const hasRecoveryHash =
-        window.location.hash.includes("type=recovery") ||
-        window.location.hash.includes("access_token");
+      // Check if user is already signed in
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        if (session?.user) {
+          const hasRecoveryHash =
+            window.location.hash.includes("type=recovery") ||
+            window.location.hash.includes("access_token");
 
-      if (hasRecoveryHash) {
-        supabase.auth.getSession().then(({ data: { session } }) => {
-          if (session) {
+          if (hasRecoveryHash) {
             setIsUpdateMode(true);
+          } else {
+            setActiveUser({
+              email: session.user.email,
+            });
           }
-        });
-      }
+        }
+      });
     }
   }, [tokenHash, toast]);
 
@@ -94,6 +126,7 @@ export default function PasswordResetPage() {
         if (event === "PASSWORD_RECOVERY" && session) {
           setIsUpdateMode(true);
           setTokenInvalid(false);
+          setActiveUser(null);
         }
       }
     );
@@ -177,9 +210,12 @@ export default function PasswordResetPage() {
         return;
       }
 
+      // OWASP ASVS 2.8: Sign out of recovery session so the user must authenticate cleanly
+      await supabase.auth.signOut();
+
       toast({
         title: "Password Updated!",
-        description: "Your password has been successfully reset. You can now log in.",
+        description: "Your password has been successfully reset. Please sign in.",
       });
 
       navigate("/auth/login/role-selection");
@@ -206,7 +242,15 @@ export default function PasswordResetPage() {
     setTokenInvalid(false);
     setIsUpdateMode(false);
     setEmailSent(false);
+    setActiveUser(null);
+    setShowOverrideForm(true);
     navigate("/password-reset", { replace: true });
+  };
+
+  const handleSignOutToRecover = async () => {
+    await signOut("/password-reset");
+    setActiveUser(null);
+    setShowOverrideForm(true);
   };
 
   return (
@@ -218,6 +262,8 @@ export default function PasswordResetPage() {
           ? "Link Expired or Invalid"
           : isUpdateMode
           ? "Create New Password"
+          : activeUser && !showOverrideForm
+          ? "Already Signed In"
           : "Reset Password"
       }
       subtitle={
@@ -225,6 +271,8 @@ export default function PasswordResetPage() {
           ? "This recovery link is no longer valid. Please request a fresh reset link."
           : isUpdateMode
           ? "Enter and confirm your new secure password"
+          : activeUser && !showOverrideForm
+          ? `You are currently logged in as ${activeUser.email}.`
           : emailSent
           ? "Check your inbox for recovery instructions"
           : "Enter your registered email to receive a password reset link"
@@ -351,6 +399,45 @@ export default function PasswordResetPage() {
             )}
           </Button>
         </form>
+      ) : activeUser && !showOverrideForm ? (
+        /* Smart Prompt for Already Signed-In User */
+        <div className="text-center space-y-4 py-3 animate-fade-in">
+          <div className="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 text-primary flex items-center justify-center mx-auto">
+            <UserCheck size={32} />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-base font-bold text-foreground">
+              You are currently logged in
+            </h3>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed px-2">
+              You are signed in as <strong>{activeUser.email}</strong>. To manage your account or password, visit your dashboard. If you need to recover a different account, please sign out first.
+            </p>
+          </div>
+
+          <div className="pt-2 space-y-2">
+            <Button
+              variant="hero"
+              onClick={() => navigate("/")}
+              className="w-full h-11 text-xs font-bold rounded-xl gap-1.5 shadow-md"
+            >
+              <LayoutDashboard size={14} /> Go to Dashboard
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleSignOutToRecover}
+              className="w-full h-10 text-xs font-bold rounded-xl border-2 gap-1.5 text-muted-foreground hover:text-destructive hover:border-destructive/30"
+            >
+              <LogOut size={14} /> Sign Out to Recover Another Account
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => setShowOverrideForm(true)}
+              className="w-full h-9 text-[11px] font-semibold text-muted-foreground hover:text-foreground"
+            >
+              Request Reset Link Anyway →
+            </Button>
+          </div>
+        </div>
       ) : emailSent ? (
         <div className="text-center space-y-4 py-4">
           <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto">
