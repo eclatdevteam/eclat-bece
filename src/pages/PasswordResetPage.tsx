@@ -38,6 +38,37 @@ export default function PasswordResetPage() {
     window.location.hash.includes("access_token");
 
   const [isUpdateMode, setIsUpdateMode] = useState(initialIsUpdateMode);
+  const [isVerifyingToken, setIsVerifyingToken] = useState(false);
+
+  // Handle direct recovery token verification (token_hash)
+  useEffect(() => {
+    const tokenHash = searchParams.get("token_hash");
+    if (tokenHash) {
+      setIsVerifyingToken(true);
+      supabase.auth
+        .verifyOtp({
+          token_hash: tokenHash,
+          type: "recovery",
+        })
+        .then(({ data, error }) => {
+          setIsVerifyingToken(false);
+          if (error) {
+            console.error("Token verification error:", error);
+            toast({
+              title: "Invalid or Expired Link",
+              description: "This password recovery link is invalid or has expired. Please request a new one.",
+              variant: "destructive",
+            });
+          } else if (data?.session) {
+            setIsUpdateMode(true);
+            toast({
+              title: "Token Verified",
+              description: "Please configure your new password below.",
+            });
+          }
+        });
+    }
+  }, [searchParams, toast]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -173,7 +204,17 @@ export default function PasswordResetPage() {
         to: "/auth/login/role-selection",
       }}
     >
-      {isUpdateMode ? (
+      {isVerifyingToken ? (
+        <div className="py-12 flex flex-col items-center justify-center space-y-3 text-center animate-fade-in">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm font-semibold text-foreground">
+            Verifying recovery link...
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Please wait while we validate your credentials.
+          </p>
+        </div>
+      ) : isUpdateMode ? (
         <form onSubmit={handleUpdatePassword} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="password" className="text-sm font-bold text-foreground">

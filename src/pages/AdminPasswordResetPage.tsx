@@ -36,6 +36,7 @@ export default function AdminPasswordResetPage() {
     window.location.hash.includes("access_token");
 
   const [isUpdateMode, setIsUpdateMode] = useState(initialIsUpdateMode);
+  const [isVerifyingToken, setIsVerifyingToken] = useState(false);
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -46,6 +47,29 @@ export default function AdminPasswordResetPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+
+  // Handle direct recovery token verification (token_hash)
+  useEffect(() => {
+    const tokenHash = searchParams.get("token_hash");
+    if (tokenHash) {
+      setIsVerifyingToken(true);
+      supabase.auth
+        .verifyOtp({
+          token_hash: tokenHash,
+          type: "recovery",
+        })
+        .then(({ data, error }) => {
+          setIsVerifyingToken(false);
+          if (error) {
+            console.error("Token verification error:", error);
+            setErrorMsg("This password recovery link is invalid or has expired. Please request a new one.");
+          } else if (data?.session) {
+            setIsUpdateMode(true);
+            toast.success("Security token verified. Please configure your new master password.");
+          }
+        });
+    }
+  }, [searchParams]);
 
   // Listen for Supabase password recovery event
   useEffect(() => {
@@ -186,7 +210,17 @@ export default function AdminPasswordResetPage() {
         </div>
       )}
 
-      {isUpdateMode ? (
+      {isVerifyingToken ? (
+        <div className="py-12 flex flex-col items-center justify-center space-y-3 text-center animate-fade-in">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <p className="text-sm font-semibold text-foreground">
+            Verifying secure password recovery token...
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Please wait while we authorize your administrator session.
+          </p>
+        </div>
+      ) : isUpdateMode ? (
         <form onSubmit={handleUpdatePassword} className="space-y-4">
           {/* New Password */}
           <div className="space-y-2">
