@@ -15,6 +15,8 @@ import {
   Shield,
   KeyRound,
   AlertCircle,
+  AlertTriangle,
+  RotateCcw,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -29,14 +31,13 @@ export default function AdminPasswordResetPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  // Mode detection: query param, hash fragment, or auth state change
-  const initialIsUpdateMode =
-    searchParams.get("type") === "recovery" ||
-    window.location.hash.includes("type=recovery") ||
-    window.location.hash.includes("access_token");
+  const tokenHash = searchParams.get("token_hash");
+  const hasTokenInUrl = Boolean(tokenHash);
 
-  const [isUpdateMode, setIsUpdateMode] = useState(initialIsUpdateMode);
-  const [isVerifyingToken, setIsVerifyingToken] = useState(false);
+  // If there's a token_hash, we must verify it first before allowing update mode
+  const [isVerifyingToken, setIsVerifyingToken] = useState(hasTokenInUrl);
+  const [tokenInvalid, setTokenInvalid] = useState(false);
+  const [isUpdateMode, setIsUpdateMode] = useState(false);
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
@@ -50,9 +51,9 @@ export default function AdminPasswordResetPage() {
 
   // Handle direct recovery token verification (token_hash)
   useEffect(() => {
-    const tokenHash = searchParams.get("token_hash");
     if (tokenHash) {
       setIsVerifyingToken(true);
+      setTokenInvalid(false);
       supabase.auth
         .verifyOtp({
           token_hash: tokenHash,
@@ -60,26 +61,46 @@ export default function AdminPasswordResetPage() {
         })
         .then(({ data, error }) => {
           setIsVerifyingToken(false);
-          if (error) {
+          if (error || !data?.session) {
             console.error("Token verification error:", error);
+            setTokenInvalid(true);
+            setIsUpdateMode(false);
             setErrorMsg("This password recovery link is invalid or has expired. Please request a new one.");
-          } else if (data?.session) {
+          } else {
+            setTokenInvalid(false);
             setIsUpdateMode(true);
             toast.success("Security token verified. Please configure your new master password.");
           }
+        })
+        .catch((err) => {
+          setIsVerifyingToken(false);
+          setTokenInvalid(true);
+          setIsUpdateMode(false);
+          setErrorMsg("Failed to verify security token. Please request a new recovery link.");
         });
+    } else {
+      // If no token_hash, check if we arrived with hash fragment or recovery session
+      const hasRecoveryHash =
+        window.location.hash.includes("type=recovery") ||
+        window.location.hash.includes("access_token");
+
+      if (hasRecoveryHash) {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session) {
+            setIsUpdateMode(true);
+          }
+        });
+      }
     }
-  }, [searchParams]);
+  }, [tokenHash]);
 
   // Listen for Supabase password recovery event
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event) => {
-        if (
-          event === "PASSWORD_RECOVERY" ||
-          (event === "SIGNED_IN" && window.location.hash.includes("type=recovery"))
-        ) {
+      (event, session) => {
+        if (event === "PASSWORD_RECOVERY" && session) {
           setIsUpdateMode(true);
+          setTokenInvalid(false);
         }
       }
     );
@@ -184,13 +205,29 @@ export default function AdminPasswordResetPage() {
     }
   };
 
+  const handleResetForm = () => {
+    setTokenInvalid(false);
+    setIsUpdateMode(false);
+    setEmailSent(false);
+    setErrorMsg("");
+    navigate("/admin/reset-password", { replace: true });
+  };
+
   return (
     <AuthLayout
       role="admin"
       badgeText="Staff Security"
-      title={isUpdateMode ? "Configure New Password" : "Admin Password Reset"}
+      title={
+        tokenInvalid
+          ? "Link Expired or Invalid"
+          : isUpdateMode
+          ? "Configure New Password"
+          : "Admin Password Reset"
+      }
       subtitle={
-        isUpdateMode
+        tokenInvalid
+          ? "This recovery link is no longer valid. Please request a fresh reset link."
+          : isUpdateMode
           ? "Set up a new secure password for your administrator account."
           : emailSent
           ? "Check your email for authorized recovery instructions."
@@ -202,14 +239,15 @@ export default function AdminPasswordResetPage() {
         to: "/admin/login",
       }}
     >
-      {/* Error Alert */}
-      {errorMsg && (
+      {/* Error Alert (only if not showing the dedicated tokenInvalid card) */}
+      {errorMsg && !tokenInvalid && (
         <div className="mb-4 bg-destructive/10 border border-destructive/30 rounded-xl p-3.5 flex items-start gap-2.5 text-xs text-destructive animate-fade-in">
           <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
           <p className="font-semibold leading-relaxed">{errorMsg}</p>
         </div>
       )}
 
+      {/* State 1: Verifying Token */}
       {isVerifyingToken ? (
         <div className="py-12 flex flex-col items-center justify-center space-y-3 text-center animate-fade-in">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -220,7 +258,39 @@ export default function AdminPasswordResetPage() {
             Please wait while we authorize your administrator session.
           </p>
         </div>
+      ) : tokenInvalid ? (
+        /* State 2: Invalid / Expired Token Error Screen */
+        <div className="text-center space-y-4 py-3 animate-fade-in">
+          <div className="w-14 h-14 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive flex items-center justify-center mx-auto">
+            <XCircle size={32} />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-base font-bold text-foreground">
+              Recovery Link Expired or Invalid
+            </h3>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed px-2">
+              For your security, password reset links can only be used once and expire after 1 hour. Please request a fresh recovery link below.
+            </p>
+          </div>
+          <div className="pt-3 space-y-2">
+            <Button
+              variant="hero"
+              onClick={handleResetForm}
+              className="w-full h-11 text-xs font-bold rounded-xl gap-1.5 shadow-md"
+            >
+              <RotateCcw size={14} /> Request New Recovery Link
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/admin/login")}
+              className="w-full h-10 text-xs font-bold rounded-xl border-2 gap-1.5"
+            >
+              <Shield size={14} /> Return to Admin Sign In
+            </Button>
+          </div>
+        </div>
       ) : isUpdateMode ? (
+        /* State 3: Valid Token -> Update Password Form */
         <form onSubmit={handleUpdatePassword} className="space-y-4">
           {/* New Password */}
           <div className="space-y-2">
@@ -331,6 +401,7 @@ export default function AdminPasswordResetPage() {
           </Button>
         </form>
       ) : emailSent ? (
+        /* State 4: Email Sent Confirmation Screen */
         <div className="text-center space-y-4 py-3 animate-fade-in">
           <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto">
             <CheckCircle2 size={32} />
@@ -352,6 +423,7 @@ export default function AdminPasswordResetPage() {
           </div>
         </div>
       ) : (
+        /* State 5: Email Request Input Form */
         <form onSubmit={handleSendResetEmail} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="admin-email" className="text-sm font-bold text-foreground">

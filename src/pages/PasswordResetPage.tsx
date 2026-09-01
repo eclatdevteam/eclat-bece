@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Eye, EyeOff, Mail, Lock, CheckCircle2, ArrowRight } from "lucide-react";
+import { Loader2, Eye, EyeOff, Mail, Lock, CheckCircle2, XCircle, ArrowRight, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -26,25 +26,23 @@ export default function PasswordResetPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
+
+  const tokenHash = searchParams.get("token_hash");
+  const hasTokenInUrl = Boolean(tokenHash);
+
+  const [isVerifyingToken, setIsVerifyingToken] = useState(hasTokenInUrl);
+  const [tokenInvalid, setTokenInvalid] = useState(false);
+  const [isUpdateMode, setIsUpdateMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Detect recovery mode from query param, hash fragment, or auth state
-  const initialIsUpdateMode =
-    searchParams.get("type") === "recovery" ||
-    window.location.hash.includes("type=recovery") ||
-    window.location.hash.includes("access_token");
-
-  const [isUpdateMode, setIsUpdateMode] = useState(initialIsUpdateMode);
-  const [isVerifyingToken, setIsVerifyingToken] = useState(false);
-
   // Handle direct recovery token verification (token_hash)
   useEffect(() => {
-    const tokenHash = searchParams.get("token_hash");
     if (tokenHash) {
       setIsVerifyingToken(true);
+      setTokenInvalid(false);
       supabase.auth
         .verifyOtp({
           token_hash: tokenHash,
@@ -52,32 +50,50 @@ export default function PasswordResetPage() {
         })
         .then(({ data, error }) => {
           setIsVerifyingToken(false);
-          if (error) {
+          if (error || !data?.session) {
             console.error("Token verification error:", error);
+            setTokenInvalid(true);
+            setIsUpdateMode(false);
             toast({
-              title: "Invalid or Expired Link",
+              title: "Link Expired or Invalid",
               description: "This password recovery link is invalid or has expired. Please request a new one.",
               variant: "destructive",
             });
-          } else if (data?.session) {
+          } else {
+            setTokenInvalid(false);
             setIsUpdateMode(true);
             toast({
               title: "Token Verified",
               description: "Please configure your new password below.",
             });
           }
+        })
+        .catch((err) => {
+          setIsVerifyingToken(false);
+          setTokenInvalid(true);
+          setIsUpdateMode(false);
         });
+    } else {
+      const hasRecoveryHash =
+        window.location.hash.includes("type=recovery") ||
+        window.location.hash.includes("access_token");
+
+      if (hasRecoveryHash) {
+        supabase.auth.getSession().then(({ data: { session } }) => {
+          if (session) {
+            setIsUpdateMode(true);
+          }
+        });
+      }
     }
-  }, [searchParams, toast]);
+  }, [tokenHash, toast]);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event) => {
-        if (
-          event === "PASSWORD_RECOVERY" ||
-          (event === "SIGNED_IN" && window.location.hash.includes("type=recovery"))
-        ) {
+      (event, session) => {
+        if (event === "PASSWORD_RECOVERY" && session) {
           setIsUpdateMode(true);
+          setTokenInvalid(false);
         }
       }
     );
@@ -186,13 +202,28 @@ export default function PasswordResetPage() {
     }
   };
 
+  const handleResetForm = () => {
+    setTokenInvalid(false);
+    setIsUpdateMode(false);
+    setEmailSent(false);
+    navigate("/password-reset", { replace: true });
+  };
+
   return (
     <AuthLayout
       role="general"
       badgeText="Account Recovery"
-      title={isUpdateMode ? "Create New Password" : "Reset Password"}
+      title={
+        tokenInvalid
+          ? "Link Expired or Invalid"
+          : isUpdateMode
+          ? "Create New Password"
+          : "Reset Password"
+      }
       subtitle={
-        isUpdateMode
+        tokenInvalid
+          ? "This recovery link is no longer valid. Please request a fresh reset link."
+          : isUpdateMode
           ? "Enter and confirm your new secure password"
           : emailSent
           ? "Check your inbox for recovery instructions"
@@ -213,6 +244,36 @@ export default function PasswordResetPage() {
           <p className="text-xs text-muted-foreground">
             Please wait while we validate your credentials.
           </p>
+        </div>
+      ) : tokenInvalid ? (
+        <div className="text-center space-y-4 py-3 animate-fade-in">
+          <div className="w-14 h-14 rounded-2xl bg-destructive/10 border border-destructive/20 text-destructive flex items-center justify-center mx-auto">
+            <XCircle size={32} />
+          </div>
+          <div className="space-y-1.5">
+            <h3 className="text-base font-bold text-foreground">
+              Recovery Link Expired or Invalid
+            </h3>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed px-2">
+              For your security, password reset links can only be used once and expire after 1 hour. Please request a fresh recovery link below.
+            </p>
+          </div>
+          <div className="pt-3 space-y-2">
+            <Button
+              variant="hero"
+              onClick={handleResetForm}
+              className="w-full h-11 text-xs font-bold rounded-xl gap-1.5 shadow-md"
+            >
+              <RotateCcw size={14} /> Request New Reset Link
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => navigate("/auth/login/role-selection")}
+              className="w-full h-10 text-xs font-bold rounded-xl border-2"
+            >
+              Return to Login Hub
+            </Button>
+          </div>
         </div>
       ) : isUpdateMode ? (
         <form onSubmit={handleUpdatePassword} className="space-y-4">
