@@ -20,21 +20,20 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
+    const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      {
-        global: {
-          headers: { Authorization: req.headers.get('Authorization')! },
-        },
-      }
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     )
 
     // Get the invitation ID and optional siteUrl from the request
     const { invitationId, siteUrl: payloadSiteUrl } = await req.json() as InvitationEmailRequest
 
+    if (!invitationId) {
+      throw new Error("Missing invitationId in request payload")
+    }
+
     // Fetch invitation details
-    const { data: invitation, error: invitationError } = await supabaseClient
+    const { data: invitation, error: invitationError } = await supabaseAdmin
       .from('admin_invitations')
       .select(`
         id,
@@ -48,16 +47,23 @@ serve(async (req) => {
       .eq('id', invitationId)
       .single()
 
-    if (invitationError) throw invitationError
+    if (invitationError || !invitation) {
+      throw new Error(`Invitation not found: ${invitationError?.message || 'Unknown error'}`)
+    }
 
-    // Get inviter's name
-    const { data: inviter, error: inviterError } = await supabaseClient
-      .from('admins')
-      .select('full_name')
-      .eq('id', invitation.invited_by)
-      .single()
+    // Get inviter's name safely
+    let inviterName = 'An administrator'
+    if (invitation.invited_by) {
+      const { data: inviter } = await supabaseAdmin
+        .from('admins')
+        .select('full_name')
+        .eq('id', invitation.invited_by)
+        .maybeSingle()
 
-    if (inviterError) throw inviterError
+      if (inviter?.full_name) {
+        inviterName = inviter.full_name
+      }
+    }
 
     // Generate invitation link dynamically
     const headerOrigin = req.headers.get('origin')
@@ -75,18 +81,7 @@ serve(async (req) => {
       minute: '2-digit'
     })
 
-    // Send email via Resend
-    let res = await fetch('https://api.resend.com/emails', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${RESEND_API_KEY}`,
-      },
-      body: JSON.stringify({
-        from: 'Éclat <noreply@eclatapp.xyz>',
-        to: [invitation.target_email],
-        subject: 'You\'ve been invited to join Éclat Platform as an Administrator',
-        html: `
+    const emailHtml = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -103,7 +98,7 @@ serve(async (req) => {
     <p style="font-size: 16px; margin-bottom: 20px;">Hello <strong>${invitation.full_name}</strong>,</p>
     
     <p style="font-size: 16px; margin-bottom: 20px;">
-      <strong>${inviter.full_name}</strong> has invited you to become an administrator on the <strong>Éclat Platform</strong>.
+      <strong>${inviterName}</strong> has invited you to become an administrator on the <strong>Éclat Platform</strong>.
     </p>
     
     <p style="font-size: 14px; margin-bottom: 20px; color: #6b7280;">
@@ -146,13 +141,26 @@ serve(async (req) => {
   </div>
 </body>
 </html>
-        `,
+`
+
+    // Send email via Resend
+    let res = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: 'Éclat <noreply@eclatapp.xyz>',
+        to: [invitation.target_email],
+        subject: 'You\'ve been invited to join Éclat Platform as an Administrator',
+        html: emailHtml,
       }),
     })
 
     let data = await res.json()
 
-    if (!res.ok && (data.message?.includes('domain') || data.message?.includes('verify'))) {
+    if (!res.ok && (data.message?.includes('domain') || data.message?.includes('verify') || data.name === 'validation_error')) {
       console.warn('Retrying invitation with fallback domain...', data.message)
       res = await fetch('https://api.resend.com/emails', {
         method: 'POST',
@@ -181,9 +189,10 @@ serve(async (req) => {
         status: 200,
       },
     )
-  } catch (error) {
+  } catch (error: any) {
+    console.error("send-admin-invitation error:", error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message || 'Unknown error' }),
       {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400,
