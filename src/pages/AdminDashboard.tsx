@@ -60,17 +60,20 @@ export default function AdminDashboard() {
     }, [user]);
 
     useEffect(() => {
+        if (!isSuperAdmin) return;
         const timer = setTimeout(() => {
             setCurrentPage(1); // Reset to first page when filters change
             fetchRecentActivity();
         }, 300); // Debounce search
 
         return () => clearTimeout(timer);
-    }, [searchQuery, actionFilter, resourceFilter]);
+    }, [searchQuery, actionFilter, resourceFilter, isSuperAdmin]);
 
     useEffect(() => {
-        fetchRecentActivity();
-    }, [currentPage]);
+        if (isSuperAdmin) {
+            fetchRecentActivity();
+        }
+    }, [currentPage, isSuperAdmin]);
 
     const fetchAdminData = async () => {
         if (!user) return;
@@ -434,161 +437,164 @@ export default function AdminDashboard() {
                 })}
             </div>
 
-            <Separator />
-
-            {/* Recent Activity */}
-            <Card className="animate-fade-in">
-                <CardHeader>
-                    <div className="flex flex-col gap-4">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <CardTitle>Recent Admin Activity</CardTitle>
-                                <CardDescription>Latest actions performed by administrators</CardDescription>
-                            </div>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={exportToCSV}
-                                disabled={recentActivity.length === 0}
-                            >
-                                <Download className="h-4 w-4 mr-2" />
-                                Export CSV
-                            </Button>
-                        </div>
-
-                        {/* Filters and Search */}
-                        <div className="flex flex-col sm:flex-row gap-3">
-                            {/* Search */}
-                            <div className="relative flex-1">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search by email or details..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="pl-9"
-                                />
-                            </div>
-
-                            {/* Action Filter */}
-                            <Select value={actionFilter} onValueChange={setActionFilter}>
-                                <SelectTrigger className="w-full sm:w-[180px]">
-                                    <Filter className="h-4 w-4 mr-2" />
-                                    <SelectValue placeholder="Action type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Actions</SelectItem>
-                                    <SelectItem value="create">Create</SelectItem>
-                                    <SelectItem value="delete">Delete</SelectItem>
-                                    <SelectItem value="update">Update</SelectItem>
-                                    <SelectItem value="deactivate">Deactivate</SelectItem>
-                                    <SelectItem value="reactivate">Reactivate</SelectItem>
-                                    <SelectItem value="invitation">Invitation</SelectItem>
-                                </SelectContent>
-                            </Select>
-
-                            {/* Resource Filter */}
-                            <Select value={resourceFilter} onValueChange={setResourceFilter}>
-                                <SelectTrigger className="w-full sm:w-[180px]">
-                                    <SelectValue placeholder="Resource type" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Resources</SelectItem>
-                                    <SelectItem value="admin">Admin</SelectItem>
-                                    <SelectItem value="question">Question</SelectItem>
-                                    <SelectItem value="passage">Passage</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Pagination */}
-                        {totalPages > 1 && (
-                            <div className="flex items-center justify-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                                    disabled={currentPage === 1}
-                                >
-                                    <ChevronLeft className="h-4 w-4" />
-                                </Button>
-                                <span className="text-sm text-muted-foreground">
-                                    Page {currentPage} of {totalPages}
-                                </span>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                                    disabled={currentPage === totalPages}
-                                >
-                                    <ChevronRight className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        )}
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    {recentActivity.length === 0 ? (
-                        <div className="text-center py-12">
-                            <Activity className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
-                            <p className="text-muted-foreground">No recent activity</p>
-                        </div>
-                    ) : (
-                        <div className="space-y-3">
-                            {recentActivity.map((activity) => {
-                                const { adminName, description, icon: Icon, color, bgColor } = getActivityInfo(activity);
-                                return (
-                                    <div
-                                        key={activity.id}
-                                        className="flex items-start gap-4 p-4 rounded-lg border border-border/50 hover:border-border hover:shadow-sm transition-all duration-200"
-                                    >
-                                        <div className={`p-2.5 rounded-lg ${bgColor} flex-shrink-0`}>
-                                            <Icon className={`w-5 h-5 ${color}`} />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-start justify-between gap-2">
-                                                <div className="flex-1">
-                                                    <p className="font-medium text-foreground">
-                                                        <span className="text-primary">{adminName}</span>
-                                                        {" "}
-                                                        <span className="text-muted-foreground font-normal">{description}</span>
-                                                    </p>
-                                                    {activity.details && Object.keys(activity.details).length > 0 && (
-                                                        <p className="text-sm text-muted-foreground mt-1">
-                                                            {/* Admin-related details */}
-                                                            {activity.details.admin_name && `Admin: ${activity.details.admin_name}`}
-                                                            {activity.details.admin_email && ` (${activity.details.admin_email})`}
-
-                                                            {/* Invitation details */}
-                                                            {activity.details.target_user_email && `Email: ${activity.details.target_user_email}`}
-                                                            {activity.details.email && !activity.details.target_user_email && `Email: ${activity.details.email}`}
-
-                                                            {/* Question details */}
-                                                            {activity.details.question_text && `Question: ${activity.details.question_text.substring(0, 50)}...`}
-                                                            {activity.details.subject && ` • Subject: ${activity.details.subject}`}
-                                                            {activity.details.difficulty && ` • ${activity.details.difficulty}`}
-
-                                                            {/* Passage details */}
-                                                            {activity.details.title && `Title: ${activity.details.title}`}
-                                                            {activity.details.passage_preview && ` • ${activity.details.passage_preview.substring(0, 50)}...`}
-
-                                                            {/* Status changes */}
-                                                            {activity.details.previous_status && activity.details.new_status &&
-                                                                ` • Status: ${activity.details.previous_status} → ${activity.details.new_status}`}
-                                                        </p>
-                                                    )}
-                                                </div>
-                                                <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                                    {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
-                                                </span>
-                                            </div>
-                                        </div>
+            {/* Recent Activity (Super Admin Only) */}
+            {isSuperAdmin && (
+                <>
+                    <Separator />
+                    <Card className="animate-fade-in">
+                        <CardHeader>
+                            <div className="flex flex-col gap-4">
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <CardTitle>Recent Admin Activity</CardTitle>
+                                        <CardDescription>Latest actions performed by administrators</CardDescription>
                                     </div>
-                                );
-                            })}
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+                                    <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={exportToCSV}
+                                        disabled={recentActivity.length === 0}
+                                    >
+                                        <Download className="h-4 w-4 mr-2" />
+                                        Export CSV
+                                    </Button>
+                                </div>
+
+                                {/* Filters and Search */}
+                                <div className="flex flex-col sm:flex-row gap-3">
+                                    {/* Search */}
+                                    <div className="relative flex-1">
+                                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            placeholder="Search by email or details..."
+                                            value={searchQuery}
+                                            onChange={(e) => setSearchQuery(e.target.value)}
+                                            className="pl-9"
+                                        />
+                                    </div>
+
+                                    {/* Action Filter */}
+                                    <Select value={actionFilter} onValueChange={setActionFilter}>
+                                        <SelectTrigger className="w-full sm:w-[180px]">
+                                            <Filter className="h-4 w-4 mr-2" />
+                                            <SelectValue placeholder="Action type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Actions</SelectItem>
+                                            <SelectItem value="create">Create</SelectItem>
+                                            <SelectItem value="delete">Delete</SelectItem>
+                                            <SelectItem value="update">Update</SelectItem>
+                                            <SelectItem value="deactivate">Deactivate</SelectItem>
+                                            <SelectItem value="reactivate">Reactivate</SelectItem>
+                                            <SelectItem value="invitation">Invitation</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+
+                                    {/* Resource Filter */}
+                                    <Select value={resourceFilter} onValueChange={setResourceFilter}>
+                                        <SelectTrigger className="w-full sm:w-[180px]">
+                                            <SelectValue placeholder="Resource type" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="all">All Resources</SelectItem>
+                                            <SelectItem value="admin">Admin</SelectItem>
+                                            <SelectItem value="question">Question</SelectItem>
+                                            <SelectItem value="passage">Passage</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Pagination */}
+                                {totalPages > 1 && (
+                                    <div className="flex items-center justify-center gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                                            disabled={currentPage === 1}
+                                        >
+                                            <ChevronLeft className="h-4 w-4" />
+                                        </Button>
+                                        <span className="text-sm text-muted-foreground">
+                                            Page {currentPage} of {totalPages}
+                                        </span>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                                            disabled={currentPage === totalPages}
+                                        >
+                                            <ChevronRight className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                            {recentActivity.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <Activity className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-50" />
+                                    <p className="text-muted-foreground">No recent activity</p>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {recentActivity.map((activity) => {
+                                        const { adminName, description, icon: Icon, color, bgColor } = getActivityInfo(activity);
+                                        return (
+                                            <div
+                                                key={activity.id}
+                                                className="flex items-start gap-4 p-4 rounded-lg border border-border/50 hover:border-border hover:shadow-sm transition-all duration-200"
+                                            >
+                                                <div className={`p-2.5 rounded-lg ${bgColor} flex-shrink-0`}>
+                                                    <Icon className={`w-5 h-5 ${color}`} />
+                                                </div>
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <div className="flex-1">
+                                                            <p className="font-medium text-foreground">
+                                                                <span className="text-primary">{adminName}</span>
+                                                                {" "}
+                                                                <span className="text-muted-foreground font-normal">{description}</span>
+                                                            </p>
+                                                            {activity.details && Object.keys(activity.details).length > 0 && (
+                                                                <p className="text-sm text-muted-foreground mt-1">
+                                                                    {/* Admin-related details */}
+                                                                    {activity.details.admin_name && `Admin: ${activity.details.admin_name}`}
+                                                                    {activity.details.admin_email && ` (${activity.details.admin_email})`}
+
+                                                                    {/* Invitation details */}
+                                                                    {activity.details.target_user_email && `Email: ${activity.details.target_user_email}`}
+                                                                    {activity.details.email && !activity.details.target_user_email && `Email: ${activity.details.email}`}
+
+                                                                    {/* Question details */}
+                                                                    {activity.details.question_text && `Question: ${activity.details.question_text.substring(0, 50)}...`}
+                                                                    {activity.details.subject && ` • Subject: ${activity.details.subject}`}
+                                                                    {activity.details.difficulty && ` • ${activity.details.difficulty}`}
+
+                                                                    {/* Passage details */}
+                                                                    {activity.details.title && `Title: ${activity.details.title}`}
+                                                                    {activity.details.passage_preview && ` • ${activity.details.passage_preview.substring(0, 50)}...`}
+
+                                                                    {/* Status changes */}
+                                                                    {activity.details.previous_status && activity.details.new_status &&
+                                                                        ` • Status: ${activity.details.previous_status} → ${activity.details.new_status}`}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                                                            {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true })}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </>
+            )}
         </div>
     );
 }
