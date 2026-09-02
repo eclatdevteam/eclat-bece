@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,9 +42,31 @@ export default function PasswordResetPage() {
   const { toast } = useToast();
   const { signOut } = useAuth();
 
+  const role = (searchParams.get("role") || "parent") as "parent" | "school" | "student" | "admin" | "general";
+  const loginPath = role === "parent"
+    ? "/parent-login"
+    : role === "school"
+    ? "/school-login"
+    : role === "student"
+    ? "/student-login"
+    : role === "admin"
+    ? "/admin/login"
+    : "/auth/login/role-selection";
+
+  const dashboardPath = role === "parent"
+    ? "/dashboard/parent"
+    : role === "school"
+    ? "/dashboard/school"
+    : role === "student"
+    ? "/dashboard/student"
+    : role === "admin"
+    ? "/admin"
+    : "/";
+
   const tokenHash = searchParams.get("token_hash");
   const hasTokenInUrl = Boolean(tokenHash);
 
+  const hasVerifiedRef = useRef(false);
   const [isVerifyingToken, setIsVerifyingToken] = useState(hasTokenInUrl);
   const [tokenInvalid, setTokenInvalid] = useState(false);
   const [isUpdateMode, setIsUpdateMode] = useState(false);
@@ -59,6 +81,10 @@ export default function PasswordResetPage() {
   // Handle direct recovery token verification (token_hash)
   useEffect(() => {
     if (tokenHash) {
+      // Guard against React 18 StrictMode double-invoking verifyOtp and burning single-use OTP
+      if (hasVerifiedRef.current) return;
+      hasVerifiedRef.current = true;
+
       setIsVerifyingToken(true);
       setTokenInvalid(false);
 
@@ -101,20 +127,15 @@ export default function PasswordResetPage() {
           setIsUpdateMode(false);
         });
     } else {
-      // Check if user is already signed in
+      // Check if user is already signed in (direct visit, not recovery)
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user) {
-          const hasRecoveryHash =
-            window.location.hash.includes("type=recovery") ||
-            window.location.hash.includes("access_token");
-
-          if (hasRecoveryHash) {
-            setIsUpdateMode(true);
-          } else {
-            setActiveUser({
-              email: session.user.email,
-            });
-          }
+          // Show the "already signed in" prompt.
+          // If this is actually a recovery flow, the PASSWORD_RECOVERY event
+          // in the next useEffect will override this and switch to update mode.
+          setActiveUser({
+            email: session.user.email,
+          });
         }
       });
     }
@@ -149,7 +170,7 @@ export default function PasswordResetPage() {
         body: {
           email: validated.email,
           siteUrl: window.location.origin,
-          role: "general",
+          role: role,
         },
       });
 
@@ -218,7 +239,7 @@ export default function PasswordResetPage() {
         description: "Your password has been successfully reset. Please sign in.",
       });
 
-      navigate("/auth/login/role-selection");
+      navigate(loginPath);
     } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         toast({
@@ -244,18 +265,19 @@ export default function PasswordResetPage() {
     setEmailSent(false);
     setActiveUser(null);
     setShowOverrideForm(true);
-    navigate("/password-reset", { replace: true });
+    hasVerifiedRef.current = false;
+    navigate(role === "general" ? "/password-reset" : `/password-reset?role=${role}`, { replace: true });
   };
 
   const handleSignOutToRecover = async () => {
-    await signOut("/password-reset");
+    await signOut(role === "general" ? "/password-reset" : `/password-reset?role=${role}`);
     setActiveUser(null);
     setShowOverrideForm(true);
   };
 
   return (
     <AuthLayout
-      role="general"
+      role={role}
       badgeText="Account Recovery"
       title={
         tokenInvalid
@@ -280,7 +302,7 @@ export default function PasswordResetPage() {
       footerLink={{
         text: "Remembered your credentials?",
         actionText: "Back to Login",
-        to: "/auth/login/role-selection",
+        to: loginPath,
       }}
     >
       {isVerifyingToken ? (
@@ -316,10 +338,10 @@ export default function PasswordResetPage() {
             </Button>
             <Button
               variant="outline"
-              onClick={() => navigate("/auth/login/role-selection")}
+              onClick={() => navigate(loginPath)}
               className="w-full h-10 text-xs font-bold rounded-xl border-2"
             >
-              Return to Login Hub
+              Return to Login
             </Button>
           </div>
         </div>
@@ -417,7 +439,7 @@ export default function PasswordResetPage() {
           <div className="pt-2 space-y-2">
             <Button
               variant="hero"
-              onClick={() => navigate("/")}
+              onClick={() => navigate(dashboardPath)}
               className="w-full h-11 text-xs font-bold rounded-xl gap-1.5 shadow-md"
             >
               <LayoutDashboard size={14} /> Go to Dashboard
@@ -448,10 +470,10 @@ export default function PasswordResetPage() {
           </p>
           <Button
             variant="outline"
-            onClick={() => navigate("/auth/login/role-selection")}
+            onClick={() => navigate(loginPath)}
             className="w-full h-11 text-sm font-bold rounded-xl border-2"
           >
-            Return to Login Hub
+            Return to Login
           </Button>
         </div>
       ) : (
@@ -497,7 +519,7 @@ export default function PasswordResetPage() {
           <Button
             type="button"
             variant="ghost"
-            onClick={() => navigate("/auth/login/role-selection")}
+            onClick={() => navigate(loginPath)}
             className="w-full h-10 text-xs font-bold rounded-xl text-muted-foreground hover:text-foreground"
           >
             Cancel & Go Back

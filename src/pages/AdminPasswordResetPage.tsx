@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,6 +39,7 @@ export default function AdminPasswordResetPage() {
   const hasTokenInUrl = Boolean(tokenHash);
 
   // State
+  const hasVerifiedRef = useRef(false);
   const [isVerifyingToken, setIsVerifyingToken] = useState(hasTokenInUrl);
   const [tokenInvalid, setTokenInvalid] = useState(false);
   const [isUpdateMode, setIsUpdateMode] = useState(false);
@@ -59,6 +60,9 @@ export default function AdminPasswordResetPage() {
   // Handle direct recovery token verification (token_hash)
   useEffect(() => {
     if (tokenHash) {
+      if (hasVerifiedRef.current) return;
+      hasVerifiedRef.current = true;
+
       setIsVerifyingToken(true);
       setTokenInvalid(false);
 
@@ -95,23 +99,16 @@ export default function AdminPasswordResetPage() {
           setErrorMsg("Failed to verify security token. Please request a new recovery link.");
         });
     } else {
-      // If no token_hash, check if user is already signed in or has an active session
+      // If no token_hash, check if user is already signed in (direct visit)
       supabase.auth.getSession().then(({ data: { session } }) => {
         if (session?.user) {
-          // If we arrived with a recovery hash
-          const hasRecoveryHash =
-            window.location.hash.includes("type=recovery") ||
-            window.location.hash.includes("access_token");
-
-          if (hasRecoveryHash) {
-            setIsUpdateMode(true);
-          } else {
-            // Active session direct visit
-            setActiveUser({
-              email: session.user.email,
-              fullName: session.user.user_metadata?.full_name || "Administrator",
-            });
-          }
+          // Show the "already signed in" prompt.
+          // If this is actually a recovery flow, the PASSWORD_RECOVERY event
+          // in the next useEffect will override this and switch to update mode.
+          setActiveUser({
+            email: session.user.email,
+            fullName: session.user.user_metadata?.full_name || "Administrator",
+          });
         }
       });
     }
@@ -239,6 +236,7 @@ export default function AdminPasswordResetPage() {
     setActiveUser(null);
     setShowOverrideForm(true);
     setErrorMsg("");
+    hasVerifiedRef.current = false;
     navigate("/admin/reset-password", { replace: true });
   };
 

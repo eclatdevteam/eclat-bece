@@ -105,6 +105,17 @@ export default function AuthPage() {
         return;
       }
 
+      // Check if user already exists (identities is empty under email enumeration protection)
+      if (data.user.identities && data.user.identities.length === 0) {
+        toast({
+          title: "Account Already Exists",
+          description: "An account with this email already exists. Please sign in instead.",
+          variant: "destructive",
+        });
+        navigate(role === "parent" ? "/parent-login" : role === "school" ? "/school-login" : "/auth/login/role-selection");
+        return;
+      }
+
       // Send verification email via edge function
       const { error: emailError } = await supabase.functions.invoke(
         "send-verification-email",
@@ -115,12 +126,17 @@ export default function AuthPage() {
 
       if (emailError) {
         console.error("Error sending verification email:", emailError);
+        toast({
+          title: "Verification Email Notice",
+          description: "Your account was created, but we had trouble dispatching the verification email. You can request a new code on the next screen.",
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Account Created!",
+          description: "Please check your email to verify your account.",
+        });
       }
-
-      toast({
-        title: "Account Created!",
-        description: "Please check your email to verify your account.",
-      });
 
       navigate(`/verify-email?email=${encodeURIComponent(validated.email)}&role=${role}&user_id=${data.user.id}`);
     } catch (error: unknown) {
@@ -147,13 +163,21 @@ export default function AuthPage() {
       setIsLoading(true);
       localStorage.setItem("pendingRole", role);
 
+      // If school name was entered in form, preserve it in localStorage for Google onboarding
+      if (role === "school") {
+        const schoolInput = document.getElementById("signup-school-name") as HTMLInputElement | null;
+        if (schoolInput?.value?.trim()) {
+          localStorage.setItem("pendingSchoolName", schoolInput.value.trim());
+        }
+      }
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}/auth/callback?role=${role}`,
           queryParams: {
             access_type: "offline",
-            prompt: "consent",
+            prompt: "select_account",
           },
         },
       });

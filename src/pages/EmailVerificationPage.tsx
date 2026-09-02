@@ -65,9 +65,15 @@ export default function EmailVerificationPage() {
         description: "Your email has been verified. Please sign in to continue.",
       });
 
-      // Redirect to auth so user can establish a session post-verification
-      const params = new URLSearchParams({ role, email: email ?? "", verified: "1" });
-      navigate(`/auth?${params.toString()}`);
+      // Redirect to the appropriate portal so user can sign in cleanly
+      const targetPath = role === "parent"
+        ? "/parent-login"
+        : role === "school"
+        ? "/school-login"
+        : "/auth/login/role-selection";
+
+      const params = new URLSearchParams({ email: email ?? "", verified: "1" });
+      navigate(`${targetPath}?${params.toString()}`);
     } catch (error: any) {
       toast({
         title: "Verification Failed",
@@ -141,9 +147,11 @@ export default function EmailVerificationPage() {
                 <Input
                   id="code"
                   type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   placeholder="Enter 6-digit code"
                   value={code}
-                  onChange={(e) => setCode(e.target.value.toUpperCase())}
+                  onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
                   maxLength={6}
                   required
                   className="text-center text-lg tracking-widest"
@@ -185,7 +193,14 @@ export default function EmailVerificationPage() {
             <div className="mt-6 text-center">
               <Button
                 variant="ghost"
-                onClick={() => navigate("/auth")}
+                onClick={() => {
+                  const backPath = role === "parent"
+                    ? "/parent-login"
+                    : role === "school"
+                    ? "/school-login"
+                    : "/auth/login/role-selection";
+                  navigate(backPath);
+                }}
                 className="text-sm"
               >
                 ← Back to Sign In

@@ -45,17 +45,36 @@ export default function ParentOnboarding() {
             description: "Please sign in to continue.",
             variant: "destructive",
           });
-          navigate("/auth?role=parent");
+          navigate("/parent-login");
           return;
         }
 
-        const { data: parentData, error: parentError } = await supabase
+        let { data: parentData, error: parentError } = await supabase
           .from("parents")
           .select("id")
           .eq("user_id", user.id)
-          .single();
+          .maybeSingle();
 
-        if (parentError || !parentData) {
+        if (!parentData) {
+          // Fallback on-the-fly provisioning
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.access_token) {
+            await supabase.functions.invoke("provision-user", {
+              headers: { Authorization: `Bearer ${session.access_token}` },
+              body: { role: "parent" },
+            });
+
+            const { data: refreshedParent } = await supabase
+              .from("parents")
+              .select("id")
+              .eq("user_id", user.id)
+              .maybeSingle();
+
+            parentData = refreshedParent;
+          }
+        }
+
+        if (!parentData) {
           throw parentError || new Error("Parent profile not found");
         }
 
@@ -107,7 +126,7 @@ export default function ParentOnboarding() {
           description: "Parent profile not found. Please sign in again.",
           variant: "destructive",
         });
-        navigate("/auth?role=parent");
+        navigate("/parent-login");
         return;
       }
 
