@@ -24,10 +24,11 @@ export const useAuth = () => {
       localStorage.setItem("theme", savedTheme);
     }
 
-    // Determine redirect destination
+    // Determine redirect destination safely (guarding against React SyntheticEvent objects)
     const targetUrl =
-      redirectTo ||
-      (window.location.pathname.startsWith("/admin") ? "/admin/login" : "/");
+      (typeof redirectTo === "string" && redirectTo.trim())
+        ? redirectTo.trim()
+        : (window.location.pathname.startsWith("/admin") ? "/admin/login" : "/");
 
     // Use window.location.href to force a full page reload and clear any cached state
     window.location.href = targetUrl;

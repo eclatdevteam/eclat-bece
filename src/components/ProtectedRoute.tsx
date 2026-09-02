@@ -96,7 +96,12 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
 
       // Check if email is verified
       if (!session.user.email_confirmed_at) {
-        navigate("/verify-email");
+        const verifyParams = new URLSearchParams({
+          email: session.user.email || '',
+          user_id: session.user.id,
+          ...(requiredRole ? { role: requiredRole } : {}),
+        });
+        navigate(`/verify-email?${verifyParams.toString()}`);
         return;
       }
 
@@ -116,6 +121,7 @@ export const ProtectedRoute = ({ children, requiredRole }: ProtectedRouteProps) 
           if (currentSession?.access_token) {
             await supabase.functions.invoke("provision-user", {
               headers: { Authorization: `Bearer ${currentSession.access_token}` },
+              body: { role: requiredRole },
             });
           }
 

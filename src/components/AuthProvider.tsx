@@ -16,9 +16,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const [user, setUser] = useState<User | null>(null);
     const [session, setSession] = useState<Session | null>(null);
     const [loading, setLoading] = useState(true);
-    // We can't use useNavigate here because AuthProvider is usually outside Router
-    // But if we put it inside Router in App.tsx, we can.
-    // For now, we'll handle navigation in the signOut function or components.
 
     useEffect(() => {
         // Check active session
@@ -41,11 +38,28 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }, []);
 
     const signOut = async () => {
+        // Preserve user theme preference
+        const savedTheme = localStorage.getItem("theme");
+
         await supabase.auth.signOut();
+
+        // Clear session storage
+        sessionStorage.clear();
+
+        // Selectively clean up auth storage while preserving user settings
+        Object.keys(localStorage).forEach((key) => {
+            if (key !== "theme" && (key.startsWith("sb-") || key.includes("supabase") || key === "pendingRole" || key === "pendingSchoolName")) {
+                localStorage.removeItem(key);
+            }
+        });
+
+        if (savedTheme) {
+            localStorage.setItem("theme", savedTheme);
+        }
+
         setUser(null);
         setSession(null);
         // Navigation should be handled by the component calling signOut
-        // or we can use window.location.href = "/" if needed, but better to let consumer handle it.
     };
 
     return (
