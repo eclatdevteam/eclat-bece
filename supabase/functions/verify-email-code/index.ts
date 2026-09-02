@@ -141,8 +141,62 @@ serve(async (req) => {
       );
     }
 
-    console.log("Email verified successfully for user", user_id);
-    return new Response(JSON.stringify({ ok: true }), {
+    // Auto-provision user role and specific role record (parent or school)
+    let resolvedRole: string | undefined;
+    try {
+      const { data: authUser, error: getUserErr } = await supabase.auth.admin.getUserById(user_id);
+      if (!getUserErr && authUser?.user) {
+        resolvedRole = authUser.user.user_metadata?.role as string | undefined;
+
+        if (resolvedRole === "parent") {
+          const { error: roleErr } = await supabase
+            .from("user_roles")
+            .upsert({ user_id: user_id, role: "parent" }, { onConflict: "user_id,role" });
+          if (roleErr) console.error("Error provisioning parent role:", roleErr);
+
+          const { data: parentExists } = await supabase
+            .from("parents")
+            .select("id")
+            .eq("user_id", user_id)
+            .maybeSingle();
+
+          if (!parentExists) {
+            const { error: parentInsertErr } = await supabase
+              .from("parents")
+              .insert({ user_id: user_id });
+            if (parentInsertErr) console.error("Error inserting parent record:", parentInsertErr);
+          }
+        } else if (resolvedRole === "school") {
+          const { error: roleErr } = await supabase
+            .from("user_roles")
+            .upsert({ user_id: user_id, role: "school" }, { onConflict: "user_id,role" });
+          if (roleErr) console.error("Error provisioning school role:", roleErr);
+
+          const { data: schoolExists } = await supabase
+            .from("schools")
+            .select("id")
+            .eq("user_id", user_id)
+            .maybeSingle();
+
+          if (!schoolExists) {
+            const schoolName =
+              authUser.user.user_metadata?.school_name ||
+              authUser.user.user_metadata?.schoolName ||
+              null;
+            const { error: schoolInsertErr } = await supabase
+              .from("schools")
+              .insert({ user_id: user_id, school_name: schoolName });
+            if (schoolInsertErr) console.error("Error inserting school record:", schoolInsertErr);
+          }
+        }
+      }
+    } catch (provisionErr) {
+      console.error("Auto-provisioning error during email verification:", provisionErr);
+      // Do not block verification success; client fallback will catch this
+    }
+
+    console.log("Email verified successfully for user", user_id, "role:", resolvedRole);
+    return new Response(JSON.stringify({ ok: true, role: resolvedRole }), {
       status: 200,
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });

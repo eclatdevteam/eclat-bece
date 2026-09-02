@@ -52,12 +52,14 @@ serve(async (req) => {
       ? `${siteUrl}/admin/reset-password`
       : `${siteUrl}/password-reset`
 
+    const roleParam = role && role !== 'general' ? `&role=${role}` : ''
+
     // Generate recovery link using Supabase Admin API
     const { data: linkData, error: linkError } = await supabaseAdmin.auth.admin.generateLink({
       type: 'recovery',
       email: cleanEmail,
       options: {
-        redirectTo: `${targetRedirectBase}?type=recovery`,
+        redirectTo: `${targetRedirectBase}?type=recovery${roleParam}`,
       },
     })
 
@@ -78,8 +80,8 @@ serve(async (req) => {
 
     // Construct DIRECT application link (bypassing raw Supabase internal project URL)
     const directActionLink = hashedToken
-      ? `${targetRedirectBase}?token_hash=${hashedToken}&type=recovery`
-      : (linkData?.properties?.action_link || `${targetRedirectBase}?type=recovery`)
+      ? `${targetRedirectBase}?token_hash=${hashedToken}&type=recovery${roleParam}`
+      : (linkData?.properties?.action_link || `${targetRedirectBase}?type=recovery${roleParam}`)
 
     // Check if user is an admin in database
     let adminName = 'Administrator'

@@ -45,7 +45,11 @@ serve(async (req) => {
       return json({ error: "Failed to fetch auth user" }, 500);
     }
 
-    const metaRole = authUser.user.user_metadata?.role as string | undefined;
+    const body = await req.json().catch(() => ({}));
+    const explicitRole = typeof body.role === "string" ? body.role.trim().toLowerCase() : undefined;
+    const explicitSchoolName = typeof body.school_name === "string" ? body.school_name.trim() : typeof body.schoolName === "string" ? body.schoolName.trim() : undefined;
+
+    const metaRole = explicitRole || (authUser.user.user_metadata?.role as string | undefined);
 
     if (!metaRole) {
       return json({ error: "Account role is missing. Please restart signup from role selection." }, 400);
@@ -105,6 +109,7 @@ serve(async (req) => {
 
     if (metaRole === "school") {
       const schoolName =
+        explicitSchoolName ||
         authUser.user.user_metadata?.school_name ||
         authUser.user.user_metadata?.schoolName ||
         null;
