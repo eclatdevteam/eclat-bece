@@ -121,8 +121,8 @@ export default function ParentSignInPage() {
       // Validate that user is a parent
       if (userRole !== "parent") {
         toast({
-          title: "Wrong Login Portal",
-          description: `This account is registered as a ${userRole}. Please use the ${userRole} login.`,
+          title: "Account Incompatible",
+          description: "This email is registered under a different account type and cannot be used for Parent access. Please sign in through your designated portal or use a different email.",
           variant: "destructive",
         });
         await supabase.auth.signOut();

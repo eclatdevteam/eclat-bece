@@ -87,8 +87,8 @@ export default function StudentLogInPage() {
       // Validate that user is a student
       if (userRole !== "student") {
         toast({
-          title: "Wrong Login Portal",
-          description: `This account is registered as a ${userRole}. Please use the ${userRole} login.`,
+          title: "Account Incompatible",
+          description: "This account is registered under a different account type and cannot be used for Student access. Please sign in through your designated portal.",
           variant: "destructive",
         });
         await supabase.auth.signOut();

@@ -91,7 +91,25 @@ export default function AuthCallback() {
 
         if (roleData) {
           const userRole = roleData.role;
-          // Accurately route all roles including admin
+
+          // If a specific portal was targeted (e.g. parent, school), enforce role compatibility
+          if (targetRole && userRole !== targetRole) {
+            await supabase.auth.signOut();
+            toast({
+              title: "Account Incompatible",
+              description: `This email is registered under a different account type and cannot be used for ${targetRole === "parent" ? "Parent" : "School"} access. Please sign in through your designated portal or use a different email.`,
+              variant: "destructive",
+            });
+            const backPath = targetRole === "parent"
+              ? "/parent-login"
+              : targetRole === "school"
+              ? "/school-login"
+              : "/auth/login/role-selection";
+            navigate(backPath);
+            return;
+          }
+
+          // Role matches target or generic callback -> route to appropriate dashboard
           const dashboardPath = userRole === "parent" 
             ? "/dashboard/parent" 
             : userRole === "school" 
