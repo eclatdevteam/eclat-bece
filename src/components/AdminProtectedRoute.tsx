@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2 } from "lucide-react";
@@ -30,10 +30,12 @@ export const AdminProtectedRoute = ({
 }: AdminProtectedRouteProps) => {
     const [isAuthorized, setIsAuthorized] = useState(false);
     const [isChecking, setIsChecking] = useState(true);
+    const isAuthorizedRef = useRef(false);
+    isAuthorizedRef.current = isAuthorized;
     const navigate = useNavigate();
 
     useEffect(() => {
-        checkAdminStatus();
+        checkAdminStatus(false);
 
         // Listen for auth state changes
         const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -43,7 +45,8 @@ export const AdminProtectedRoute = ({
                     setIsChecking(false);
                     navigate('/admin/login');
                 } else if (event === 'SIGNED_IN') {
-                    checkAdminStatus();
+                    // Perform verification silently if already authorized, avoiding full-screen loader
+                    checkAdminStatus(isAuthorizedRef.current);
                 }
             }
         );
@@ -51,14 +54,16 @@ export const AdminProtectedRoute = ({
         return () => subscription?.unsubscribe();
     }, [navigate, requiresSuperAdmin]);
 
-    const checkAdminStatus = async () => {
+    const checkAdminStatus = async (isBackground = false) => {
         try {
-            setIsChecking(true);
+            if (!isBackground) {
+                setIsChecking(true);
+            }
             const { data: { session } } = await supabase.auth.getSession();
 
             if (!session?.user) {
-                navigate("/admin/login");
                 setIsAuthorized(false);
+                navigate("/admin/login");
                 return;
             }
 

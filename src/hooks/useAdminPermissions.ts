@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -23,8 +23,10 @@ export function useAdminPermissions() {
   const { user } = useAuth();
   const [admin, setAdmin] = useState<AdminProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const adminRef = useRef<AdminProfile | null>(null);
+  adminRef.current = admin;
 
-  const fetchPermissions = useCallback(async () => {
+  const fetchPermissions = useCallback(async (isSilent = false) => {
     if (!user) {
       setAdmin(null);
       setLoading(false);
@@ -32,7 +34,10 @@ export function useAdminPermissions() {
     }
 
     try {
-      setLoading(true);
+      // Only set loading = true if this is an initial load and data isn't cached yet
+      if (!isSilent && !adminRef.current) {
+        setLoading(true);
+      }
       const { data, error } = await supabase
         .from("admins" as any)
         .select("id, user_id, full_name, is_super_admin, permissions, is_active")
@@ -66,11 +71,12 @@ export function useAdminPermissions() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, [user?.id]);
 
   useEffect(() => {
-    fetchPermissions();
-  }, [fetchPermissions]);
+    const isAlreadyLoaded = adminRef.current?.user_id === user?.id && adminRef.current !== null;
+    fetchPermissions(isAlreadyLoaded);
+  }, [user?.id, fetchPermissions]);
 
   const isSuperAdmin = admin?.is_super_admin === true;
   const canManageUsers = isSuperAdmin || admin?.permissions?.canManageUsers === true;

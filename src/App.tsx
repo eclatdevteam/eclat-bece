@@ -60,7 +60,15 @@ import PricingPage from "./pages/PricingPage";
 import FeaturesPage from "./pages/FeaturesPage";
 import PublicLeaderboardPage from "./pages/PublicLeaderboardPage";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false,
+      staleTime: 1000 * 60 * 2, // 2 minutes
+      retry: 1,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
