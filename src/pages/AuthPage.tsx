@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { useNavigate, useSearchParams, Link } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { CardContent  } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, ArrowRight, BookOpen, Loader2, Eye, EyeOff, LockKeyhole, Mail, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Loader2, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -25,9 +26,8 @@ const signupSchema = z.object({
 
 export default function AuthPage() {
   const navigate = useNavigate();
-  useRedirectIfAuthenticated();
   const [searchParams] = useSearchParams();
-  const role = (searchParams.get("role") || "student") as AuthRole;
+  const role = searchParams.get("role") || "student";
   const [isLoading, setIsLoading] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -41,13 +41,15 @@ export default function AuthPage() {
     }
   };
 
+
+
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (role === "student") {
       toast({
-        title: "Registration Notice",
-        description: "Student accounts are created and managed by parents from their dashboard.",
+        title: "Registration Disabled",
+        description: "Student accounts must be created by a parent.",
         variant: "destructive",
       });
       return;
@@ -71,7 +73,6 @@ export default function AuthPage() {
           description: "School name must be at least 2 characters",
           variant: "destructive",
         });
-        setIsLoading(false);
         return;
       }
 
@@ -106,18 +107,10 @@ export default function AuthPage() {
         return;
       }
 
-      // Check if user already exists (identities is empty under email enumeration protection)
-      if (data.user.identities && data.user.identities.length === 0) {
-        toast({
-          title: "Account Already Exists",
-          description: "An account with this email already exists. Please sign in instead.",
-          variant: "destructive",
-        });
-        navigate(role === "parent" ? "/parent-login" : role === "school" ? "/school-login" : "/auth/login/role-selection");
-        return;
-      }
+      // Defer role and record provisioning until AFTER login (via provision-user)
+      // This avoids RLS violations during signup when the user has no session yet.
 
-      // Send verification email via edge function
+      // Send verification email via edge function (it will generate and store the code)
       const { error: emailError } = await supabase.functions.invoke(
         "send-verification-email",
         {
@@ -127,18 +120,14 @@ export default function AuthPage() {
 
       if (emailError) {
         console.error("Error sending verification email:", emailError);
-        toast({
-          title: "Verification Email Notice",
-          description: "Your account was created, but we had trouble dispatching the verification email. You can request a new code on the next screen.",
-          variant: "destructive",
-        });
-      } else {
-        toast({
-          title: "Account Created!",
-          description: "Please check your email to verify your account.",
-        });
       }
 
+      toast({
+        title: "Account Created!",
+        description: "Please check your email to verify your account.",
+      });
+
+      // Navigate to email verification page with user_id for later onboarding redirect
       navigate(`/verify-email?email=${encodeURIComponent(validated.email)}&role=${role}&user_id=${data.user.id}`);
     } catch (error: unknown) {
       if (error instanceof z.ZodError) {
@@ -162,23 +151,17 @@ export default function AuthPage() {
   const handleGoogleLogin = async () => {
     try {
       setIsLoading(true);
-      localStorage.setItem("pendingRole", role);
 
-      // If school name was entered in form, preserve it in localStorage for Google onboarding
-      if (role === "school") {
-        const schoolInput = document.getElementById("signup-school-name") as HTMLInputElement | null;
-        if (schoolInput?.value?.trim()) {
-          localStorage.setItem("pendingSchoolName", schoolInput.value.trim());
-        }
-      }
+      // Store role in localStorage before OAuth redirect
+      localStorage.setItem('pendingRole', role);
 
       const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
+        provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?role=${role}`,
+          redirectTo: `${window.location.origin}/auth/callback`,
           queryParams: {
-            access_type: "offline",
-            prompt: "select_account",
+            access_type: 'offline',
+            prompt: 'consent',
           },
         },
       });
@@ -201,6 +184,8 @@ export default function AuthPage() {
     }
   };
 
+
+
   return (
     <main className="relative flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8 font-sans text-slate-900 dark:bg-[#081328] dark:text-[#dce7ff]">
       <div className="absolute right-4 top-4"><ThemeToggle /></div>
@@ -209,29 +194,6 @@ export default function AuthPage() {
           <img src={eclatlLogo} alt="Eclat Logo" className="mx-auto mb-2 h-16 w-auto" />
           <p className="mt-2 text-[11px] font-bold uppercase tracking-[2px] text-slate-600 dark:text-[#b9c5d9]">{getRoleTitle()} Portal</p>
         </div>
-      ) : (
-        <form onSubmit={handleSignup} className="space-y-3.5">
-          {/* Full Name */}
-          <div className="space-y-1.5">
-            <Label htmlFor="signup-name" className="text-sm font-bold text-foreground">
-              {role === "school" ? "Administrator Full Name" : "Full Name"}
-            </Label>
-            <div className="relative">
-              <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
-                <User size={19} />
-              </div>
-              <Input
-                id="signup-name"
-                name="fullName"
-                type="text"
-                placeholder="e.g. Dr. Ngozi Eze"
-                required
-                minLength={2}
-                maxLength={100}
-                className="pl-11 h-11 bg-background border-2 border-border hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/15 rounded-xl text-base font-medium text-foreground placeholder:text-muted-foreground/60 shadow-xs"
-              />
-            </div>
-          </div>
 
         <section className="mt-8 w-full max-w-[360px] animate-scale-in border border-slate-300 bg-white px-6 pb-6 pt-5 shadow-[0_10px_28px_rgba(15,23,42,0.12)] dark:border-[#2a3a53] dark:bg-[#1b283d] dark:shadow-[0_10px_28px_rgba(0,0,0,0.22)]">
           <div className="mb-5 grid grid-cols-2 text-center text-[12px] font-bold tracking-[1px]">
@@ -367,28 +329,12 @@ export default function AuthPage() {
                       )}
                     </Button>
 
-          {/* School Name if School */}
-          {role === "school" && (
-            <div className="space-y-1.5">
-              <Label htmlFor="signup-school-name" className="text-sm font-bold text-foreground">
-                School Name
-              </Label>
-              <div className="relative">
-                <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
-                  <School size={19} />
-                </div>
-                <Input
-                  id="signup-school-name"
-                  name="schoolName"
-                  type="text"
-                  placeholder="e.g. Apex Academy Lagos"
-                  required
-                  maxLength={200}
-                  className="pl-11 h-11 bg-background border-2 border-border hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/15 rounded-xl text-base font-medium text-foreground placeholder:text-muted-foreground/60 shadow-xs"
-                />
-              </div>
-            </div>
-          )}
+                    <div className="relative my-4">
+                      <Separator />
+                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
+                        OR
+                      </span>
+                    </div>
 
                     <Button
                       type="button"
@@ -419,9 +365,6 @@ export default function AuthPage() {
                     </Button>
                   </form>
                 )}
-              </button>
-            </div>
-          </div>
 
             <div className="mt-6 text-center">
               <Button variant="ghost" onClick={() => navigate("/signup/role-selection")} className="mt-7 flex items-center gap-2 text-[11px] font-medium text-slate-600 transition-colors hover:bg-transparent hover:text-slate-900 dark:text-[#c1cada] dark:hover:bg-transparent dark:hover:text-white">
