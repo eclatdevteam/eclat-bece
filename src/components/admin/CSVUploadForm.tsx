@@ -45,6 +45,11 @@ export function CSVUploadForm({ onSuccess }: CSVUploadFormProps) {
     const [loading, setLoading] = useState(false);
     const [errors, setErrors] = useState<ValidationError[]>([]);
     const [uploadSummary, setUploadSummary] = useState<{ success: number; failed: number } | null>(null);
+    const [duplicateInfo, setDuplicateInfo] = useState<{
+        duplicateCount: number;
+        duplicateRows: Set<string>;
+        validRows: CSVRow[];
+    } | null>(null);
     const { user } = useAuth();
 
     const validateCSVRow = (row: CSVRow, rowIndex: number): ValidationError[] => {
@@ -103,6 +108,7 @@ export function CSVUploadForm({ onSuccess }: CSVUploadFormProps) {
             setFile(selectedFile);
             setErrors([]);
             setUploadSummary(null);
+            setDuplicateInfo(null);
         }
     };
 
@@ -145,7 +151,35 @@ export function CSVUploadForm({ onSuccess }: CSVUploadFormProps) {
                         return;
                     }
 
-                    // Upload valid questions
+                    // Pre-check for duplicate questions against existing database
+                    const tableName = classYear === 'year_6' ? 'quiz_questions_year6' : 'quiz_questions_year9';
+                    const candidateTexts = validRows.map(r => r.question_text.trim());
+                    const existingDuplicates = new Set<string>();
+
+                    for (let i = 0; i < candidateTexts.length; i += 100) {
+                        const chunk = candidateTexts.slice(i, i + 100);
+                        const { data: matched } = await supabase
+                            .from(tableName as any)
+                            .select('question_text')
+                            .in('question_text', chunk);
+
+                        if (matched) {
+                            matched.forEach((m: any) => existingDuplicates.add(m.question_text.trim().toLowerCase()));
+                        }
+                    }
+
+                    if (existingDuplicates.size > 0) {
+                        const dupCount = validRows.filter(r => existingDuplicates.has(r.question_text.trim().toLowerCase())).length;
+                        setDuplicateInfo({
+                            duplicateCount: dupCount,
+                            duplicateRows: existingDuplicates,
+                            validRows: validRows
+                        });
+                        setLoading(false);
+                        return;
+                    }
+
+                    // No duplicates found, upload all valid questions
                     await uploadQuestions(validRows);
                 },
                 error: (error) => {
@@ -318,19 +352,80 @@ export function CSVUploadForm({ onSuccess }: CSVUploadFormProps) {
                 </Alert>
             )}
 
-            <Button
-                onClick={handleUpload}
-                disabled={!file || loading}
-                className="w-full"
-            >
-                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {loading ? "Uploading..." : (
-                    <>
-                        <Upload className="mr-2 h-4 w-4" />
-                        Upload Questions
-                    </>
-                )}
-            </Button>
+            {duplicateInfo && (
+                <Alert className="border-amber-300 bg-amber-50 dark:bg-amber-950/40 text-amber-900 dark:text-amber-200">
+                    <AlertCircle className="h-4 w-4 text-amber-600" />
+                    <AlertDescription className="space-y-3">
+                        <div>
+                            <div className="font-semibold text-amber-900 dark:text-amber-100">
+                                Duplicate Questions Detected
+                            </div>
+                            <p className="text-xs text-amber-800 dark:text-amber-300 mt-0.5">
+                                Found <strong>{duplicateInfo.duplicateCount}</strong> question(s) in this CSV that already exist in the {classYear === 'year_6' ? 'Year 6' : 'Year 9'} Question Bank.
+                            </p>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+                            <Button
+                                size="sm"
+                                className="bg-amber-700 hover:bg-amber-800 text-white text-xs"
+                                onClick={async () => {
+                                    const filtered = duplicateInfo.validRows.filter(
+                                        r => !duplicateInfo.duplicateRows.has(r.question_text.trim().toLowerCase())
+                                    );
+                                    setDuplicateInfo(null);
+                                    setLoading(true);
+                                    await uploadQuestions(filtered);
+                                }}
+                                disabled={loading}
+                            >
+                                Skip {duplicateInfo.duplicateCount} Duplicates & Upload ({duplicateInfo.validRows.length - duplicateInfo.duplicateCount})
+                            </Button>
+
+                            <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-xs border-amber-400 dark:border-amber-700"
+                                onClick={async () => {
+                                    const allRows = duplicateInfo.validRows;
+                                    setDuplicateInfo(null);
+                                    setLoading(true);
+                                    await uploadQuestions(allRows);
+                                }}
+                                disabled={loading}
+                            >
+                                Upload All Anyway ({duplicateInfo.validRows.length})
+                            </Button>
+
+                            <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-xs text-muted-foreground"
+                                onClick={() => setDuplicateInfo(null)}
+                                disabled={loading}
+                            >
+                                Cancel
+                            </Button>
+                        </div>
+                    </AlertDescription>
+                </Alert>
+            )}
+
+            {!duplicateInfo && (
+                <Button
+                    onClick={handleUpload}
+                    disabled={!file || loading}
+                    className="w-full"
+                >
+                    {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    {loading ? "Checking & Uploading..." : (
+                        <>
+                            <Upload className="mr-2 h-4 w-4" />
+                            Upload Questions
+                        </>
+                    )}
+                </Button>
+            )}
         </div>
     );
 }
