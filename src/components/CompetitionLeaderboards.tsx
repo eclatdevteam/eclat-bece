@@ -125,13 +125,16 @@ export const CompetitionLeaderboards = ({
               const student = podium.find((item) => item.rank === rank);
               if (!student) return <div key={rank} />;
               const winner = rank === 1;
+              const isSecond = rank === 2;
               return (
                 <div 
                   key={student.rank} 
-                  className={`relative flex flex-col items-center justify-end rounded-t-lg border px-2 pb-4 pt-6 transition-all ${
+                  className={`relative flex flex-col items-center justify-end rounded-t-lg border px-2 pb-3.5 pt-5 transition-all ${
                     winner 
                       ? 'h-48 sm:h-52 border-[#f4d21f] bg-[#202b40] shadow-lg shadow-amber-500/10' 
-                      : 'h-36 sm:h-40 border-[#43506a] bg-[#182338]'
+                      : isSecond
+                        ? 'h-40 sm:h-44 border-[#43506a] bg-[#182338]'
+                        : 'h-[136px] sm:h-[150px] border-[#43506a] bg-[#182338]'
                   }`}
                 >
                   <span className={`absolute -top-3.5 flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold shadow-sm ${
@@ -145,7 +148,7 @@ export const CompetitionLeaderboards = ({
                   <p className="w-full truncate px-1 text-center text-xs font-semibold text-white leading-normal" title={student.name}>
                     {student.name}{student.isCurrentUser ? ' (You)' : ''}
                   </p>
-                  <p className={`mt-1 text-[11px] font-bold leading-tight ${winner ? 'text-[#f4d21f]' : 'text-slate-400'}`}>
+                  <p className={`mt-0.5 text-[11px] font-bold leading-tight ${winner ? 'text-[#f4d21f]' : 'text-slate-400'}`}>
                     {student.points.toLocaleString()} pts
                   </p>
                 </div>
