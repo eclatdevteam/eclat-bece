@@ -8,6 +8,7 @@ import { z } from "zod";
 import { getSafeErrorMessage } from "@/lib/errorUtils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import eclatlLogo from "@/assets/logo.png";
+import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
 
 const loginSchema = z.object({
   email: z.string().trim().email("Invalid email address").max(255),
