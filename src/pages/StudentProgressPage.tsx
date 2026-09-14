@@ -1,6 +1,7 @@
 import { TrendingUp, Loader2, BookOpen } from "lucide-react";
 import { ProgressReport } from "@/components/ProgressReport";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
