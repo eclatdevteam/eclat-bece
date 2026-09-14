@@ -1,4 +1,5 @@
 import { LayoutDashboard, BookOpen, ClipboardList, TrendingUp, Trophy, ChevronLeft, ChevronRight, LogOut } from "lucide-react";
+import logoLight from "@/assets/logo-light.png";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -35,10 +36,13 @@ export function StudentSidebar() {
   const isActive = (path: string) => currentPath === path;
 
   return (
-    <Sidebar collapsible="icon" className="border-r">
+    <Sidebar collapsible="icon" className="border-r border-[#26344d] bg-[#071023] text-slate-300">
+      <div className="flex h-16 items-center border-b border-[#26344d] px-4">
+        <img src={logoLight} alt="Éclat" className="h-8 w-auto" />
+      </div>
       <SidebarContent>
         <SidebarGroup>
-          {!isCollapsed && <SidebarGroupLabel>Navigation</SidebarGroupLabel>}
+          {!isCollapsed && <SidebarGroupLabel className="px-4 pt-7 pb-6 text-[10px] uppercase tracking-[0.18em] text-slate-400">Navigation</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => {
@@ -50,7 +54,7 @@ export function StudentSidebar() {
                       <TooltipTrigger asChild>
                         <SidebarMenuButton
                           onClick={() => navigate(item.url)}
-                          className={active ? "bg-accent text-accent-foreground font-medium" : ""}
+                          className={`mx-2 h-10 rounded-md text-sm transition-colors ${active ? "bg-[#334158] text-white shadow-[inset_3px_0_0_#0c9dcc]" : "text-slate-300 hover:bg-[#172338] hover:text-white"}`}
                         >
                           <Icon className={isCollapsed ? "" : "mr-2 h-4 w-4"} />
                           {!isCollapsed && <span>{item.title}</span>}
@@ -77,7 +81,7 @@ export function StudentSidebar() {
               variant="ghost"
               size="sm"
               onClick={signOut}
-              className="w-full justify-start hover:bg-destructive/20 hover:text-destructive mb-2"
+              className="mb-2 w-full justify-start text-slate-300 hover:bg-red-500/10 hover:text-red-300"
             >
               <LogOut className={isCollapsed ? "h-4 w-4" : "mr-2 h-4 w-4"} />
               {!isCollapsed && <span>Logout</span>}

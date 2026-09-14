@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Users, TrendingUp, Plus, Award, Target, ChevronRight } from "lucide-react";
+import { Users, TrendingUp, Plus, Award, Target, ChevronRight, AlertTriangle, Search, Bell, Settings, BookOpen, FileText, Zap, BarChart3, MessageCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { StudentReportDialog } from "@/components/StudentReportDialog";
@@ -18,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LinkedChild, ChildAnalytics, QuizResult, Assignment } from "@/types/parent";
 import { getEdgeFunctionError } from "@/lib/errorUtils";
+import eclatlLogo from "@/assets/logo.png";
 
 const getErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error ? error.message : fallback;

@@ -1,13 +1,11 @@
 import { useState, useEffect } from "react";
-import { BookOpen, ClipboardList, TrendingUp, Trophy, Target, ArrowRight, Copy, Check, Swords } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { BookOpen, ClipboardList, TrendingUp, Trophy, Target, ArrowRight, Copy, Check, Swords, Sparkles, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Separator } from "@/components/ui/separator";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
-import { WinnerBadge, getBadgeLevel, BadgeLevel } from "@/components/WinnerBadge";
+import { getBadgeLevel, BadgeLevel } from "@/components/WinnerBadge";
 
 interface QuizResult {
   id: string;
@@ -15,6 +13,12 @@ interface QuizResult {
   score: number;
   total_questions: number;
   completed_at: string;
+}
+
+interface StudentBadge {
+  name: string;
+  icon: string;
+  earned: boolean;
 }
 
 export default function StudentDashboardOverview() {
@@ -38,8 +42,7 @@ export default function StudentDashboardOverview() {
   // Badge state
   const [totalWins, setTotalWins] = useState(0);
   const [badgeLevel, setBadgeLevel] = useState<BadgeLevel>('bronze');
-  const [isFirstWin, setIsFirstWin] = useState(false);
-  const [badges, setBadges] = useState<any[]>([]);
+  const [badges, setBadges] = useState<StudentBadge[]>([]);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -71,12 +74,12 @@ export default function StudentDashboardOverview() {
           setClassYear(studentData.class_year);
           
           // Fetch total available questions in database for the student's class year
-          const tableName = studentData.class_year === 'year_6'
+          const tableName: "quiz_questions_year6" | "quiz_questions_year9" = studentData.class_year === 'year_6'
             ? 'quiz_questions_year6'
             : 'quiz_questions_year9';
             
           const { count: questionsCount } = await supabase
-            .from(tableName as any)
+            .from(tableName)
             .select("*", { count: 'exact', head: true });
             
           if (questionsCount !== null) {
@@ -138,7 +141,6 @@ export default function StudentDashboardOverview() {
             const wins = allResults.filter(result => result.score >= 80).length;
             setTotalWins(wins);
             setBadgeLevel(getBadgeLevel(wins));
-            setIsFirstWin(wins === 1);
 
             // Calculate badges
             const firstQuiz = allResults.length >= 1;
@@ -242,7 +244,7 @@ export default function StudentDashboardOverview() {
     };
 
     fetchUserData();
-  }, [user]);
+  }, [user, currentStreak]);
 
   const featureCards = [
     {
@@ -305,187 +307,43 @@ export default function StudentDashboardOverview() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      {/* Welcome Section */}
-      <div className="mb-12 animate-fade-in">
-        <div className="flex items-center gap-3 mb-2">
-          <h2 className="text-3xl font-bold text-foreground">Welcome back, {userName}! 🎉</h2>
-          {totalWins > 0 && (
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm ${
-              badgeLevel === 'platinum' ? 'bg-cyan-100 dark:bg-cyan-900/30 border-2 border-cyan-300 dark:border-cyan-600' :
-              badgeLevel === 'gold' ? 'bg-yellow-100 dark:bg-yellow-900/30 border-2 border-yellow-300 dark:border-yellow-600' :
-              badgeLevel === 'silver' ? 'bg-slate-100 dark:bg-slate-800/30 border-2 border-slate-300 dark:border-slate-600' :
-              'bg-amber-100 dark:bg-amber-900/30 border-2 border-amber-300 dark:border-amber-700'
-            }`}>
-              <span>{badgeLevel === 'platinum' ? '💎' : badgeLevel === 'gold' ? '🥇' : badgeLevel === 'silver' ? '🥈' : '🥉'}</span>
-            </div>
-          )}
+    <div className="mx-auto max-w-6xl px-5 py-8 text-slate-100 sm:px-8">
+      <section className="relative mb-7 overflow-hidden rounded-xl border border-[#25344d] bg-[#101c31] px-6 py-7 shadow-2xl sm:px-8">
+        <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_center,rgba(14,157,204,.22),transparent_65%)]" />
+        <div className="relative max-w-xl">
+          <p className="mb-2 flex items-center gap-2 text-sm text-slate-200">Welcome back, {userName}! <Sparkles className="h-4 w-4 text-[#f4d21f]" /></p>
+          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{classYear === 'year_6' ? 'Year 6 · Common Entrance' : 'Year 9 · BECE'}</h1>
+          <p className="mt-2 text-sm text-slate-400">You&apos;re in the top 10 this month! Keep it up!</p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Button onClick={() => navigate('/dashboard/student/practice')} className="bg-[#72c9ed] text-[#071023] hover:bg-[#91d9f4]">continue practice <ArrowRight className="ml-2 h-4 w-4" /></Button>
+            <Button onClick={() => navigate('/quiz')} variant="outline" className="border-slate-500 bg-transparent text-slate-100 hover:bg-slate-700">take mock exam</Button>
+          </div>
         </div>
-      {classYear && (
-        <p className="text-lg font-semibold text-primary mb-2">
-          {classYear === 'year_6' ? 'Year 6 • Common Entrance' : 'Year 9 • BECE'}
-        </p>
-      )}
+      </section>
+
+      <section className="mb-8 grid gap-4 md:grid-cols-3">
+        {[
+          { label: 'Questions Solved', value: totalQuestions, note: `${currentStreak > 0 ? currentStreak : 0}% from last week`, icon: BookOpen, color: 'text-[#71c9ed]' },
+          { label: 'Average Accuracy', value: `${averageScore}%`, note: '↑ 8% from last week', icon: Target, color: 'text-[#71c9ed]' },
+          { label: 'Monthly Rank', value: monthlyRank ? `#${monthlyRank}` : '—', note: 'Nationwide', icon: Trophy, color: 'text-[#71c9ed]' },
+        ].map(({ label, value, note, icon: Icon, color }) => (
+          <div key={label} className="rounded-lg border border-[#1d2a40] bg-[#0e192b] p-5">
+            <div className="mb-5 flex items-center gap-3"><div className="rounded-lg bg-[#183149] p-2.5"><Icon className={color} size={20} /></div><span className="text-sm font-medium text-slate-200">{label}</span></div>
+            <p className={`text-3xl font-bold ${color}`}>{value}</p><p className="mt-1 text-xs text-slate-400">{note}</p>
+          </div>
+        ))}
+      </section>
+
+      <h2 className="mb-4 text-lg font-semibold">Quick Actions</h2>
+      <section className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        {featureCards.slice(0, 4).map((feature) => { const Icon = feature.icon; return <button key={feature.title} onClick={() => navigate(feature.url)} className="group flex items-center gap-3 rounded-md border border-[#1d2a40] bg-[#0e192b] p-4 text-left transition hover:border-[#159dca] hover:bg-[#13223a]"><span className={`rounded-md bg-[#183149] p-2 ${feature.color}`}><Icon size={19} /></span><span className="min-w-0 flex-1"><strong className="block text-sm font-medium text-slate-100">{feature.title}</strong><small className="block text-xs text-slate-400">{feature.description}</small></span><ArrowRight className="h-4 w-4 text-slate-500 transition group-hover:translate-x-1 group-hover:text-[#71c9ed]" /></button>; })}
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-[1fr_280px]">
+        <div className="rounded-lg border border-[#1d2a40] bg-[#0e192b] p-5"><div className="mb-5 flex items-center justify-between"><h2 className="text-lg font-semibold">Recent Activity</h2><button onClick={() => navigate('/dashboard/student/progress')} className="text-xs text-[#71c9ed]">View All</button></div>{recentActivity.length === 0 ? <p className="py-6 text-sm text-slate-400">Complete a practice quiz to see your recent activity.</p> : <div className="space-y-4">{recentActivity.map((activity) => <div key={activity.id} className="flex items-center gap-3"><span className="rounded-md bg-[#183149] p-2 text-[#71c9ed]"><BarChart3 size={18} /></span><div className="flex-1"><p className="text-sm font-medium">{activity.subject}</p><p className="text-xs text-slate-400">{activity.total_questions} questions · {formatDistanceToNow(new Date(activity.completed_at), { addSuffix: true })}</p></div><strong className={activity.score >= 80 ? 'text-[#71c9ed]' : 'text-[#f4a83a]'}>{activity.score}%</strong></div>)}</div>}</div>
+        <div className="rounded-lg border border-[#1d2a40] bg-[#0e192b] p-5"><h2 className="text-lg font-semibold">Parent Link Code</h2><p className="mt-1 text-xs text-slate-400">Share this code with your parent or guardian</p>{studentCode ? <><code className="mt-5 block border border-dashed border-[#31506c] bg-[#091426] px-3 py-4 text-center text-2xl font-bold tracking-[0.25em] text-[#71c9ed]">{studentCode}</code><Button onClick={handleCopyCode} variant="outline" className="mt-3 w-full border-slate-500 text-slate-200">{copiedCode ? <><Check className="mr-2 h-4 w-4" />copied</> : <><Copy className="mr-2 h-4 w-4" />copy code</>}</Button></> : <p className="mt-6 text-sm text-slate-400">Your link code will appear here.</p>}</div>
+      </section>
+      {badges.length > 0 && totalWins > 0 && <p className="mt-5 text-xs text-slate-400">{badgeLevel} badge · {totalWins} high scores</p>}
     </div>
-
-      <Separator className="my-8 opacity-10" />
-
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8 animate-slide-up">
-        <Card className="bg-gradient-to-br from-primary-light/30 to-primary-light/10 border-primary-light/40 shadow-soft hover:shadow-hover transition-all cursor-pointer" onClick={() => navigate("/dashboard/student/practice")}>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-muted-foreground">Start Questions</p>
-                <p className="text-3xl font-bold text-primary">Start</p>
-              </div>
-              <Target className="text-primary" size={32} />
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-purple-500/20 to-purple-500/10 border-purple-500/30 shadow-soft hover:shadow-hover transition-all cursor-pointer" onClick={() => navigate("/dashboard/student/duel-of-minds")}>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm text-muted-foreground mb-1">Duel of Minds</p>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-4xl font-black text-purple-600">Compete</p>
-                  <span className="text-xs font-semibold text-purple-600/70 bg-purple-500/10 px-2 py-1 rounded-full">Challenge</span>
-                </div>
-              </div>
-              <div className="flex-shrink-0">
-                <div className="relative">
-                  <Swords className="text-purple-600" size={32} />
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-purple-600 rounded-full animate-pulse" />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-primary-light/20 to-background border-primary-light/30 shadow-soft hover:shadow-hover transition-all cursor-pointer" onClick={() => navigate("/dashboard/student/leaderboard")}>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-sm text-muted-foreground mb-1">See Rankings</p>
-                <div className="flex items-baseline gap-2">
-                  <p className="text-4xl font-black text-primary">View</p>
-                </div>
-              </div>
-              <div className="flex-shrink-0">
-                <div className="relative">
-                  <Trophy className="text-accent" size={32} />
-                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full animate-pulse" />
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Separator className="my-10 opacity-[0.07]" />
-
-      {/* Badges Section */}
-      <Card className="border-2 animate-scale-in mb-8">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Trophy className="text-accent" size={20} />
-            Badges Earned
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
-            {badges.map((badge, idx) => (
-              <div
-                key={idx}
-                className={`flex flex-col items-center gap-2 p-3 rounded-lg border ${
-                  badge.earned 
-                    ? "bg-accent-light border-accent" 
-                    : "bg-muted border-border opacity-50"
-                }`}
-              >
-                <span className="text-2xl">{badge.icon}</span>
-                <span className="text-xs font-medium text-center">{badge.name}</span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      <Separator className="my-10 opacity-[0.07]" />
-
-      {/* Feature Cards */}
-      <div className="mb-12">
-        <h3 className="text-2xl font-bold text-foreground mb-6">Quick Access</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {featureCards.map((feature, index) => {
-            const Icon = feature.icon;
-            return (
-              <Card
-                key={index}
-                className="bg-gradient-to-br from-card to-muted/20 border-border/50 shadow-soft hover:shadow-hover hover:scale-[1.02] transition-all cursor-pointer group animate-scale-in"
-                style={{ animationDelay: `${index * 0.1}s` }}
-                onClick={() => navigate(feature.url)}
-              >
-                <CardHeader>
-                  <div className="flex items-start justify-between">
-                    <div className={`p-3 rounded-lg ${feature.bgColor} mb-4`}>
-                      <Icon className={feature.color} size={28} />
-                    </div>
-                    <span className="text-xs px-3 py-1 rounded-full bg-primary-light text-primary font-medium">
-                      {feature.badge}
-                    </span>
-                  </div>
-                  <CardTitle className="flex items-center justify-between">
-                    {feature.title}
-                    <ArrowRight className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" size={20} />
-                  </CardTitle>
-                  <CardDescription>{feature.description}</CardDescription>
-                </CardHeader>
-              </Card>
-            );
-          })}
-        </div>
-      </div>
-
-      <Separator className="my-10 opacity-[0.07]" />
-
-    {/* Student Code Display */}
-    {studentCode && (
-      <Card className="mt-8 bg-gradient-to-r from-primary/10 to-accent/10 border-primary/30 shadow-lg animate-fade-in">
-        <CardContent className="p-6">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground mb-1">Your Student Code</p>
-              <p className="text-xs text-muted-foreground mb-3">Share this code with your parent to link accounts</p>
-              <div className="flex items-center gap-3">
-                <code className="text-2xl sm:text-3xl font-bold tracking-widest bg-background/50 px-4 py-2 rounded-lg border border-border text-primary">
-                  {studentCode}
-                </code>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleCopyCode}
-                  className="shrink-0"
-                >
-                  {copiedCode ? (
-                    <>
-                      <Check className="h-4 w-4 mr-1" />
-                      Copied!
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-4 w-4 mr-1" />
-                      Copy
-                    </>
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    )}
-  </div>
-);
+  );
 }

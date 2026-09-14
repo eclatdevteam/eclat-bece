@@ -12,7 +12,7 @@ import logoLight from "@/assets/logo-light.png";
 interface StudentReportDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  studentId: string;
+  studentId?: string;
   studentName: string;
   studentClass: string;
   avatar?: string;

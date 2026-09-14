@@ -1,16 +1,13 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Loader2, Eye, EyeOff, Mail, Lock, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, LockKeyhole, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import { getSafeErrorMessage } from "@/lib/errorUtils";
-import { Separator } from "@/components/ui/separator";
-import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
-import { AuthLayout } from "@/components/auth/AuthLayout";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import eclatlLogo from "@/assets/logo.png";
 
 const loginSchema = z.object({
   email: z.string().trim().email("Invalid email address").max(255),
@@ -185,160 +182,54 @@ export default function ParentSignInPage() {
   };
 
   return (
-    <AuthLayout
-      role="parent"
-      badgeText="Parent Portal"
-      title="Parent Sign In"
-      subtitle="Sign in to monitor your children's quizzes and performance"
-      footerLink={{
-        text: "Don't have a parent account?",
-        actionText: "Create Account",
-        to: "/auth?role=parent",
-      }}
-    >
-      <form onSubmit={handleLogin} className="space-y-4">
-        {/* Email Field */}
-        <div className="space-y-2">
-          <Label htmlFor="login-email" className="text-sm font-bold text-foreground">
-            Parent Email Address
-          </Label>
-          <div className="relative">
-            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
-              <Mail size={19} />
-            </div>
-            <Input
-              id="login-email"
-              name="email"
-              type="email"
-              placeholder="parent@example.com"
-              required
-              maxLength={255}
-              className="pl-11 h-12 bg-background border-2 border-border hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/15 rounded-xl text-base font-medium text-foreground placeholder:text-muted-foreground/60 shadow-xs"
-            />
-          </div>
+    <main className="relative flex min-h-screen items-center justify-center bg-slate-100 px-4 py-8 font-sans text-slate-900 dark:bg-[#081328] dark:text-[#dce7ff]">
+      <div className="absolute right-4 top-4"><ThemeToggle /></div>
+      <div className="flex w-full max-w-[420px] flex-col items-center">
+        <div className="animate-fade-in text-center">
+          <img src={eclatlLogo} alt="Eclat Logo" className="mx-auto mb-2 h-16 w-auto" />
+          <p className="mt-2 text-[11px] font-bold uppercase tracking-[2px] text-slate-600 dark:text-[#b9c5d9]">Parent Portal</p>
         </div>
 
-        {/* Password Field */}
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Label htmlFor="login-password" className="text-sm font-bold text-foreground">
-              Password
-            </Label>
-            <Link
-              to="/password-reset?role=parent"
-              className="text-xs text-primary hover:underline font-bold"
-            >
-              Forgot password?
-            </Link>
+        <section className="mt-8 w-full max-w-[330px] animate-scale-in border border-slate-300 bg-white px-6 pb-6 pt-5 shadow-[0_10px_28px_rgba(15,23,42,0.12)] dark:border-[#2a3a53] dark:bg-[#1b283d] dark:shadow-[0_10px_28px_rgba(0,0,0,0.22)]">
+          <div className="mb-5 grid grid-cols-2 text-center text-[12px] font-bold tracking-[1px]">
+            <button type="button" className="border-b-2 border-sky-600 pb-3 text-sky-600 dark:border-[#72c8f6] dark:text-[#72c8f6]">Login</button>
+            <button type="button" onClick={() => navigate("/parent-signup")} className="border-b border-slate-300 pb-3 text-slate-500 transition-colors hover:text-slate-900 dark:border-[#3a485c] dark:text-[#b6c0d1] dark:hover:text-white">Sign Up</button>
           </div>
-          <div className="relative">
-            <div className="absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
-              <Lock size={19} />
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <label htmlFor="login-email" className="text-[11px] font-bold tracking-[1px] text-slate-700 dark:text-[#c5cee0]">Email</label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#8d9bb1]" size={15} />
+                <Input id="login-email" name="email" type="email" placeholder="e.g. jane@example.com" required maxLength={255} className="h-9 border-slate-300 bg-slate-50 pl-9 text-[12px] text-slate-900 placeholder:text-slate-400 focus-visible:ring-sky-500 dark:border-[#2d3c55] dark:bg-[#111b30] dark:text-[#dce7ff] dark:placeholder:text-[#6f7b91] dark:focus-visible:ring-[#72c8f6]" />
+              </div>
             </div>
-            <Input
-              id="login-password"
-              name="password"
-              type={showLoginPassword ? "text" : "password"}
-              placeholder="••••••••"
-              required
-              minLength={6}
-              maxLength={100}
-              className="pl-11 pr-11 h-12 bg-background border-2 border-border hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/15 rounded-xl text-base font-medium text-foreground placeholder:text-muted-foreground/60 shadow-xs"
-            />
-            <button
-              type="button"
-              onClick={() => setShowLoginPassword(!showLoginPassword)}
-              className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
-            >
-              {showLoginPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
+
+            <div className="space-y-2">
+              <label htmlFor="login-password" className="text-[11px] font-bold tracking-[1px] text-slate-700 dark:text-[#c5cee0]">Password</label>
+              <div className="relative">
+                <LockKeyhole className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 dark:text-[#8d9bb1]" size={15} />
+                <Input id="login-password" name="password" type={showLoginPassword ? "text" : "password"} required minLength={6} maxLength={100} className="h-9 border-slate-300 bg-slate-50 pl-9 pr-10 text-[12px] text-slate-900 focus-visible:ring-sky-500 dark:border-[#2d3c55] dark:bg-[#111b30] dark:text-[#dce7ff] dark:focus-visible:ring-[#72c8f6]" />
+                <button type="button" onClick={() => setShowLoginPassword(!showLoginPassword)} aria-label={showLoginPassword ? "Hide password" : "Show password"} className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-900 dark:text-[#718097] dark:hover:text-[#dce7ff]">{showLoginPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}</button>
+              </div>
+              <div className="flex justify-end">
+                <button type="button" onClick={() => navigate("/password-reset")} className="text-[10px] font-semibold text-sky-600 hover:underline dark:text-[#72c8f6]">Forgot password?</button>
+              </div>
+            </div>
+
+            <button type="submit" className="flex h-9 w-full items-center justify-center gap-2 bg-sky-500 text-[12px] font-bold tracking-[1px] text-white transition-colors hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#72c8f6] dark:text-[#0a1a31] dark:hover:bg-[#8bd4fb]" disabled={isLoading}>
+              {isLoading ? <><Loader2 className="h-4 w-4 animate-spin" />Signing in...</> : <>Log In <ArrowRight size={16} /></>}
             </button>
-          </div>
-        </div>
+          </form>
 
-        {/* Sign In Button */}
-        <Button
-          type="submit"
-          variant="hero"
-          className="w-full h-12 text-base font-extrabold shadow-md rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-95 text-white transition-all mt-3"
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Signing in...
-            </>
-          ) : (
-            <>
-              Sign In to Parent Portal <ArrowRight className="ml-1.5 h-4 w-4" />
-            </>
-          )}
-        </Button>
+          <button type="button" onClick={handleGoogleLogin} disabled={isLoading} className="mt-3 flex h-9 w-full items-center justify-center gap-2 border border-slate-300 bg-slate-50 text-[12px] font-bold tracking-[1px] text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-[#2a3a53] dark:bg-[#111b30] dark:text-[#dce7ff] dark:hover:bg-[#1a2a42]">
+            Continue with Google
+          </button>
+        </section>
 
-        {/* Divider */}
-        <div className="relative my-3">
-          <Separator />
-          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-xs font-bold text-muted-foreground uppercase tracking-wider">
-            OR
-          </span>
-        </div>
-
-        {/* Google OAuth Button */}
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full h-12 rounded-xl border-2 border-border font-bold text-sm gap-3 hover:bg-muted/70 text-foreground"
-          onClick={handleGoogleLogin}
-          disabled={isLoading}
-        >
-          <svg className="h-5 w-5" viewBox="0 0 24 24">
-            <path
-              fill="#4285F4"
-              d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-            />
-            <path
-              fill="#34A853"
-              d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-            />
-            <path
-              fill="#FBBC05"
-              d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-            />
-            <path
-              fill="#EA4335"
-              d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-            />
-          </svg>
-          Continue with Google
-        </Button>
-
-        {/* Portal Switcher */}
-        <div className="space-y-3 pt-4 border-t border-border/60 text-center">
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full h-11 text-xs font-bold rounded-xl border-2 border-border hover:bg-muted/70 text-foreground"
-            onClick={() => navigate("/auth/login/role-selection")}
-            disabled={isLoading}
-          >
-            Switch to Another Role
-          </Button>
-
-          <div className="flex items-center justify-center gap-3 text-xs font-medium text-muted-foreground pt-1">
-            <span>Are you a student?</span>
-            <Link to="/student-login" className="font-bold text-primary hover:underline">
-              Student Login
-            </Link>
-            <span>•</span>
-            <Link to="/school-login" className="font-bold text-primary hover:underline">
-              School Login
-            </Link>
-          </div>
-        </div>
-      </form>
-    </AuthLayout>
+        <button type="button" onClick={() => navigate("/auth/login/role-selection")} className="mt-7 flex items-center gap-2 text-[11px] font-medium text-slate-600 transition-colors hover:text-slate-900 dark:text-[#c1cada] dark:hover:text-white"><ArrowLeft size={14} /> Back to Role Selection</button>
+        <p className="mt-4 text-[9px] tracking-[1px] text-slate-400 dark:text-[#718098]">© 2024 Eclat Platform. All rights reserved.</p>
+      </div>
+    </main>
   );
 }

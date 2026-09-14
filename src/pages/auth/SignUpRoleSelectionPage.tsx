@@ -1,15 +1,8 @@
-import { useNavigate, Link } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ThemeToggle } from "@/components/ThemeToggle";
-import { Users, School, ArrowRight, ArrowLeft, Sparkles, CheckCircle2, BookOpen } from "lucide-react";
-import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
-import { useTheme } from "next-themes";
-import logoDark from "@/assets/logo-dark.png";
-import logoLight from "@/assets/logo-light.png";
+import { useNavigate } from "react-router-dom";
+import { ArrowRight, ArrowLeft, Building2, GraduationCap, Users } from "lucide-react";
+import eclatlLogo from "@/assets/logo.png";
 
-export default function SignUpRoleSelectionPage() {
+export default function SignUpRoleSelectionPage({ login = false }: { login?: boolean }) {
   const navigate = useNavigate();
   useRedirectIfAuthenticated();
   const { theme } = useTheme();
@@ -17,159 +10,67 @@ export default function SignUpRoleSelectionPage() {
 
   const roles = [
     {
+      id: "student",
+      icon: GraduationCap,
+      title: "Student",
+      description: "Access your courses, track your progress, and collaborate with peers.",
+    },
+    {
       id: "parent",
       icon: Users,
-      badge: "Family Account",
-      title: "Parent Account",
-      description: "Create a family account to manage your children's learning, assign customized homework quizzes, and track detailed progress.",
-      features: [
-        "Create & manage multiple student profiles",
-        "Curriculum diagnostic topic tracking",
-        "Custom practice quiz generator",
-      ],
-      color: "from-purple-500 to-indigo-600",
-      accentBg: "bg-purple-500/10 text-purple-500 border-purple-500/20",
-      to: "/auth?role=parent",
+      title: "Parent",
+      description: "Monitor academic performance, communicate with teachers, and manage schedules.",
     },
     {
       id: "school",
-      icon: School,
-      badge: "Institutional Account",
-      title: "School Account",
-      description: "Onboard your school to track Primary 6 and JSS 3 cohorts, assign class-wide CBT mock exams, and export CSV performance reports.",
-      features: [
-        "Unique school student connection code",
-        "Year 6 & Year 9 cohort performance tracking",
-        "Early warning diagnostic alerts",
-      ],
-      color: "from-emerald-500 to-teal-600",
-      accentBg: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-      to: "/auth?role=school",
+      icon: Building2,
+      title: "School",
+      description: "Manage faculty, oversee curriculum delivery, and analyze institutional data.",
     },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/5 via-background to-accent/5 flex flex-col justify-between p-4 sm:p-8">
-      {/* Top Header */}
-      <header className="max-w-6xl mx-auto w-full flex items-center justify-between py-2">
-        <Link to="/" className="flex items-center gap-2">
-          <img src={logo} alt="Éclat Logo" className="h-10 w-auto" />
-        </Link>
-        <div className="flex items-center gap-3">
-          <ThemeToggle />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => navigate("/")}
-            className="text-xs font-bold gap-1.5 rounded-xl text-muted-foreground hover:text-foreground"
-          >
-            <ArrowLeft size={16} /> Home
-          </Button>
-        </div>
-      </header>
-
-      {/* Main Container */}
-      <main className="max-w-4xl mx-auto w-full my-auto py-8">
-        <div className="text-center mb-10 animate-fade-in max-w-2xl mx-auto">
-          <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground">
-            Choose Your Account Type
-          </h1>
-          <p className="text-muted-foreground text-sm sm:text-base mt-2">
-            Get started with free access to WAEC BECE and National Common Entrance CBT exam prep.
-          </p>
-        </div>
-
-        {/* Roles Grid */}
-        <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-          {roles.map((r, index) => {
-            const Icon = r.icon;
-            return (
-              <Card
-                key={r.id}
-                className="relative cursor-pointer border-2 hover:border-primary/80 hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 rounded-3xl bg-card/90 backdrop-blur-sm flex flex-col justify-between group overflow-hidden"
-                style={{ animationDelay: `${index * 100}ms` }}
-                onClick={() => navigate(r.to)}
-              >
-                {/* Accent top stripe */}
-                <div className={`h-1.5 w-full bg-gradient-to-r ${r.color}`} />
-
-                <CardHeader className="pb-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className={`p-3.5 rounded-2xl bg-gradient-to-br ${r.color} text-white shadow-md group-hover:scale-110 transition-transform`}>
-                      <Icon size={24} />
-                    </div>
-                    <Badge variant="outline" className={`text-[10px] font-bold ${r.accentBg}`}>
-                      {r.badge}
-                    </Badge>
-                  </div>
-                  <CardTitle className="text-xl font-bold text-foreground">{r.title}</CardTitle>
-                  <CardDescription className="text-xs text-muted-foreground leading-relaxed mt-1">
-                    {r.description}
-                  </CardDescription>
-                </CardHeader>
-
-                <CardContent className="space-y-4 pt-0">
-                  <div className="space-y-2 border-t border-border/50 pt-3">
-                    {r.features.map((f, fi) => (
-                      <div key={fi} className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-                        <CheckCircle2 size={13} className="text-primary flex-shrink-0" />
-                        <span>{f}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <Button
-                    className="w-full text-xs font-bold h-10 rounded-xl gap-1.5 shadow-sm group-hover:bg-primary group-hover:text-primary-foreground transition-all"
-                    variant="outline"
-                  >
-                    <span>Create {r.title}</span>
-                    <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-                  </Button>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        {/* Student Notice Banner - Professional & Crisp */}
-        <div className="mt-8 p-4 sm:p-5 rounded-2xl bg-card border-2 border-border/80 shadow-md max-w-2xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-sm">
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary border border-primary/20 flex items-center justify-center flex-shrink-0">
-              <BookOpen size={20} />
-            </div>
-            <div className="text-left">
-              <p className="font-bold text-foreground text-sm">Are you a student?</p>
-              <p className="text-xs text-muted-foreground">Student accounts are set up by parents. Ask your parent to sign up, or sign in below.</p>
-            </div>
+    <main className="flex min-h-screen items-center justify-center bg-[#081328] p-0 font-sans text-[#dce7ff]">
+      <section className="relative flex min-h-screen w-full flex-col overflow-hidden bg-[#081328]">
+        <div className="flex flex-1 flex-col items-center px-6 pb-10 pt-14 sm:px-12 sm:pt-20 lg:px-[92px] lg:pt-[82px]">
+          <div className="animate-fade-in text-center">
+            <img src={eclatlLogo} alt="Eclat Logo" className="h-20 w-auto mx-auto mb-6" />
+            <h2 className="mt-6 text-[32px] font-bold leading-none text-[#dce3fa]">Select Your Role</h2>
+            <p className="mx-auto mt-3 max-w-[430px] text-[16px] leading-[1.45] text-[#bbc5d9]">
+              Choose how you want to interact with the platform to get started.
+            </p>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => navigate("/student-login")}
-            className="h-9 px-4 text-xs font-bold rounded-xl border-2 border-primary/40 text-primary hover:bg-primary hover:text-primary-foreground flex-shrink-0 self-start sm:self-auto transition-all"
+
+          <div className="mt-[84px] grid w-full max-w-[905px] grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
+            {roles.map(({ id, icon: Icon, title, description }, index) => (
+              <button
+                key={id}
+                type="button"
+                className="group flex min-h-[290px] flex-col items-start border border-[#1d2c47] bg-[#121e34] px-7 py-7 text-left transition duration-200 hover:-translate-y-1 hover:border-[#43718e] hover:bg-[#172640] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#72c8f6] animate-scale-in"
+                style={{ animationDelay: `${index * 100}ms` }}
+                onClick={() => navigate(login ? `/${id === "student" ? "student-login" : `${id}-login`}` : id === "student" ? "/student-signup" : id === "parent" ? "/parent-signup" : `/auth?role=${id}`)}
+              >
+                <span className="flex h-[57px] w-[57px] items-center justify-center rounded-[11px] bg-[#1c2b45] text-[#72c8f6] transition-transform group-hover:scale-105">
+                  <Icon size={31} strokeWidth={2.2} />
+                </span>
+                <span className="mt-7 text-[20px] font-bold text-[#dce3fa]">{title}</span>
+                <span className="mt-3 text-[15px] leading-[1.45] text-[#bdc8db]">{description}</span>
+                <span className="mt-auto flex items-center gap-3 pt-6 text-[13px] font-bold uppercase tracking-[1px] text-[#65b9e5]">
+                  Click to continue <ArrowRight size={18} strokeWidth={2.5} />
+                </span>
+              </button>
+            ))}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => navigate("/")}
+            className="mt-auto flex items-center gap-3 pt-14 text-[14px] font-medium text-[#c4cede] transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#72c8f6]"
           >
-            Student Login →
-          </Button>
+            <ArrowLeft size={18} /> Back to Home
+          </button>
         </div>
-
-        {/* Footer info */}
-        <div className="text-center mt-8 space-y-3">
-          <p className="text-sm text-muted-foreground">
-            Already registered?{" "}
-            <Link
-              to="/auth/login/role-selection"
-              className="text-primary font-bold hover:underline"
-            >
-              Sign In to Your Account
-            </Link>
-          </p>
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="max-w-6xl mx-auto w-full text-center text-xs text-muted-foreground py-4">
-        <span>© 2026 Éclat Platform • Empowering learning, one quiz at a time</span>
-      </footer>
-    </div>
+      </section>
+    </main>
   );
 }

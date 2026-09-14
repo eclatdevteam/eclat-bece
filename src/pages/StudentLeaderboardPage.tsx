@@ -65,13 +65,12 @@ export default function StudentLeaderboardPage() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-7xl">
+    <div className="mx-auto max-w-6xl px-5 py-8 text-slate-100 sm:px-8">
       <div className="mb-8 animate-fade-in">
-        <h2 className="text-3xl sm:text-4xl font-black text-foreground tracking-tight flex items-center gap-2">
-          <Trophy className="text-accent" size={32} />
-          National Leaderboards <span className="text-primary">.</span>
+        <h2 className="flex items-center gap-2 text-2xl font-bold tracking-tight sm:text-3xl">
+          National Leaderboard<span className="text-[#71c9ed]">.</span>
         </h2>
-        <p className="text-muted-foreground font-medium text-sm sm:text-base mt-1">See where you rank among top performers nationwide</p>
+        <p className="mt-1 text-sm text-slate-400">See where you rank among top performers nationwide</p>
       </div>
 
       <div className="animate-scale-in">

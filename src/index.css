@@ -117,6 +117,46 @@ All colors MUST be HSL.
   [data-radix-portal] * {
     font-family: 'Outfit', sans-serif !important;
   }
+
+  [data-student-theme="light"] {
+    background: #f4f7fa;
+    color: #132338;
+  }
+
+  [data-student-theme="light"] aside,
+  [data-student-theme="light"] header,
+  [data-student-theme="light"] main {
+    background-color: #ffffff !important;
+  }
+
+  [data-student-theme="light"] main [class*="border-"],
+  [data-student-theme="light"] aside [class*="border-"],
+  [data-student-theme="light"] header [class*="border-"] {
+    border-color: #d2e0e8 !important;
+  }
+
+  [data-student-theme="light"] main [class*="bg-"] {
+    background-color: #f8fbfd !important;
+  }
+
+  [data-student-theme="light"] main [class*="text-slate-100"],
+  [data-student-theme="light"] main [class*="text-white"] {
+    color: #132338 !important;
+  }
+
+  [data-student-theme="light"] main [class*="text-slate-200"],
+  [data-student-theme="light"] main [class*="text-slate-300"] {
+    color: #33485b !important;
+  }
+
+  [data-student-theme="light"] main [class*="text-slate-400"],
+  [data-student-theme="light"] main [class*="text-slate-500"] {
+    color: #607487 !important;
+  }
+
+  [data-student-theme="light"] main [class*="placeholder:text-slate-500"]::placeholder {
+    color: #607487 !important;
+  }
 }
 
 @layer utilities {
