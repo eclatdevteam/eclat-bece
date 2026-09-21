@@ -1,9 +1,14 @@
 import { useState } from "react";
+<<<<<<< HEAD
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
+=======
+import { useNavigate, useSearchParams } from "react-router-dom";
+import { CardContent  } from "@/components/ui/card";
+>>>>>>> a73e388 (parent dashboard updated)
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ArrowLeft, ArrowRight, BookOpen, Loader2, Eye, EyeOff, LockKeyhole, Mail, UserRound } from "lucide-react";
+import { ArrowLeft, ArrowRight, BookOpen, Loader2, Eye, EyeOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";

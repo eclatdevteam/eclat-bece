@@ -19,6 +19,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 const menuItems = [
     { title: "Dashboard", url: "/dashboard/parent", icon: LayoutDashboard },
     { title: "My Children", url: "/dashboard/parent/children", icon: Users },
+    { title: "Assignments", url: "/dashboard/parent/assignments", icon: LayoutDashboard },
+    { title: "Reports", url: "/dashboard/parent/reports", icon: CreditCard },
     { title: "Subscriptions", url: "/dashboard/parent/subscriptions", icon: CreditCard },
     { title: "Help & Resources", url: "/dashboard/parent/resources", icon: HelpCircle },
 ];
@@ -39,16 +41,16 @@ export function ParentSidebar() {
     };
 
     return (
-        <Sidebar collapsible="icon" className="border-r bg-card/50 backdrop-blur-sm">
-            <SidebarContent>
+        <Sidebar collapsible="icon" className="border-r border-border/50 bg-[#0d1d2f] text-foreground shadow-[inset_0_0_0_1px_rgba(141,191,255,0.06)]">
+            <SidebarContent className="bg-[#0d1d2f]">
                 <SidebarGroup>
                     {!isCollapsed && (
-                        <SidebarGroupLabel className="px-4 text-xs font-semibold uppercase tracking-wider text-muted-foreground/70 mb-2">
+                        <SidebarGroupLabel className="mb-3 px-4 text-[10px] font-black uppercase tracking-[0.24em] text-slate-400">
                             Parent Portal
                         </SidebarGroupLabel>
                     )}
                     <SidebarGroupContent>
-                        <SidebarMenu className="px-2 space-y-1">
+                        <SidebarMenu className="space-y-1 px-2">
                             {menuItems.map((item) => {
                                 const Icon = item.icon;
                                 const active = isActive(item.url);
@@ -57,7 +59,7 @@ export function ParentSidebar() {
                                         <Tooltip delayDuration={0}>
                                             <TooltipTrigger asChild>
                                                 <SidebarMenuButton
-                                                    onClick={() => {
+                                                    onClick={() => { 
                                                         if (item.url.includes("#") && currentPath === item.url.split("#")[0]) {
                                                             const el = document.getElementById(item.url.split("#")[1]);
                                                             if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -65,19 +67,14 @@ export function ParentSidebar() {
                                                             navigate(item.url);
                                                         }
                                                     }}
-                                                    className={`
-                            h-11 rounded-xl transition-all duration-200
-                            ${active
-                                                            ? "bg-primary text-primary-foreground shadow-md shadow-primary/20 font-semibold"
-                                                            : "hover:bg-primary/10 text-muted-foreground hover:text-primary"}
-                          `}
+                                                    className={`h-11 rounded-xl border border-transparent transition-all duration-200 ${active ? 'bg-primary/12 text-primary shadow-[inset_0_0_0_1px_rgba(125,211,252,0.2)]' : 'text-slate-300 hover:bg-white/5 hover:text-primary'}`}
                                                 >
-                                                    <Icon className={`${isCollapsed ? "h-5 w-5" : "mr-3 h-5 w-5"} transition-transform duration-200 group-hover:scale-110`} />
-                                                    {!isCollapsed && <span className="text-[15px]">{item.title}</span>}
+                                                    <Icon className={`${isCollapsed ? 'h-5 w-5' : 'mr-3 h-5 w-5'} transition-transform duration-200 group-hover:scale-110`} />
+                                                    {!isCollapsed && <span className="text-[15px] font-medium">{item.title}</span>}
                                                 </SidebarMenuButton>
                                             </TooltipTrigger>
                                             {isCollapsed && (
-                                                <TooltipContent side="right" className="bg-popover border-border animate-in fade-in zoom-in-95">
+                                                <TooltipContent side="right" className="border border-border/40 bg-popover text-foreground">
                                                     <p className="font-medium">{item.title}</p>
                                                 </TooltipContent>
                                             )}
@@ -90,20 +87,17 @@ export function ParentSidebar() {
                 </SidebarGroup>
             </SidebarContent>
 
-            <SidebarFooter className="p-4 border-t border-border/50">
+            <SidebarFooter className="border-t border-border/50 bg-[#0d1d2f] p-4">
                 <Tooltip delayDuration={0}>
                     <TooltipTrigger asChild>
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={signOut}
-                            className={`
-                w-full justify-start rounded-xl h-11 text-muted-foreground hover:bg-destructive/10 hover:text-destructive 
-                transition-all duration-200 group
-              `}
+                            className="h-11 w-full justify-start rounded-xl text-slate-300 transition hover:bg-destructive/10 hover:text-destructive"
                         >
-                            <LogOut className={`${isCollapsed ? "h-5 w-5" : "mr-3 h-5 w-5"} transition-transform group-hover:-translate-x-1`} />
-                            {!isCollapsed && <span className="font-medium text-[15px]">Sign Out</span>}
+                            <LogOut className={`${isCollapsed ? 'h-5 w-5' : 'mr-3 h-5 w-5'} transition-transform group-hover:-translate-x-1`} />
+                            {!isCollapsed && <span className="text-[15px] font-medium">Sign Out</span>}
                         </Button>
                     </TooltipTrigger>
                     {isCollapsed && (
@@ -117,14 +111,14 @@ export function ParentSidebar() {
                     variant="ghost"
                     size="sm"
                     onClick={toggleSidebar}
-                    className="w-full justify-center mt-2 h-8 rounded-lg hover:bg-muted text-muted-foreground/60"
+                    className="mt-2 h-8 w-full justify-center rounded-lg text-slate-400 hover:bg-white/5 hover:text-primary"
                 >
                     {isCollapsed ? (
                         <ChevronRight className="h-4 w-4" />
                     ) : (
                         <div className="flex items-center gap-2">
                             <ChevronLeft className="h-4 w-4" />
-                            <span className="text-xs font-medium uppercase tracking-tighter italic">Collapse Menu</span>
+                            <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-slate-400">Collapse</span>
                         </div>
                     )}
                 </Button>
