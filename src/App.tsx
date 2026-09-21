@@ -31,6 +31,8 @@ import StudentSettingsPage from "./pages/StudentSettingsPage";
 import DuelOfMindsPage from "./pages/DuelOfMindsPage";
 import ParentDashboard from "./pages/ParentDashboard";
 import MyChildren from "./pages/parent/MyChildren";
+import ParentAssignmentsPage from "./pages/parent/ParentAssignmentsPage";
+import ParentReportsPage from "./pages/parent/ParentReportsPage";
 import SubscriptionsPage from "./pages/parent/SubscriptionsPage";
 import ParentSettingsPage from "./pages/parent/ParentSettingsPage";
 import ParentResourcesPage from "./pages/parent/ParentResourcesPage";
@@ -178,6 +180,20 @@ const App = () => (
                 <ProtectedRoute requiredRole="parent">
                   <ParentLayout>
                     <MyChildren />
+                  </ParentLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/dashboard/parent/assignments" element={
+                <ProtectedRoute requiredRole="parent">
+                  <ParentLayout>
+                    <ParentAssignmentsPage />
+                  </ParentLayout>
+                </ProtectedRoute>
+              } />
+              <Route path="/dashboard/parent/reports" element={
+                <ProtectedRoute requiredRole="parent">
+                  <ParentLayout>
+                    <ParentReportsPage />
                   </ParentLayout>
                 </ProtectedRoute>
               } />

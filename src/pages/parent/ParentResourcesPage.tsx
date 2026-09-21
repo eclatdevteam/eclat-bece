@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { HelpCircle, BookOpen, FileText, Mail, Phone, MessageSquare, Loader2, ChevronRight } from "lucide-react";
+import { HelpCircle, BookOpen, FileText, Mail, Phone, MessageSquare, Loader2, ChevronRight, Search, ShieldCheck, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Accordion, AccordionItem, AccordionTrigger, AccordionContent } from "@/components/ui/accordion";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
@@ -30,7 +31,7 @@ export default function ParentResourcesPage() {
       });
 
       if (error) throw error;
-      
+
       toast.success("Support request sent! We will contact you via email shortly.");
       setSupportMessage("");
     } catch (error: any) {
@@ -41,153 +42,137 @@ export default function ParentResourcesPage() {
     }
   };
 
+  const guideCards = [
+    { icon: BookOpen, title: "Standard Exams", subtitle: "Common Entrance & BECE Guide", description: "Scoring rubrics, reliable practice resources, and revision timelines for all core subjects." },
+    { icon: FileText, title: "Family Accounts", subtitle: "Managing children & codes", description: "Generate or update a child account, link a student profile, and monitor activity quickly." },
+    { icon: ShieldCheck, title: "Targeted Mastery", subtitle: "Parent tasks & custom quizzes", description: "Create custom tasks and focus on weak areas with guided, targeted practice drill sets." },
+    { icon: HelpCircle, title: "Invoicing & Cards", subtitle: "Billing & family subscriptions", description: "Manage multiple children, update billing info, and download invoices with confidence." },
+  ];
+
   return (
-    <div className="p-6 space-y-10 animate-fade-in max-w-5xl mx-auto">
-      {/* Header section */}
-      <div className="flex flex-col gap-1 pb-2 border-b border-border/40">
-        <div className="flex items-center gap-2 text-primary font-bold uppercase tracking-wider text-xs">
-          <HelpCircle className="h-4 w-4" />
-          <span>Help & Resources</span>
+    <div className="w-full px-3 pb-20 pt-6 md:px-6">
+      <div className="rounded-[2rem] border border-border/60 bg-card/60 p-6 shadow-[0_12px_30px_rgba(4,12,20,0.12)] md:p-8">
+        <div className="parent-section-chip mb-4">Academic Service</div>
+        <div className="mb-6 flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+          <div>
+            <h1 className="text-4xl font-black tracking-tight text-foreground md:text-5xl">Help & Support Hub</h1>
+            <p className="mt-2 text-base text-muted-foreground">Find structured curriculum breakdowns, step-by-step parent guides, or connect directly with an Éclat education specialist.</p>
+          </div>
+          <div className="relative w-full max-w-xl">
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="Search topics, Common Entrance FAQ, BECE syllabus, or billing..." className="parent-search h-12 bg-background/40 pr-4" />
+          </div>
         </div>
-        <h1 className="text-4xl font-black tracking-tight text-foreground">
-          Portal <span className="text-primary italic">Resources</span>.
-        </h1>
-        <p className="text-muted-foreground font-medium">
-          Access exam guidelines, study handbooks, and directly contact our support desk for help.
-        </p>
+
+        <div className="flex flex-wrap gap-2 text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">
+          <span className="rounded-full border border-border/60 bg-background/30 px-2.5 py-1">Trending:</span>
+          <span className="rounded-full border border-border/60 bg-background/30 px-2.5 py-1">Parent Guidance</span>
+          <span className="rounded-full border border-border/60 bg-background/30 px-2.5 py-1">Link Child</span>
+          <span className="rounded-full border border-border/60 bg-background/30 px-2.5 py-1">Common Entrance</span>
+          <span className="rounded-full border border-border/60 bg-background/30 px-2.5 py-1">Billing</span>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10">
-        {/* Left Column: FAQ Accordion */}
-        <div className="lg:col-span-7 space-y-6">
-          <div className="space-y-1">
-            <h4 className="text-xl font-bold tracking-tight text-foreground">Frequently Asked Questions</h4>
-            <p className="text-muted-foreground text-sm font-medium">Quick answers to common questions about managing your student's account.</p>
+      <div className="mt-8 grid gap-6 xl:grid-cols-[1.4fr_0.9fr]">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h2 className="text-2xl font-black tracking-tight text-foreground">Curated Knowledge Categories</h2>
+            <span className="text-xs font-black uppercase tracking-[0.18em] text-muted-foreground">48 comprehensive guides</span>
           </div>
-          
-          <Accordion type="single" collapsible className="w-full space-y-4">
-            <AccordionItem value="item-1" className="border-2 border-border/40 bg-background/50 rounded-2xl px-5 py-1">
-              <AccordionTrigger className="hover:no-underline font-bold text-base text-foreground text-left py-4">
-                How do my children connect to my parent portal?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground font-medium text-sm leading-relaxed pb-4">
-                Every parent account has a unique 8-character connection code. You can find this under <strong className="text-primary">Settings &gt; Children &amp; Preferences</strong>. Share this code with your children, and they can enter it in their profile settings or during signup to link their accounts automatically.
-              </AccordionContent>
-            </AccordionItem>
 
-            <AccordionItem value="item-2" className="border-2 border-border/40 bg-background/50 rounded-2xl px-5 py-1">
-              <AccordionTrigger className="hover:no-underline font-bold text-base text-foreground text-left py-4">
-                What features are included in the Premium subscription?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground font-medium text-sm leading-relaxed pb-4">
-                Premium unlocks unlimited practice questions, full access to all subjects (including comprehension passages), detailed performance graphs, class leaderboards, and priority support. Standard accounts are limited to basic subject coverage and 50 practice questions per session.
-              </AccordionContent>
-            </AccordionItem>
+          <div className="grid gap-4 md:grid-cols-2">
+            {guideCards.map(({ icon: Icon, title, subtitle, description }, index) => (
+              <Card key={title} className="parent-panel rounded-[1.5rem] border border-border/60 bg-card/60 p-4">
+                <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl border border-border/60 bg-background/40 text-primary">
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="mb-1 text-[10px] font-black uppercase tracking-[0.18em] text-muted-foreground">{subtitle}</div>
+                <h3 className="text-xl font-black text-foreground">{title}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{description}</p>
+                <div className="mt-4 flex items-center justify-between text-xs font-bold uppercase tracking-[0.18em] text-primary">
+                  <span>{index === 0 ? '14 parent articles' : index === 1 ? '9 tutorials' : index === 2 ? '15 walkthroughs' : '10 articles'}</span>
+                  <ArrowRight className="h-4 w-4" />
+                </div>
+              </Card>
+            ))}
+          </div>
 
-            <AccordionItem value="item-3" className="border-2 border-border/40 bg-background/50 rounded-2xl px-5 py-1">
-              <AccordionTrigger className="hover:no-underline font-bold text-base text-foreground text-left py-4">
-                How can I assign a custom practice task to my child?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground font-medium text-sm leading-relaxed pb-4">
-                On the dashboard, locate your child's overview card. Click the <strong className="text-primary">Assign Task</strong> button, choose the subject and specific topics, set the number of questions, and click assign. Your child will instantly see the new task on their student dashboard.
-              </AccordionContent>
-            </AccordionItem>
+          <div className="rounded-[1.8rem] border border-border/60 bg-card/60 p-4 md:p-5">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-2xl font-black text-foreground">Frequently Asked Inquiries</h3>
+              <Button variant="ghost" className="text-xs font-black uppercase tracking-[0.18em] text-primary">Expand all</Button>
+            </div>
 
-            <AccordionItem value="item-4" className="border-2 border-border/40 bg-background/50 rounded-2xl px-5 py-1">
-              <AccordionTrigger className="hover:no-underline font-bold text-base text-foreground text-left py-4">
-                How does the streak tracking work?
-              </AccordionTrigger>
-              <AccordionContent className="text-muted-foreground font-medium text-sm leading-relaxed pb-4">
-                The daily streak tracks the consecutive days your child completes at least one practice quiz. High streaks build study habits and are celebrated with special badges on both student and parent dashboards.
-              </AccordionContent>
-            </AccordionItem>
-          </Accordion>
+            <Accordion type="single" collapsible className="w-full space-y-3">
+              {[
+                "How do I link my child’s school account to my parent portal?",
+                "Can I assign specific topics that my child is struggling with?",
+                "How are the national leaderboard and percentile ranks calculated?",
+                "What should I do if my child misses an assignment deadline?",
+                "How does Éclat ensure questions align with the Nigerian curriculum?",
+              ].map((item, idx) => (
+                <AccordionItem key={item} value={`item-${idx + 1}`} className="rounded-2xl border border-border/60 bg-background/40 px-4">
+                  <AccordionTrigger className="py-4 text-left text-base font-bold text-foreground hover:no-underline">{item}</AccordionTrigger>
+                  <AccordionContent className="pb-4 text-sm leading-6 text-muted-foreground">
+                    Each parent dashboard includes a unique connection code and a secure link flow that allows your child to connect to your portal without needing to re-enter details. Assignment tracking, quiz statuses, and report visibility then sync automatically.
+                  </AccordionContent>
+                </AccordionItem>
+              ))}
+            </Accordion>
+          </div>
         </div>
 
-        {/* Right Column: Handbooks & Contact Support */}
-        <div className="lg:col-span-5 space-y-8">
-          {/* Quick Handbooks */}
-          <div className="space-y-4">
-            <div className="space-y-1">
-              <h4 className="text-xl font-bold tracking-tight text-foreground">Guides & Syllabi</h4>
-              <p className="text-muted-foreground text-sm font-medium">Study resources to help your child prepare for the BECE exams.</p>
-            </div>
-            <div className="space-y-3">
-              <a
-                href="https://www.neco.gov.ng/"
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-4 p-4 border-2 border-border/40 bg-background/50 hover:border-primary/30 rounded-2xl transition-all group"
-              >
-                <div className="p-3 bg-primary/10 text-primary rounded-xl group-hover:scale-110 transition-transform">
-                  <BookOpen className="h-5 w-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-sm text-foreground truncate">Official NECO BECE Syllabus Guidelines</p>
-                  <p className="text-xs text-muted-foreground font-medium">Review the official requirements and subject curriculum.</p>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground/60 group-hover:translate-x-1 transition-transform" />
-              </a>
-
-              <a
-                href="https://www.neco.gov.ng/"
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-4 p-4 border-2 border-border/40 bg-background/50 hover:border-primary/30 rounded-2xl transition-all group"
-              >
-                <div className="p-3 bg-blue-500/10 text-blue-500 rounded-xl group-hover:scale-110 transition-transform">
-                  <FileText className="h-5 w-5" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="font-bold text-sm text-foreground truncate">Parent's Study Companion Handbook</p>
-                  <p className="text-xs text-muted-foreground font-medium">Best practices on structuring study time and rewards at home.</p>
-                </div>
-                <ChevronRight className="h-5 w-5 text-muted-foreground/60 group-hover:translate-x-1 transition-transform" />
-              </a>
-            </div>
-          </div>
-
-          {/* Quick Contact Form */}
-          <Card className="rounded-[2rem] border-2 border-border/60 overflow-hidden shadow-sm bg-background/30 backdrop-blur-md">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg font-bold text-foreground flex items-center gap-2">
-                <MessageSquare className="h-5 w-5 text-primary" />
-                Direct Support Message
-              </CardTitle>
-              <CardDescription className="font-medium text-xs">
-                Need custom help or found an issue? Send us a direct message.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <form onSubmit={handleSendSupport} className="space-y-3">
-                <Textarea
-                  placeholder="Describe your issue or question..."
-                  value={supportMessage}
-                  onChange={(e) => setSupportMessage(e.target.value)}
-                  className="min-h-[90px] rounded-xl border-2 font-medium bg-background"
-                  required
-                />
-                <Button
-                  type="submit"
-                  disabled={sendingSupport || !supportMessage.trim()}
-                  className="w-full rounded-xl font-bold h-10"
-                  size="sm"
-                >
-                  {sendingSupport ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    "Send Message"
-                  )}
-                </Button>
-              </form>
-              <div className="flex items-center justify-around pt-2 border-t border-border/40 text-xs text-muted-foreground font-semibold">
-                <span className="flex items-center gap-1"><Mail className="h-3.5 w-3.5" /> support@eclatapp.xyz</span>
-                <span className="flex items-center gap-1"><Phone className="h-3.5 w-3.5" /> +2348130202112</span>
+        <div className="space-y-5">
+          <Card className="parent-panel rounded-[1.75rem] border border-border/60 bg-card/60 p-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="text-[10px] font-black uppercase tracking-[0.22em] text-muted-foreground">Direct Assistance</div>
+                <h3 className="mt-2 text-2xl font-black text-foreground">Contact Support Desk</h3>
               </div>
-            </CardContent>
+              <div className="rounded-full border border-emerald-500/20 bg-emerald-500/10 px-2 py-1 text-[10px] font-black uppercase tracking-[0.18em] text-emerald-400">Advisors online</div>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-border/60 bg-background/40 p-4">
+              <div className="mb-2 text-lg font-black text-foreground">Chat with Academic Advisor</div>
+              <p className="text-sm leading-6 text-muted-foreground">Need personalised help interpreting one of your child&apos;s scores and performance trends? Speak with a dedicated advisor today.</p>
+              <Button className="mt-4 w-full rounded-xl bg-primary text-primary-foreground">Start Instant Live Chat</Button>
+            </div>
+
+            <div className="mt-4 space-y-3">
+              {[
+                { title: "WhatsApp Parent", value: "+234 904-218-...", action: "Message" },
+                { title: "1-on-1 Academic Audit", value: "Schedule a consultation", action: "Schedule" },
+                { title: "Submit Support Ticket", value: "Open or track requests", action: "Open" },
+              ].map((item) => (
+                <div key={item.title} className="flex items-center justify-between rounded-2xl border border-border/60 bg-background/40 p-3">
+                  <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><Phone className="h-4 w-4" /></div>
+                    <div>
+                      <div className="text-sm font-black text-foreground">{item.title}</div>
+                      <div className="text-xs text-muted-foreground">{item.value}</div>
+                    </div>
+                  </div>
+                  <Button variant="ghost" className="text-xs font-black uppercase tracking-[0.18em] text-primary">{item.action}</Button>
+                </div>
+              ))}
+            </div>
+          </Card>
+
+          <Card className="parent-panel rounded-[1.75rem] border border-border/60 bg-card/60 p-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-2xl font-black text-foreground">Send a message</h3>
+              <div className="rounded-full border border-border/60 bg-background/40 px-2 py-1 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">Email us</div>
+            </div>
+            <form onSubmit={handleSendSupport} className="mt-4 space-y-4">
+              <Textarea value={supportMessage} onChange={(e) => setSupportMessage(e.target.value)} placeholder="Describe your issue or question..." className="min-h-[110px] rounded-2xl border-border/60 bg-background/40" />
+              <Button type="submit" disabled={sendingSupport || !supportMessage.trim()} className="w-full rounded-xl bg-primary text-primary-foreground">
+                {sendingSupport ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...</> : 'Send Message'}
+              </Button>
+            </form>
+            <div className="mt-4 flex items-center justify-between border-t border-border/60 pt-4 text-xs text-muted-foreground">
+              <span className="flex items-center gap-2"><Mail className="h-3.5 w-3.5" /> support@eclatapp.xyz</span>
+              <span className="flex items-center gap-2"><Phone className="h-3.5 w-3.5" /> +2348130202112</span>
+            </div>
           </Card>
         </div>
       </div>
