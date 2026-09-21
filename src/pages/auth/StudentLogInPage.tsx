@@ -8,6 +8,7 @@ import { z } from "zod";
 import { getSafeErrorMessage } from "@/lib/errorUtils";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import eclatlLogo from "@/assets/logo.png";
+import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
 
 const loginSchema = z.object({
   username: z.string().trim().min(2, "Username must be at least 2 characters").max(100),

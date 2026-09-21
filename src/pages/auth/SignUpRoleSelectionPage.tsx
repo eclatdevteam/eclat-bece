@@ -1,12 +1,11 @@
 import { useNavigate } from "react-router-dom";
 import { ArrowRight, ArrowLeft, Building2, GraduationCap, Users } from "lucide-react";
 import eclatlLogo from "@/assets/logo.png";
+import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
 
 export default function SignUpRoleSelectionPage({ login = false }: { login?: boolean }) {
   const navigate = useNavigate();
   useRedirectIfAuthenticated();
-  const { theme } = useTheme();
-  const logo = theme === "dark" ? logoLight : logoDark;
 
   const roles = [
     {

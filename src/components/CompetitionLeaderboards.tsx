@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Trophy, Calendar, Crown, Clock, Medal } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -119,12 +120,39 @@ export const CompetitionLeaderboards = ({
         </div>
 
         {leaders.length === 0 ? <div className="border border-dashed border-[#2b3a54] bg-[#0e192b] py-12 text-center text-sm text-slate-400">No students ranked yet. Be the first to quiz!</div> : <>
-          <div className="grid min-h-[205px] grid-cols-3 items-end gap-2 rounded-lg border border-[#2b3a54] bg-[#0e192b] px-3 pb-5 pt-8 sm:gap-6 sm:px-12">
+          <div className="grid min-h-[230px] grid-cols-3 items-end gap-2 rounded-lg border border-[#2b3a54] bg-[#0e192b] px-3 pb-5 pt-8 sm:gap-6 sm:px-12">
             {[2, 1, 3].map((rank) => {
               const student = podium.find((item) => item.rank === rank);
               if (!student) return <div key={rank} />;
               const winner = rank === 1;
-              return <div key={student.rank} className={`relative flex flex-col items-center justify-end rounded-t-lg border px-2 pb-4 pt-7 ${winner ? 'h-40 border-[#f4d21f] bg-[#202b40]' : 'h-28 border-[#43506a] bg-[#182338]'}`}><span className={`absolute -top-3 flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold ${winner ? 'bg-[#f4d21f] text-[#071023]' : 'border border-slate-300 bg-[#273349] text-white'}`}>{rank}</span><span className="mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#091426] text-xl">{student.avatar}</span><p className="max-w-full truncate text-center text-xs font-semibold text-white">{student.name}{student.isCurrentUser ? ' (You)' : ''}</p><p className={`mt-1 text-[10px] font-bold ${winner ? 'text-[#f4d21f]' : 'text-slate-400'}`}>{student.points.toLocaleString()} pts</p></div>;
+              const isSecond = rank === 2;
+              return (
+                <div 
+                  key={student.rank} 
+                  className={`relative flex flex-col items-center justify-end rounded-t-lg border px-2 pb-3.5 pt-5 transition-all ${
+                    winner 
+                      ? 'h-48 sm:h-52 border-[#f4d21f] bg-[#202b40] shadow-lg shadow-amber-500/10' 
+                      : isSecond
+                        ? 'h-40 sm:h-44 border-[#43506a] bg-[#182338]'
+                        : 'h-[136px] sm:h-[150px] border-[#43506a] bg-[#182338]'
+                  }`}
+                >
+                  <span className={`absolute -top-3.5 flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold shadow-sm ${
+                    winner ? 'bg-[#f4d21f] text-[#071023] ring-2 ring-[#f4d21f]/30' : 'border border-slate-300 bg-[#273349] text-white'
+                  }`}>
+                    {rank}
+                  </span>
+                  <span className="mb-2 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#091426] text-xl shadow-inner">
+                    {student.avatar}
+                  </span>
+                  <p className="w-full truncate px-1 text-center text-xs font-semibold text-white leading-normal" title={student.name}>
+                    {student.name}{student.isCurrentUser ? ' (You)' : ''}
+                  </p>
+                  <p className={`mt-0.5 text-[11px] font-bold leading-tight ${winner ? 'text-[#f4d21f]' : 'text-slate-400'}`}>
+                    {student.points.toLocaleString()} pts
+                  </p>
+                </div>
+              );
             })}
           </div>
           <div className="overflow-hidden rounded-lg border border-[#1d2a40] bg-[#0e192b]">

@@ -32,7 +32,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Loader2, Plus, Trash2, CheckCircle2, ImagePlus, X } from "lucide-react";
+import { Loader2, Plus, Trash2, CheckCircle2, ImagePlus, X, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
@@ -121,6 +121,39 @@ export function AddQuestionDialog({ onSuccess }: AddQuestionDialogProps) {
     const classYear = form.watch("classYear");
     const questionType = form.watch("questionType");
     const passageMode = form.watch("passageMode");
+    const watchedQuestionText = form.watch("questionText");
+    const watchedSubject = form.watch("subject");
+    const [duplicateWarning, setDuplicateWarning] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!watchedQuestionText || watchedQuestionText.trim().length < 8 || !watchedSubject) {
+            setDuplicateWarning(null);
+            return;
+        }
+
+        const timer = setTimeout(async () => {
+            try {
+                const tableName = classYear === 'year_6' ? 'quiz_questions_year6' : 'quiz_questions_year9';
+                const cleanText = watchedQuestionText.trim();
+                const { data } = await supabase
+                    .from(tableName as any)
+                    .select('id, question_text')
+                    .eq('subject', watchedSubject)
+                    .ilike('question_text', `%${cleanText.slice(0, 40)}%`)
+                    .limit(1);
+
+                if (data && data.length > 0) {
+                    setDuplicateWarning(`A question with similar text already exists in ${watchedSubject}.`);
+                } else {
+                    setDuplicateWarning(null);
+                }
+            } catch {
+                setDuplicateWarning(null);
+            }
+        }, 500);
+
+        return () => clearTimeout(timer);
+    }, [watchedQuestionText, watchedSubject, classYear]);
 
     useEffect(() => {
         if (questionType === "comprehension") {
@@ -653,6 +686,14 @@ export function AddQuestionDialog({ onSuccess }: AddQuestionDialogProps) {
                                         <FormControl>
                                             <Textarea placeholder="Enter the question here..." {...field} />
                                         </FormControl>
+                                        {duplicateWarning && (
+                                            <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-xs text-amber-800 dark:text-amber-200 mt-1.5">
+                                                <AlertTriangle className="h-4 w-4 text-amber-600 shrink-0 mt-0.5" />
+                                                <div>
+                                                    <span className="font-semibold">Possible duplicate:</span> {duplicateWarning}
+                                                </div>
+                                            </div>
+                                        )}
                                         <FormMessage />
                                     </FormItem>
                                 )}

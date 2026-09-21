@@ -408,9 +408,10 @@ export function EditQuestionDialog({ open, onOpenChange, questionId, classYear, 
                 display_order: index,
             }));
 
-            const { error: optionsError } = await supabase
+            const { data: optionsData, error: optionsError } = await supabase
                 .from(optionsTableName as any)
-                .insert(optionsToInsert);
+                .insert(optionsToInsert)
+                .select();
 
             if (optionsError) throw optionsError;
 
