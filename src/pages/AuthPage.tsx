@@ -3,8 +3,12 @@ import { useState } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
 =======
 import { useNavigate, useSearchParams } from "react-router-dom";
+<<<<<<< HEAD
 import { CardContent  } from "@/components/ui/card";
 >>>>>>> a73e388 (parent dashboard updated)
+=======
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+>>>>>>> 36612c6 (parent dahsboard updated)
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
