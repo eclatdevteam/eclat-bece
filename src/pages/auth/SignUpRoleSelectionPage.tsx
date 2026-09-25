@@ -7,7 +7,7 @@ export default function SignUpRoleSelectionPage({ login = false }: { login?: boo
   const navigate = useNavigate();
   useRedirectIfAuthenticated();
 
-  const roles = [
+  const allRoles = [
     {
       id: "student",
       icon: GraduationCap,
@@ -28,6 +28,8 @@ export default function SignUpRoleSelectionPage({ login = false }: { login?: boo
     },
   ];
 
+  const roles = login ? allRoles : allRoles.filter((r) => r.id !== "student");
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#081328] p-0 font-sans text-[#dce7ff]">
       <section className="relative flex min-h-screen w-full flex-col overflow-hidden bg-[#081328]">
@@ -36,18 +38,26 @@ export default function SignUpRoleSelectionPage({ login = false }: { login?: boo
             <img src={eclatlLogo} alt="Eclat Logo" className="h-20 w-auto mx-auto mb-6" />
             <h2 className="mt-6 text-[32px] font-bold leading-none text-[#dce3fa]">Select Your Role</h2>
             <p className="mx-auto mt-3 max-w-[430px] text-[16px] leading-[1.45] text-[#bbc5d9]">
-              Choose how you want to interact with the platform to get started.
+              {login ? "Choose your role to sign in to your portal." : "Choose your account type to get started."}
             </p>
           </div>
 
-          <div className="mt-[84px] grid w-full max-w-[905px] grid-cols-1 gap-4 sm:grid-cols-3 sm:gap-6">
+          <div className={`mt-[84px] grid w-full gap-4 sm:gap-6 ${login ? "max-w-[905px] grid-cols-1 sm:grid-cols-3" : "max-w-[620px] grid-cols-1 sm:grid-cols-2"}`}>
             {roles.map(({ id, icon: Icon, title, description }, index) => (
               <button
                 key={id}
                 type="button"
                 className="group flex min-h-[290px] flex-col items-start border border-[#1d2c47] bg-[#121e34] px-7 py-7 text-left transition duration-200 hover:-translate-y-1 hover:border-[#43718e] hover:bg-[#172640] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#72c8f6] animate-scale-in"
                 style={{ animationDelay: `${index * 100}ms` }}
-                onClick={() => navigate(login ? `/${id === "student" ? "student-login" : `${id}-login`}` : id === "student" ? "/student-signup" : id === "parent" ? "/parent-signup" : `/auth?role=${id}`)}
+                onClick={() =>
+                  navigate(
+                    login
+                      ? `/${id === "student" ? "student-login" : `${id}-login`}`
+                      : id === "parent"
+                      ? "/parent-signup"
+                      : `/auth?role=${id}`
+                  )
+                }
               >
                 <span className="flex h-[57px] w-[57px] items-center justify-center rounded-[11px] bg-[#1c2b45] text-[#72c8f6] transition-transform group-hover:scale-105">
                   <Icon size={31} strokeWidth={2.2} />
@@ -60,6 +70,19 @@ export default function SignUpRoleSelectionPage({ login = false }: { login?: boo
               </button>
             ))}
           </div>
+
+          {!login && (
+            <p className="mt-8 text-center text-[14px] text-[#bbc5d9]">
+              Are you a student? Student accounts are managed by parents and schools.{" "}
+              <button
+                type="button"
+                onClick={() => navigate("/student-login")}
+                className="font-semibold text-[#72c8f6] hover:underline"
+              >
+                Sign in here &rarr;
+              </button>
+            </p>
+          )}
 
           <button
             type="button"
