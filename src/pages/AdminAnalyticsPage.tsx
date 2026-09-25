@@ -45,18 +45,24 @@ export default function AdminAnalyticsPage() {
     const fetchAnalytics = async () => {
         setLoading(true);
         try {
-            // 1. Fetch User Counts
-            const { count: studentCount } = await supabase
-                .from("students")
-                .select("*", { count: "exact", head: true });
-
-            const { count: parentCount } = await supabase
-                .from("parents")
-                .select("*", { count: "exact", head: true });
-
-            const { count: schoolCount } = await supabase
-                .from("schools")
-                .select("*", { count: "exact", head: true });
+            // 1. Fetch User Counts & Total Quizzes concurrently with bounded 30-day window for recent results
+            const thirtyDaysAgo = subDays(new Date(), 30).toISOString();
+            const [
+                { count: studentCount },
+                { count: parentCount },
+                { count: schoolCount },
+                { count: allTimeQuizzesCount },
+                { data: recentResults }
+            ] = await Promise.all([
+                supabase.from("students").select("*", { count: "exact", head: true }),
+                supabase.from("parents").select("*", { count: "exact", head: true }),
+                supabase.from("schools").select("*", { count: "exact", head: true }),
+                supabase.from("quiz_results").select("*", { count: "exact", head: true }),
+                supabase
+                    .from("quiz_results")
+                    .select("subject, score, completed_at")
+                    .gte("completed_at", thirtyDaysAgo)
+            ]);
 
             setUserStats([
                 { name: "Students", value: studentCount || 0 },
@@ -64,21 +70,16 @@ export default function AdminAnalyticsPage() {
                 { name: "Schools", value: schoolCount || 0 },
             ]);
 
-            // 2. Fetch Quiz Results for Performance & Activity
-            const { data: results } = await supabase
-                .from("quiz_results")
-                .select("subject, score, completed_at");
+            setTotalQuizzes(allTimeQuizzesCount || 0);
 
-            if (results && results.length > 0) {
-                setTotalQuizzes(results.length);
-
-                // Calculate Average Score
-                const totalScore = results.reduce((acc, curr) => acc + Number(curr.score), 0);
-                setAvgScore(Math.round(totalScore / results.length));
+            if (recentResults && recentResults.length > 0) {
+                // Calculate Average Score across the active window
+                const totalScore = recentResults.reduce((acc, curr) => acc + Number(curr.score), 0);
+                setAvgScore(Math.round(totalScore / recentResults.length));
 
                 // Group by Subject for Bar Chart
                 const subjectMap = new Map();
-                results.forEach((r) => {
+                recentResults.forEach((r) => {
                     if (!subjectMap.has(r.subject)) {
                         subjectMap.set(r.subject, { count: 0, total: 0 });
                     }
@@ -101,7 +102,7 @@ export default function AdminAnalyticsPage() {
                     activityMap.set(date, 0);
                 }
 
-                results.forEach((r) => {
+                recentResults.forEach((r) => {
                     const date = format(new Date(r.completed_at), "MMM dd");
                     if (activityMap.has(date)) {
                         activityMap.set(date, activityMap.get(date) + 1);
