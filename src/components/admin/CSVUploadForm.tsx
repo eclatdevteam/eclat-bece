@@ -201,51 +201,62 @@ export function CSVUploadForm({ onSuccess }: CSVUploadFormProps) {
 
         let successCount = 0;
         let failCount = 0;
+        const BATCH_SIZE = 10;
 
-        for (const row of rows) {
-            try {
-                // Insert question
-                const { data: questionData, error: questionError } = await supabase
-                    .from(tableName)
-                    .insert({
-                        subject: row.subject.trim(),
-                        topic: row.topic?.trim() || null,
-                        question_text: row.question_text.trim(),
-                        correct_answer: row[`option_${row.correct_option}` as keyof CSVRow],
-                        explanation: row.explanation?.trim() || null,
-                        difficulty: row.difficulty?.toLowerCase() || "medium",
-                    })
-                    .select()
-                    .single();
+        // Process in chunked concurrent batches for high throughput and fault isolation
+        for (let i = 0; i < rows.length; i += BATCH_SIZE) {
+            const batch = rows.slice(i, i + BATCH_SIZE);
+            const batchResults = await Promise.allSettled(
+                batch.map(async (row) => {
+                    // Insert question
+                    const { data: questionData, error: questionError } = await supabase
+                        .from(tableName)
+                        .insert({
+                            subject: row.subject.trim(),
+                            topic: row.topic?.trim() || null,
+                            question_text: row.question_text.trim(),
+                            correct_answer: row[`option_${row.correct_option}` as keyof CSVRow],
+                            explanation: row.explanation?.trim() || null,
+                            difficulty: row.difficulty?.toLowerCase() || "medium",
+                        })
+                        .select()
+                        .single();
 
-                if (questionError) throw questionError;
+                    if (questionError || !questionData) {
+                        throw questionError || new Error("Failed to insert question");
+                    }
 
-                // Insert options
-                const options = [
-                    { text: row.option_1.trim(), isCorrect: row.correct_option === "1" },
-                    { text: row.option_2.trim(), isCorrect: row.correct_option === "2" },
-                    { text: row.option_3.trim(), isCorrect: row.correct_option === "3" },
-                    { text: row.option_4.trim(), isCorrect: row.correct_option === "4" },
-                ];
+                    // Insert options
+                    const options = [
+                        { text: row.option_1.trim(), isCorrect: row.correct_option === "1" },
+                        { text: row.option_2.trim(), isCorrect: row.correct_option === "2" },
+                        { text: row.option_3.trim(), isCorrect: row.correct_option === "3" },
+                        { text: row.option_4.trim(), isCorrect: row.correct_option === "4" },
+                    ];
 
-                const optionsToInsert = options.map((opt, index) => ({
-                    question_id: questionData.id,
-                    option_text: opt.text,
-                    is_correct: opt.isCorrect,
-                    display_order: index,
-                }));
+                    const optionsToInsert = options.map((opt, index) => ({
+                        question_id: questionData.id,
+                        option_text: opt.text,
+                        is_correct: opt.isCorrect,
+                        display_order: index,
+                    }));
 
-                const { error: optionsError } = await supabase
-                    .from(optionsTableName)
-                    .insert(optionsToInsert);
+                    const { error: optionsError } = await supabase
+                        .from(optionsTableName)
+                        .insert(optionsToInsert);
 
-                if (optionsError) throw optionsError;
+                    if (optionsError) throw optionsError;
+                })
+            );
 
-                successCount++;
-            } catch (error) {
-                console.error("Error uploading question:", error);
-                failCount++;
-            }
+            batchResults.forEach((res) => {
+                if (res.status === "fulfilled") {
+                    successCount++;
+                } else {
+                    console.error("Error uploading question in batch:", res.reason);
+                    failCount++;
+                }
+            });
         }
 
         // Log admin action
