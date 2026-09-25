@@ -15,6 +15,17 @@ import { format } from "date-fns";
 export default function AdminReportsPage() {
     const [loading, setLoading] = useState<string | null>(null);
 
+    const escapeCSVCell = (val: unknown): string => {
+        if (val === null || val === undefined) return '""';
+        let str = String(val);
+        // Neutralize spreadsheet formula execution (prevent CSV Formula Injection)
+        if (/^[=+\-@\t\r]/.test(str)) {
+            str = `'${str}`;
+        }
+        // Escape double quotes per RFC 4180 by doubling them
+        return `"${str.replace(/"/g, '""')}"`;
+    };
+
     const downloadCSV = (data: any[], filename: string) => {
         if (!data || data.length === 0) {
             toast.error("No data available to export");
@@ -24,22 +35,16 @@ export default function AdminReportsPage() {
         // Get headers from first object
         const headers = Object.keys(data[0]);
 
-        // Convert to CSV string
+        // Convert to CSV string with RFC 4180 escaping and formula neutralization
         const csvContent = [
-            headers.join(","), // Header row
+            headers.map(escapeCSVCell).join(","), // Header row
             ...data.map(row =>
-                headers.map(header => {
-                    const value = row[header];
-                    // Handle strings with commas, nulls, etc.
-                    if (value === null || value === undefined) return "";
-                    if (typeof value === "string" && value.includes(",")) return `"${value}"`;
-                    return value;
-                }).join(",")
+                headers.map(header => escapeCSVCell(row[header])).join(",")
             )
-        ].join("\n");
+        ].join("\r\n");
 
-        // Create download link
-        const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+        // Create download link with UTF-8 BOM so spreadsheet viewers render UTF-8 properly
+        const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.setAttribute("href", url);
@@ -47,6 +52,7 @@ export default function AdminReportsPage() {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
+        URL.revokeObjectURL(url);
     };
 
     const exportStudents = async () => {
