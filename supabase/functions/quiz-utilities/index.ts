@@ -11,6 +11,11 @@ const questionTables = {
   year_9: "quiz_questions_year9",
 } as const;
 
+const topicViews = {
+  year_6: "topic_question_counts_year6",
+  year_9: "topic_question_counts_year9",
+} as const;
+
 type ClassYear = keyof typeof questionTables;
 
 const json = (body: Record<string, unknown>, status = 200) =>
@@ -56,8 +61,9 @@ serve(async (req) => {
     const tableName = questionTables[classYear as ClassYear];
 
     if (action === "get-metadata") {
+      const viewName = topicViews[classYear as ClassYear];
       const { data, error } = await adminClient
-        .from(tableName)
+        .from(viewName)
         .select("subject, topic")
         .not("subject", "is", null)
         .order("subject", { ascending: true })

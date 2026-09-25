@@ -60,6 +60,7 @@ export function AssignPracticeDialog({ open, onOpenChange, child }: AssignPracti
     
     setIsLoading(true);
     try {
+      let metadata: Record<string, string[]> = {};
       const { data, error } = await supabase.functions.invoke("quiz-utilities", {
         body: { 
           classYear: child.class_year, 
@@ -67,12 +68,41 @@ export function AssignPracticeDialog({ open, onOpenChange, child }: AssignPracti
         }
       });
 
-      if (error) throw error;
-      if (data?.error) throw new Error(data.error);
-      
-      const metadata = data.metadata || {};
+      if (!error && data?.metadata && Object.keys(data.metadata).length > 0) {
+        metadata = data.metadata;
+      } else {
+        // Fallback directly to the pre-aggregated topic counts view
+        const viewName = child.class_year === "year_6" ? "topic_question_counts_year6" : "topic_question_counts_year9";
+        const { data: viewData, error: viewError } = await (supabase.from(viewName as any) as any)
+          .select("subject, topic")
+          .order("subject", { ascending: true })
+          .order("topic", { ascending: true });
+
+        if (viewError) throw viewError;
+
+        const collected: Record<string, string[]> = {};
+        (viewData || []).forEach((row: { subject: string; topic: string }) => {
+          if (!row.subject || !row.topic) return;
+          if (!collected[row.subject]) collected[row.subject] = [];
+          if (!collected[row.subject].includes(row.topic)) collected[row.subject].push(row.topic);
+        });
+        metadata = collected;
+      }
+
+      // Merge configured subjects from database for this student's cohort
+      const cohortColumn = child.class_year === "year_6" ? "available_year_6" : "available_year_9";
+      const { data: dbSubjects } = await (supabase.from("subjects" as any) as any)
+        .select("name")
+        .eq(cohortColumn, true)
+        .eq("is_active", true);
+
+      const allSubjects = new Set([
+        ...Object.keys(metadata),
+        ...(dbSubjects || []).map((s: { name: string }) => s.name),
+      ]);
+
       setSubjectsMetadata(metadata);
-      setAvailableSubjects(Object.keys(metadata).sort());
+      setAvailableSubjects(Array.from(allSubjects).sort());
     } catch (error: unknown) {
       console.error("Error fetching metadata:", error);
       toast.error("Failed to load subjects and topics");
@@ -283,23 +313,35 @@ export function AssignPracticeDialog({ open, onOpenChange, child }: AssignPracti
                     
                     <ScrollArea className="h-[280px] rounded-2xl border-2 p-4">
                       <div className="space-y-4">
-                        {(subjectsMetadata[selectedSubject] || []).map(topic => (
-                          <div 
-                            key={topic} 
-                            className={`flex items-center space-x-3 p-3 rounded-xl transition-colors cursor-pointer hover:bg-muted/50 ${selectedTopics.includes(topic) ? 'bg-primary/5 border border-primary/20' : 'border border-transparent'}`}
-                            onClick={() => toggleTopic(topic)}
-                          >
-                            <Checkbox 
-                              id={topic} 
-                              checked={selectedTopics.includes(topic)}
-                              onCheckedChange={() => toggleTopic(topic)}
-                              className="rounded-md h-5 w-5 border-2"
-                            />
-                            <label htmlFor={topic} className="text-base font-bold cursor-pointer flex-1 leading-tight">
-                              {topic}
-                            </label>
-                          </div>
-                        ))}
+                        {(subjectsMetadata[selectedSubject] || []).map(topic => {
+                          const isSelected = selectedTopics.includes(topic);
+                          return (
+                            <div 
+                              key={topic} 
+                              role="checkbox"
+                              aria-checked={isSelected}
+                              tabIndex={0}
+                              className={`flex items-center space-x-3 p-3 rounded-xl transition-colors cursor-pointer hover:bg-muted/50 ${isSelected ? 'bg-primary/5 border border-primary/20' : 'border border-transparent'}`}
+                              onClick={() => toggleTopic(topic)}
+                              onKeyDown={(e) => {
+                                if (e.key === ' ' || e.key === 'Enter') {
+                                  e.preventDefault();
+                                  toggleTopic(topic);
+                                }
+                              }}
+                            >
+                              <Checkbox 
+                                id={`topic-${topic}`}
+                                checked={isSelected}
+                                tabIndex={-1}
+                                className="rounded-md h-5 w-5 border-2 pointer-events-none"
+                              />
+                              <span className="text-base font-bold select-none flex-1 leading-tight">
+                                {topic}
+                              </span>
+                            </div>
+                          );
+                        })}
                       </div>
                     </ScrollArea>
                   </div>

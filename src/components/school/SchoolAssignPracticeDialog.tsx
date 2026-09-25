@@ -409,13 +409,26 @@ export function SchoolAssignPracticeDialog({
                   return (
                     <div
                       key={topic}
+                      role="checkbox"
+                      aria-checked={isChecked}
+                      tabIndex={0}
                       onClick={() => handleToggleTopic(topic)}
+                      onKeyDown={(e) => {
+                        if (e.key === " " || e.key === "Enter") {
+                          e.preventDefault();
+                          handleToggleTopic(topic);
+                        }
+                      }}
                       className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-all ${
                         isChecked ? "bg-primary/5 border-primary" : "border-border/60 hover:bg-muted/40"
                       }`}
                     >
-                      <Checkbox checked={isChecked} onCheckedChange={() => handleToggleTopic(topic)} />
-                      <span className="text-sm font-medium">{topic}</span>
+                      <Checkbox 
+                        checked={isChecked} 
+                        tabIndex={-1}
+                        className="pointer-events-none" 
+                      />
+                      <span className="text-sm font-medium select-none flex-1">{topic}</span>
                     </div>
                   );
                 })}
