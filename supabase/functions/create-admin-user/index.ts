@@ -67,14 +67,7 @@ serve(async (req) => {
                 throw new Error('Email, password, and full name are required')
             }
 
-            // Check if email already registered
-            const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers()
-            const emailExists = existingUser?.users?.some((u: { email?: string }) => u.email === payload.email)
-            if (emailExists) {
-                throw new Error('This email is already registered in the system')
-            }
-
-            // Create Auth user
+            // Create Auth user directly - unique constraint enforced natively by auth engine
             const { data: newUser, error: userError } = await supabaseAdmin.auth.admin.createUser({
                 email: payload.email,
                 password: payload.password,
@@ -86,6 +79,9 @@ serve(async (req) => {
             })
 
             if (userError || !newUser.user) {
+                if (userError?.message?.toLowerCase().includes('already') || userError?.message?.toLowerCase().includes('exists')) {
+                    throw new Error('This email is already registered in the system')
+                }
                 throw new Error(`Failed to create auth user: ${userError?.message}`)
             }
 
@@ -184,18 +180,8 @@ serve(async (req) => {
         const invitation = result.invitation
         console.log('Step 2: Checking if email exists:', invitation.target_email)
 
-        // 2. Check if email already exists
-        const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers()
-        const emailExists = existingUser?.users?.some((u: { email?: string }) => u.email === invitation.target_email)
-
-        if (emailExists) {
-            console.error('Step 2 failed - Email already exists')
-            throw new Error('Email already registered')
-        }
-
-        console.log('Step 3: Creating auth user...')
-
-        // 3. Create auth user
+        // 2. Create auth user directly - unique constraint enforced natively by auth engine
+        console.log('Step 2: Creating auth user...')
         const { data: newUser, error: userError } = await supabaseAdmin.auth.admin.createUser({
             email: invitation.target_email,
             password: password,
@@ -207,6 +193,9 @@ serve(async (req) => {
         })
 
         if (userError || !newUser.user) {
+            if (userError?.message?.toLowerCase().includes('already') || userError?.message?.toLowerCase().includes('exists')) {
+                throw new Error('This email is already registered in the system')
+            }
             throw new Error(`Failed to create user: ${userError?.message}`)
         }
 
