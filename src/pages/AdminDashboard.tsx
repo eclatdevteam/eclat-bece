@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, BookOpen, Trophy, TrendingUp, Activity, Shield, ChevronLeft, ChevronRight, UserPlus, UserMinus, Edit, Trash2, Mail, Upload, Search, Download, Filter, Flag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,30 +50,46 @@ export default function AdminDashboard() {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [actionFilter, setActionFilter] = useState<string>("all");
     const [resourceFilter, setResourceFilter] = useState<string>("all");
     const ITEMS_PER_PAGE = 10;
+    const fetchIdRef = useRef(0);
+    const prevFilterRef = useRef({ debouncedSearch, actionFilter, resourceFilter });
 
     useEffect(() => {
         fetchAdminData();
         fetchPlatformStats();
     }, [user]);
 
+    // Debounce search query input (350ms)
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+        }, 350);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    // Single unified effect to fetch activity when page, debounced search, or filters change
     useEffect(() => {
         if (!isSuperAdmin) return;
-        const timer = setTimeout(() => {
-            setCurrentPage(1); // Reset to first page when filters change
-            fetchRecentActivity();
-        }, 300); // Debounce search
 
-        return () => clearTimeout(timer);
-    }, [searchQuery, actionFilter, resourceFilter, isSuperAdmin]);
+        const filterChanged =
+            prevFilterRef.current.debouncedSearch !== debouncedSearch ||
+            prevFilterRef.current.actionFilter !== actionFilter ||
+            prevFilterRef.current.resourceFilter !== resourceFilter;
 
-    useEffect(() => {
-        if (isSuperAdmin) {
-            fetchRecentActivity();
+        prevFilterRef.current = { debouncedSearch, actionFilter, resourceFilter };
+
+        // If a filter or search term changed while on a page > 1, reset to page 1
+        // (the subsequent re-render with currentPage=1 will trigger the fetch)
+        if (filterChanged && currentPage !== 1) {
+            setCurrentPage(1);
+            return;
         }
-    }, [currentPage, isSuperAdmin]);
+
+        fetchRecentActivity();
+    }, [currentPage, debouncedSearch, actionFilter, resourceFilter, isSuperAdmin]);
 
     const fetchAdminData = async () => {
         if (!user) return;
@@ -138,6 +154,7 @@ export default function AdminDashboard() {
     };
 
     const fetchRecentActivity = async () => {
+        const currentFetchId = ++fetchIdRef.current;
         try {
             let query = supabase
                 .from("admin_audit_log" as any)
@@ -161,22 +178,26 @@ export default function AdminDashboard() {
                 query = query.eq('resource_type', resourceFilter);
             }
 
-            // Apply search (search in admin name or details)
-            if (searchQuery) {
+            // Apply debounced search (search in admin name or details)
+            if (debouncedSearch) {
                 // Note: This is a simplified search. For better performance,
                 // consider using PostgreSQL full-text search
-                query = query.or(`details->>admin_name.ilike.%${searchQuery}%,details->>admin_email.ilike.%${searchQuery}%,details->>target_user_email.ilike.%${searchQuery}%,details->>email.ilike.%${searchQuery}%`);
+                query = query.or(`details->>admin_name.ilike.%${debouncedSearch}%,details->>admin_email.ilike.%${debouncedSearch}%,details->>target_user_email.ilike.%${debouncedSearch}%,details->>email.ilike.%${debouncedSearch}%`);
             }
 
             const { data, count } = await query
                 .order("created_at", { ascending: false })
                 .range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1) as any;
 
+            // Discard stale in-flight responses if another query was launched in the meantime
+            if (currentFetchId !== fetchIdRef.current) return;
+
             if (data) {
                 setRecentActivity(data as RecentActivity[]);
                 setTotalPages(Math.ceil((count || 0) / ITEMS_PER_PAGE));
             }
         } catch (error) {
+            if (currentFetchId !== fetchIdRef.current) return;
             console.error("Error fetching recent activity:", error);
         }
     };
