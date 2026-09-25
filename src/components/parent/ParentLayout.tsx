@@ -1,5 +1,5 @@
 import { ReactNode, useEffect, useState } from "react";
-import { LayoutDashboard, Users, CreditCard, HelpCircle, Bell, Settings, LogOut, User as UserIcon, KeyRound, Copy, Check } from "lucide-react";
+import { LayoutDashboard, Users, ClipboardCheck, BarChart3, CreditCard, HelpCircle, Bell, Settings, LogOut, User as UserIcon, KeyRound, Copy, Check } from "lucide-react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -97,8 +97,9 @@ export function ParentLayout({ children }: ParentLayoutProps) {
     const navItems = [
         { title: "Dashboard", url: "/dashboard/parent", icon: LayoutDashboard },
         { title: "Children", url: "/dashboard/parent/children", icon: Users },
+        { title: "Tasks", url: "/dashboard/parent/assignments", icon: ClipboardCheck },
+        { title: "Reports", url: "/dashboard/parent/reports", icon: BarChart3 },
         { title: "Billing", url: "/dashboard/parent/subscriptions", icon: CreditCard },
-        { title: "Resources", url: "/dashboard/parent/resources", icon: HelpCircle },
     ];
 
     const currentPath = location.pathname + location.hash;
@@ -174,6 +175,10 @@ export function ParentLayout({ children }: ParentLayoutProps) {
                                                 <span>Copy Link Code</span>
                                                 <span className="select-all rounded bg-muted px-1.5 py-0.5 font-mono text-[10px] font-black text-primary">{uniqueId}</span>
                                             </div>
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => navigate("/dashboard/parent/resources")} className="cursor-pointer rounded-xl py-2 font-bold">
+                                            <HelpCircle className="mr-2 h-4 w-4 text-muted-foreground" />
+                                            <span>Help & Resources</span>
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator className="my-1.5" />
                                         <DropdownMenuItem onClick={signOut} className="cursor-pointer rounded-xl py-2 font-bold text-destructive focus:bg-destructive/10 focus:text-destructive">

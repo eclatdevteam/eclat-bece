@@ -167,7 +167,7 @@
   }
 
   .parent-panel {
-    background: linear-gradient(180deg, rgba(17, 28, 41, 0.88) 0%, rgba(15, 28, 42, 0.96) 100%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(246, 249, 254, 0.98) 100%);
     border: 1px solid hsl(var(--border));
     box-shadow: var(--shadow-soft);
   }
