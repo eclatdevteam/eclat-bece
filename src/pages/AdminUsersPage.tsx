@@ -221,6 +221,23 @@ export default function AdminUsersPage() {
     try {
       const adminToDelete = admins.find(a => a.id === deleteId);
 
+      // Safeguard: Prevent deleting the last remaining active Super Admin
+      if (adminToDelete?.is_super_admin) {
+        const activeSuperAdmins = admins.filter(a => a.is_super_admin && a.is_active);
+        if (activeSuperAdmins.length <= 1) {
+          toast.error("Cannot delete the last remaining active Super Administrator.");
+          setDeleteId(null);
+          return;
+        }
+      }
+
+      // Safeguard: Prevent self-deletion directly
+      if (adminToDelete?.user_id === user.id) {
+        toast.error("You cannot delete your own administrator account.");
+        setDeleteId(null);
+        return;
+      }
+
       const { error } = await supabase
         .from("admins" as any)
         .delete()
