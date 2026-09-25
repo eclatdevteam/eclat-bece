@@ -71,6 +71,7 @@ export default function QuestionBankPage() {
     const [classYear, setClassYear] = useState<"year_6" | "year_9">("year_6");
     const [subjectFilter, setSubjectFilter] = useState<string>("all");
     const [searchQuery, setSearchQuery] = useState("");
+    const [debouncedSearch, setDebouncedSearch] = useState("");
     const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
     const [deleteId, setDeleteId] = useState<string | null>(null);
     const [editQuestion, setEditQuestion] = useState<{ id: string; classYear: "year_6" | "year_9" } | null>(null);
@@ -81,6 +82,16 @@ export default function QuestionBankPage() {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
     const [totalItems, setTotalItems] = useState(0);
+
+    // Debounce search query input to avoid spamming database
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery.trim());
+            setCurrentPage(1);
+        }, 400);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
 
     const fetchDuplicateCount = useCallback(async () => {
         try {
@@ -123,9 +134,8 @@ export default function QuestionBankPage() {
                 query = query.eq("difficulty", difficultyFilter);
             }
 
-            if (searchQuery) {
-                // Search in question_text or topic
-                query = query.or(`question_text.ilike.%${searchQuery}%,topic.ilike.%${searchQuery}%`);
+            if (debouncedSearch) {
+                query = query.or(`question_text.ilike.%${debouncedSearch}%,topic.ilike.%${debouncedSearch}%`);
             }
 
             const { data, error, count } = await query;
@@ -143,17 +153,9 @@ export default function QuestionBankPage() {
         } finally {
             setLoading(false);
         }
-    }, [classYear, currentPage, difficultyFilter, searchQuery, subjectFilter]);
+    }, [classYear, currentPage, difficultyFilter, debouncedSearch, subjectFilter]);
 
-    // Debounce search
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            fetchQuestions();
-        }, 500);
-
-        return () => clearTimeout(timer);
-    }, [fetchQuestions]);
-
+    // Single unified effect for fetching questions
     useEffect(() => {
         fetchQuestions();
     }, [fetchQuestions]);
