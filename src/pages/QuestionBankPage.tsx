@@ -33,6 +33,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { AddQuestionDialog } from "@/components/admin/AddQuestionDialog";
 import { EditQuestionDialog } from "@/components/admin/EditQuestionDialog";
 import { DuplicateQuestionsModal } from "@/components/admin/DuplicateQuestionsModal";
+import { useSubjects } from "@/hooks/useSubjects";
 import {
     AlertDialog,
     AlertDialogAction,
@@ -70,6 +71,7 @@ export default function QuestionBankPage() {
     const [loading, setLoading] = useState(true);
     const [classYear, setClassYear] = useState<"year_6" | "year_9">("year_6");
     const [subjectFilter, setSubjectFilter] = useState<string>("all");
+    const { subjects: availableSubjects } = useSubjects({ classYear, onlyActive: false });
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [difficultyFilter, setDifficultyFilter] = useState<string>("all");
@@ -312,11 +314,11 @@ export default function QuestionBankPage() {
                     </SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Subjects</SelectItem>
-                        <SelectItem value="Mathematics">Mathematics</SelectItem>
-                        <SelectItem value="English Language">English Language</SelectItem>
-                        <SelectItem value="General Paper">General Paper</SelectItem>
-                        <SelectItem value="Basic Science">Basic Science</SelectItem>
-                        <SelectItem value="Social Studies">Social Studies</SelectItem>
+                        {availableSubjects.map((sub) => (
+                            <SelectItem key={sub.id} value={sub.name}>
+                                {sub.icon} {sub.name}
+                            </SelectItem>
+                        ))}
                     </SelectContent>
                 </Select>
             </div>

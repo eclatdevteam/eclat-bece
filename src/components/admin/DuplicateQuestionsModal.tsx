@@ -45,6 +45,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { useSubjects } from "@/hooks/useSubjects";
 
 export interface QuestionOption {
     id: string;
@@ -95,6 +96,7 @@ export function DuplicateQuestionsModal({
     const [loading, setLoading] = useState(false);
     const [fetchError, setFetchError] = useState<string | null>(null);
     const [subjectFilter, setSubjectFilter] = useState<string>("all");
+    const { subjects } = useSubjects({ classYear, onlyActive: false });
     const [matchTypeFilter, setMatchTypeFilter] = useState<"all" | "exact_clone" | "same_prompt" | "fuzzy">("all");
     const [selectedCanonicals, setSelectedCanonicals] = useState<Record<string, string>>({});
     const [resolvingClusterId, setResolvingClusterId] = useState<string | null>(null);
@@ -289,10 +291,11 @@ export function DuplicateQuestionsModal({
                                     </SelectTrigger>
                                     <SelectContent>
                                         <SelectItem value="all">All Subjects</SelectItem>
-                                        <SelectItem value="Mathematics">Mathematics</SelectItem>
-                                        <SelectItem value="English Language">English Language</SelectItem>
-                                        <SelectItem value="Basic Science">Basic Science</SelectItem>
-                                        <SelectItem value="Social Studies">Social Studies</SelectItem>
+                                        {subjects.map((sub) => (
+                                            <SelectItem key={sub.id} value={sub.name}>
+                                                {sub.icon} {sub.name}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>

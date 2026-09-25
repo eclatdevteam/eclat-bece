@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { CSVUploadForm } from "./CSVUploadForm";
 import { validateImageFile, compressImage } from "@/lib/imageUtils";
+import { useSubjects } from "@/hooks/useSubjects";
 
 const formSchema = z.object({
     classYear: z.enum(["year_6", "year_9"]),
@@ -119,6 +120,7 @@ export function AddQuestionDialog({ onSuccess }: AddQuestionDialogProps) {
     });
 
     const classYear = form.watch("classYear");
+    const { subjects } = useSubjects({ classYear, onlyActive: true });
     const questionType = form.watch("questionType");
     const passageMode = form.watch("passageMode");
     const watchedQuestionText = form.watch("questionText");
@@ -502,11 +504,11 @@ export function AddQuestionDialog({ onSuccess }: AddQuestionDialogProps) {
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
-                                                    <SelectItem value="Mathematics">Mathematics</SelectItem>
-                                                    <SelectItem value="English Language">English Language</SelectItem>
-                                                    <SelectItem value="General Paper">General Paper</SelectItem>
-                                                    <SelectItem value="Basic Science">Basic Science</SelectItem>
-                                                    <SelectItem value="Social Studies">Social Studies</SelectItem>
+                                                    {subjects.map((sub) => (
+                                                        <SelectItem key={sub.id} value={sub.name}>
+                                                            {sub.icon} {sub.name}
+                                                        </SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
                                             <FormMessage />

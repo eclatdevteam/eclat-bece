@@ -37,6 +37,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { useRef } from "react";
 import { validateImageFile, compressImage } from "@/lib/imageUtils";
+import { useSubjects } from "@/hooks/useSubjects";
 
 const formSchema = z.object({
     classYear: z.enum(["year_6", "year_9"]),
@@ -82,7 +83,8 @@ interface EditQuestionDialogProps {
 }
 
 export function EditQuestionDialog({ open, onOpenChange, questionId, classYear, onSuccess }: EditQuestionDialogProps) {
-        const [loading, setLoading] = useState(false);
+    const { subjects } = useSubjects({ classYear, onlyActive: false });
+    const [loading, setLoading] = useState(false);
     const [fetchingData, setFetchingData] = useState(false);
     const [passages, setPassages] = useState<Array<{ id: string; title: string | null; passage_text: string }>>([]);
     const { user } = useAuth();
@@ -616,11 +618,11 @@ export function EditQuestionDialog({ open, onOpenChange, questionId, classYear, 
                                                     </SelectTrigger>
                                                 </FormControl>
                                                 <SelectContent>
-                                                    <SelectItem value="Mathematics">Mathematics</SelectItem>
-                                                    <SelectItem value="English Language">English Language</SelectItem>
-                                                    <SelectItem value="General Paper">General Paper</SelectItem>
-                                                    <SelectItem value="Basic Science">Basic Science</SelectItem>
-                                                    <SelectItem value="Social Studies">Social Studies</SelectItem>
+                                                    {subjects.map((sub) => (
+                                                        <SelectItem key={sub.id} value={sub.name}>
+                                                            {sub.icon} {sub.name}
+                                                        </SelectItem>
+                                                    ))}
                                                 </SelectContent>
                                             </Select>
                                             <FormMessage />

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Papa from "papaparse";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -15,6 +15,7 @@ import { Loader2, Upload, FileText, AlertCircle, CheckCircle2 } from "lucide-rea
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
+import { useSubjects } from "@/hooks/useSubjects";
 
 interface CSVRow {
     subject: string;
@@ -51,6 +52,12 @@ export function CSVUploadForm({ onSuccess }: CSVUploadFormProps) {
         validRows: CSVRow[];
     } | null>(null);
     const { user } = useAuth();
+    const { subjects } = useSubjects({ classYear, onlyActive: false });
+    const validSubjectMap = useMemo(() => {
+        const map = new Map<string, string>();
+        subjects.forEach((s) => map.set(s.name.toLowerCase(), s.name));
+        return map;
+    }, [subjects]);
 
     const validateCSVRow = (row: CSVRow, rowIndex: number): ValidationError[] => {
         const errors: ValidationError[] = [];
@@ -58,6 +65,12 @@ export function CSVUploadForm({ onSuccess }: CSVUploadFormProps) {
         // Check required fields
         if (!row.subject?.trim()) {
             errors.push({ row: rowIndex, field: "subject", message: "Subject is required" });
+        } else if (validSubjectMap.size > 0 && !validSubjectMap.has(row.subject.trim().toLowerCase())) {
+            errors.push({
+                row: rowIndex,
+                field: "subject",
+                message: `Subject "${row.subject}" is not configured for ${classYear === "year_6" ? "Year 6" : "Year 9"}. (Configured: ${subjects.map(s => s.name).join(", ")})`
+            });
         }
         if (!row.question_text?.trim()) {
             errors.push({ row: rowIndex, field: "question_text", message: "Question text is required" });
@@ -209,10 +222,11 @@ export function CSVUploadForm({ onSuccess }: CSVUploadFormProps) {
             const batchResults = await Promise.allSettled(
                 batch.map(async (row) => {
                     // Insert question
+                    const canonicalSubject = validSubjectMap.get(row.subject.trim().toLowerCase()) || row.subject.trim();
                     const { data: questionData, error: questionError } = await supabase
                         .from(tableName)
                         .insert({
-                            subject: row.subject.trim(),
+                            subject: canonicalSubject,
                             topic: row.topic?.trim() || null,
                             question_text: row.question_text.trim(),
                             correct_answer: row[`option_${row.correct_option}` as keyof CSVRow],
