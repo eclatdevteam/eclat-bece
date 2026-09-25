@@ -92,42 +92,29 @@ export default function AdminDashboard() {
 
     const fetchPlatformStats = async () => {
         try {
-            // Count students
-            const { count: studentCount } = await supabase
-                .from("students")
-                .select("*", { count: "exact", head: true });
-
-            // Count parents
-            const { count: parentCount } = await supabase
-                .from("parents")
-                .select("*", { count: "exact", head: true });
-
-            // Count schools
-            const { count: schoolCount } = await supabase
-                .from("schools")
-                .select("*", { count: "exact", head: true });
-
-            // Count quiz questions (Year 6 + Year 9)
-            const { count: year6Questions } = await supabase
-                .from("quiz_questions_year6")
-                .select("*", { count: "exact", head: true });
-
-            const { count: year9Questions } = await supabase
-                .from("quiz_questions_year9")
-                .select("*", { count: "exact", head: true });
-
-            // Count total quizzes taken
-            const { count: quizzesTaken } = await supabase
-                .from("quiz_results")
-                .select("*", { count: "exact", head: true });
-
-            // Count active students today (unique students who completed at least 1 quiz today)
             const today = new Date();
             today.setHours(0, 0, 0, 0);
-            const { data: activeTodayData } = await supabase
-                .from("quiz_results")
-                .select("student_id")
-                .gte("completed_at", today.toISOString());
+
+            // Fetch all platform statistics concurrently with Promise.all
+            const [
+                { count: studentCount },
+                { count: parentCount },
+                { count: schoolCount },
+                { count: year6Questions },
+                { count: year9Questions },
+                { count: quizzesTaken },
+                { data: activeTodayData },
+                { count: flagsCount }
+            ] = await Promise.all([
+                supabase.from("students").select("*", { count: "exact", head: true }),
+                supabase.from("parents").select("*", { count: "exact", head: true }),
+                supabase.from("schools").select("*", { count: "exact", head: true }),
+                supabase.from("quiz_questions_year6").select("*", { count: "exact", head: true }),
+                supabase.from("quiz_questions_year9").select("*", { count: "exact", head: true }),
+                supabase.from("quiz_results").select("*", { count: "exact", head: true }),
+                supabase.from("quiz_results").select("student_id").gte("completed_at", today.toISOString()),
+                supabase.from("flagged_questions").select("*", { count: "exact", head: true }).eq("status", "pending")
+            ]);
 
             const activeTodayCount = activeTodayData
                 ? new Set(activeTodayData.map(r => r.student_id)).size
@@ -141,12 +128,6 @@ export default function AdminDashboard() {
                 totalQuizzesTaken: quizzesTaken || 0,
                 activeStudentsToday: activeTodayCount,
             });
-
-            // Count pending flagged questions
-            const { count: flagsCount } = await supabase
-                .from("flagged_questions")
-                .select("*", { count: "exact", head: true })
-                .eq("status", "pending");
 
             setPendingFlagsCount(flagsCount || 0);
         } catch (error) {
