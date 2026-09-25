@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { CreditCard, LayoutDashboard, Zap, CheckCircle2, Clock, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useParentAccount } from "@/hooks/useParentAccount";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { DummyPaymentModal } from "@/components/parent/DummyPaymentModal";
@@ -52,52 +53,49 @@ const PREMIUM_FEATURES = [
 export default function SubscriptionsPage() {
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { parentId, loading: parentLoading } = useParentAccount();
 
     const [children, setChildren] = useState<LinkedChild[]>([]);
     const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-    const [parentId, setParentId] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     const [paymentModalOpen, setPaymentModalOpen] = useState(false);
     const [selectedChild, setSelectedChild] = useState<{ id: string; name: string } | null>(null);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            if (!user) return;
-            try {
-                const { data: parentData } = await supabase
-                    .from("parents")
-                    .select("id")
-                    .eq("user_id", user.id)
-                    .single();
-
-                if (!parentData) return;
-                setParentId(parentData.id);
-
-                const [childrenResult, subsResult] = await Promise.all([
-                    supabase
-                        .from("students")
-                        .select("id, user_id, class_year, is_premium, profile:profiles(full_name, unique_id, username)")
-                        .eq("parent_id", parentData.id),
-                    supabase
-                        .from("subscriptions")
-                        .select("*")
-                        .eq("parent_id", parentData.id)
-                        .eq("status", "active"),
-                ]);
-
-                if (childrenResult.data) setChildren(childrenResult.data as unknown as LinkedChild[]);
-                if (subsResult.data) setSubscriptions(subsResult.data as Subscription[]);
-            } catch (err) {
-                console.error("Error loading subscriptions:", err);
-                toast.error("Failed to load subscription data");
-            } finally {
+    const fetchSubscriptionsData = useCallback(async () => {
+        if (!parentId) {
+            if (!parentLoading) {
                 setIsLoading(false);
             }
-        };
+            return;
+        }
+        try {
+            setIsLoading(true);
+            const [childrenResult, subsResult] = await Promise.all([
+                supabase
+                    .from("students")
+                    .select("id, user_id, class_year, is_premium, profile:profiles(full_name, unique_id, username)")
+                    .eq("parent_id", parentId),
+                supabase
+                    .from("subscriptions")
+                    .select("*")
+                    .eq("parent_id", parentId)
+                    .eq("status", "active"),
+            ]);
 
-        fetchData();
-    }, [user]);
+            if (childrenResult.data) setChildren(childrenResult.data as unknown as LinkedChild[]);
+            if (subsResult.data) setSubscriptions(subsResult.data as Subscription[]);
+        } catch (err) {
+            console.error("Error loading subscriptions:", err);
+            toast.error("Failed to load subscription data");
+        } finally {
+            setIsLoading(false);
+        }
+    }, [parentId, parentLoading]);
+
+    useEffect(() => {
+        fetchSubscriptionsData();
+    }, [fetchSubscriptionsData]);
 
     const refetch = async () => {
         if (!parentId) return;

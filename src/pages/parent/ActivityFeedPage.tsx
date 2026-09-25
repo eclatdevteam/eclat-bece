@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useParentAccount } from "@/hooks/useParentAccount";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +24,7 @@ interface Activity {
 export default function ActivityFeedPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { parentId, loading: parentLoading } = useParentAccount();
   const [activities, setActivities] = useState<Activity[]>([]);
   const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
@@ -31,26 +33,22 @@ export default function ActivityFeedPage() {
 
   useEffect(() => {
     const fetchFullActivities = async () => {
-      if (!user) return;
+      if (!parentId) {
+        if (!parentLoading) setLoading(false);
+        return;
+      }
       try {
         setLoading(true);
 
-        // 1. Get Parent ID
-        const { data: parentData } = await supabase
-          .from("parents")
-          .select("id")
-          .eq("user_id", user.id)
-          .single();
-
-        if (!parentData) return;
-
-        // 2. Get children
+        // 1. Get children
         const { data: childrenData } = await supabase
           .from("students")
           .select("id, profile:profiles(full_name)")
-          .eq("parent_id", parentData.id);
+          .eq("parent_id", parentId);
 
         if (!childrenData || childrenData.length === 0) {
+          setActivities([]);
+          setTotalCount(0);
           setLoading(false);
           return;
         }
@@ -97,7 +95,7 @@ export default function ActivityFeedPage() {
     };
 
     fetchFullActivities();
-  }, [user, currentPage]);
+  }, [parentId, parentLoading, currentPage]);
 
   const totalPages = Math.ceil(totalCount / itemsPerPage) || 1;
 
