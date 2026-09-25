@@ -21,8 +21,11 @@ import {
     School,
     Loader2,
     CheckCircle2,
-    XCircle
+    XCircle,
+    ChevronLeft,
+    ChevronRight,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -32,6 +35,8 @@ interface Profile {
     id: string;
     email: string;
     full_name: string;
+    username?: string | null;
+    unique_id?: string;
     email_verified: boolean;
     created_at: string;
 }
@@ -54,10 +59,36 @@ interface SchoolUser extends Profile {
     school_code: string;
 }
 
+// Bounded batch fetcher to prevent URL length limits (HTTP 414) on large arrays
+const fetchProfilesBatch = async (userIds: string[]): Promise<Profile[]> => {
+    if (userIds.length === 0) return [];
+    const BATCH_SIZE = 80;
+    const batches: string[][] = [];
+    for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
+        batches.push(userIds.slice(i, i + BATCH_SIZE));
+    }
+    const results = await Promise.all(
+        batches.map(batch =>
+            supabase
+                .from("profiles")
+                .select("id, email, full_name, username, unique_id, email_verified, created_at")
+                .in("id", batch)
+        )
+    );
+    const allProfiles: Profile[] = [];
+    for (const res of results) {
+        if (res.error) throw res.error;
+        if (res.data) allProfiles.push(...(res.data as Profile[]));
+    }
+    return allProfiles;
+};
+
 export default function PlatformUsersPage() {
     const [activeTab, setActiveTab] = useState("students");
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState("");
+    const [currentPage, setCurrentPage] = useState(1);
+    const ITEMS_PER_PAGE = 20;
 
     const [students, setStudents] = useState<Student[]>([]);
     const [parents, setParents] = useState<Parent[]>([]);
@@ -79,12 +110,7 @@ export default function PlatformUsersPage() {
 
         // 2. Fetch profiles for these students (including username & unique_id)
         const userIds = studentsData.map(s => s.user_id);
-        const { data: profilesData, error: profilesError } = await supabase
-            .from("profiles")
-            .select("id, email, full_name, username, unique_id, email_verified, created_at")
-            .in("id", userIds);
-
-        if (profilesError) throw profilesError;
+        const profilesData = await fetchProfilesBatch(userIds);
 
         // 3. Fetch linked parents and schools for attribution
         const parentIds = Array.from(new Set(studentsData.map(s => s.parent_id).filter(Boolean))) as string[];
@@ -111,24 +137,18 @@ export default function PlatformUsersPage() {
         if (parentsRes.data && parentsRes.data.length > 0) {
             const parentUserIds = (parentsRes.data as any[]).map((p: any) => p.user_id).filter(Boolean);
             if (parentUserIds.length > 0) {
-                const { data: parentProfiles } = await supabase
-                    .from("profiles")
-                    .select("id, full_name")
-                    .in("id", parentUserIds);
-
-                if (parentProfiles) {
-                    const profileMap = new Map(parentProfiles.map((p: any) => [p.id, p.full_name]));
-                    (parentsRes.data as any[]).forEach((parent: any) => {
-                        const name = profileMap.get(parent.user_id) || "Parent";
-                        parentNameMap.set(parent.id, name);
-                    });
-                }
+                const parentProfiles = await fetchProfilesBatch(parentUserIds);
+                const profileMap = new Map(parentProfiles.map((p: any) => [p.id, p.full_name]));
+                (parentsRes.data as any[]).forEach((parent: any) => {
+                    const name = profileMap.get(parent.user_id) || "Parent";
+                    parentNameMap.set(parent.id, name);
+                });
             }
         }
 
         // 4. Merge data
         const mergedStudents = studentsData.map(student => {
-            const profile = profilesData?.find(p => p.id === student.user_id);
+            const profile = profilesData.find(p => p.id === student.user_id);
             return {
                 ...student,
                 username: profile?.username || null,
@@ -159,15 +179,10 @@ export default function PlatformUsersPage() {
         }
 
         const userIds = parentsData.map(p => p.user_id);
-        const { data: profilesData, error: profilesError } = await supabase
-            .from("profiles")
-            .select("id, email, full_name, email_verified, created_at")
-            .in("id", userIds);
-
-        if (profilesError) throw profilesError;
+        const profilesData = await fetchProfilesBatch(userIds);
 
         const mergedParents = parentsData.map(parent => {
-            const profile = profilesData?.find(p => p.id === parent.user_id);
+            const profile = profilesData.find(p => p.id === parent.user_id);
             return {
                 ...parent,
                 ...(profile || {
@@ -196,15 +211,10 @@ export default function PlatformUsersPage() {
         }
 
         const userIds = schoolsData.map(s => s.user_id);
-        const { data: profilesData, error: profilesError } = await supabase
-            .from("profiles")
-            .select("id, email, full_name, email_verified, created_at")
-            .in("id", userIds);
-
-        if (profilesError) throw profilesError;
+        const profilesData = await fetchProfilesBatch(userIds);
 
         const mergedSchools = schoolsData.map(school => {
-            const profile = profilesData?.find(p => p.id === school.user_id);
+            const profile = profilesData.find(p => p.id === school.user_id);
             return {
                 ...school,
                 ...(profile || {
@@ -254,6 +264,81 @@ export default function PlatformUsersPage() {
         );
     };
 
+    const handleTabChange = (val: string) => {
+        setActiveTab(val);
+        setCurrentPage(1);
+    };
+
+    const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setSearchQuery(e.target.value);
+        setCurrentPage(1);
+    };
+
+    const filteredStudents = filterUsers(students);
+    const totalStudentPages = Math.max(1, Math.ceil(filteredStudents.length / ITEMS_PER_PAGE));
+    const paginatedStudents = filteredStudents.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
+    const filteredParents = filterUsers(parents);
+    const totalParentPages = Math.max(1, Math.ceil(filteredParents.length / ITEMS_PER_PAGE));
+    const paginatedParents = filteredParents.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
+    const filteredSchools = filterUsers(schools);
+    const totalSchoolPages = Math.max(1, Math.ceil(filteredSchools.length / ITEMS_PER_PAGE));
+    const paginatedSchools = filteredSchools.slice(
+        (currentPage - 1) * ITEMS_PER_PAGE,
+        currentPage * ITEMS_PER_PAGE
+    );
+
+    const renderPagination = (totalItems: number, totalPages: number) => {
+        if (totalItems === 0) return null;
+        const start = (currentPage - 1) * ITEMS_PER_PAGE + 1;
+        const end = Math.min(currentPage * ITEMS_PER_PAGE, totalItems);
+
+        return (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 border-t">
+                <p className="text-xs text-muted-foreground">
+                    Showing <span className="font-semibold text-foreground">{start}</span> to{" "}
+                    <span className="font-semibold text-foreground">{end}</span> of{" "}
+                    <span className="font-semibold text-foreground">{totalItems}</span> users
+                </p>
+                {totalPages > 1 && (
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 gap-1 text-xs"
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                            disabled={currentPage === 1}
+                        >
+                            <ChevronLeft className="h-3.5 w-3.5" />
+                            Previous
+                        </Button>
+                        <span className="text-xs text-muted-foreground px-1">
+                            Page <span className="font-medium text-foreground">{currentPage}</span> of{" "}
+                            <span className="font-medium text-foreground">{totalPages}</span>
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 gap-1 text-xs"
+                            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                            disabled={currentPage === totalPages}
+                        >
+                            Next
+                            <ChevronRight className="h-3.5 w-3.5" />
+                        </Button>
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     return (
         <div className="space-y-6">
             <div>
@@ -270,12 +355,12 @@ export default function PlatformUsersPage() {
                         placeholder="Search by name, username, email, parent..."
                         className="pl-8"
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={handleSearchChange}
                     />
                 </div>
             </div>
 
-            <Tabs defaultValue="students" value={activeTab} onValueChange={setActiveTab}>
+            <Tabs defaultValue="students" value={activeTab} onValueChange={handleTabChange}>
                 <TabsList className="grid w-full grid-cols-3 max-w-[400px]">
                     <TabsTrigger value="students" className="flex items-center gap-2">
                         <User size={16} />
@@ -314,14 +399,14 @@ export default function PlatformUsersPage() {
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ) : filterUsers(students).length === 0 ? (
+                                ) : filteredStudents.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                                             No students found.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    filterUsers(students).map((student) => (
+                                    paginatedStudents.map((student) => (
                                         <TableRow key={student.id}>
                                             <TableCell>
                                                 <div className="font-medium">{student.full_name}</div>
@@ -373,6 +458,7 @@ export default function PlatformUsersPage() {
                                 )}
                             </TableBody>
                         </Table>
+                        {renderPagination(filteredStudents.length, totalStudentPages)}
                     </div>
                 </TabsContent>
 
@@ -397,14 +483,14 @@ export default function PlatformUsersPage() {
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ) : filterUsers(parents).length === 0 ? (
+                                ) : filteredParents.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
                                             No parents found.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    filterUsers(parents).map((parent) => (
+                                    paginatedParents.map((parent) => (
                                         <TableRow key={parent.id}>
                                             <TableCell className="font-medium">{parent.full_name}</TableCell>
                                             <TableCell>{parent.email}</TableCell>
@@ -429,6 +515,7 @@ export default function PlatformUsersPage() {
                                 )}
                             </TableBody>
                         </Table>
+                        {renderPagination(filteredParents.length, totalParentPages)}
                     </div>
                 </TabsContent>
 
@@ -454,14 +541,14 @@ export default function PlatformUsersPage() {
                                             </div>
                                         </TableCell>
                                     </TableRow>
-                                ) : filterUsers(schools).length === 0 ? (
+                                ) : filteredSchools.length === 0 ? (
                                     <TableRow>
                                         <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                                             No schools found.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
-                                    filterUsers(schools).map((school) => (
+                                    paginatedSchools.map((school) => (
                                         <TableRow key={school.id}>
                                             <TableCell className="font-medium">{school.school_name || "N/A"}</TableCell>
                                             <TableCell>
@@ -491,6 +578,7 @@ export default function PlatformUsersPage() {
                                 )}
                             </TableBody>
                         </Table>
+                        {renderPagination(filteredSchools.length, totalSchoolPages)}
                     </div>
                 </TabsContent>
             </Tabs>
