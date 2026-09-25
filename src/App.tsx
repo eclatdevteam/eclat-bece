@@ -54,6 +54,7 @@ import AdminCompetitionsPage from "./pages/AdminCompetitionsPage";
 import AdminReportsPage from "./pages/AdminReportsPage";
 import AdminSettingsPage from "./pages/AdminSettingsPage";
 import PassagesPage from "./pages/PassagesPage";
+import AdminSubjectsPage from "./pages/AdminSubjectsPage";
 import FlagReportsPage from "./pages/admin/FlagReportsPage";
 import { AuthProvider } from "./components/AuthProvider";
 import { PrivacyPolicy } from "./components/PrivacyPolicy";
@@ -255,6 +256,11 @@ const App = () => (
                 <Route path="questions" element={
                   <AdminPermissionGuard requiredPermission="canManageQuestions" resourceName="Question Bank">
                     <QuestionBankPage />
+                  </AdminPermissionGuard>
+                } />
+                <Route path="subjects" element={
+                  <AdminPermissionGuard requiredPermission="canManageQuestions" resourceName="Subjects">
+                    <AdminSubjectsPage />
                   </AdminPermissionGuard>
                 } />
                 <Route path="passages" element={

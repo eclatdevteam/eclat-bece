@@ -13,6 +13,7 @@ import {
   X,
   Shield,
   Flag,
+  Library,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -62,6 +63,12 @@ export const AdminLayout = () => {
       name: "Question Bank", 
       href: "/admin/questions", 
       icon: BookOpen,
+      allowed: isSuperAdmin || canManageQuestions 
+    },
+    { 
+      name: "Subjects", 
+      href: "/admin/subjects", 
+      icon: Library,
       allowed: isSuperAdmin || canManageQuestions 
     },
     { 
