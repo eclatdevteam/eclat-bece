@@ -11,6 +11,16 @@ import { toast } from "sonner";
 import { EditQuestionDialog } from "@/components/admin/EditQuestionDialog";
 import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface FlaggedQuestion {
     id: string;
@@ -41,6 +51,12 @@ export default function FlagReportsPage() {
     const [classYearFilter, setClassYearFilter] = useState<string>("all");
     const [reasonFilter, setReasonFilter] = useState<string>("all");
     const [selectedQuestion, setSelectedQuestion] = useState<{ id: string; classYear: "year_6" | "year_9" } | null>(null);
+    const [pendingAction, setPendingAction] = useState<{
+        flagId: string;
+        actionType: "resolved" | "dismissed";
+        questionText: string;
+    } | null>(null);
+    const [submittingAction, setSubmittingAction] = useState(false);
 
     const fetchFlags = useCallback(async () => {
         setLoading(true);
@@ -84,6 +100,7 @@ export default function FlagReportsPage() {
 
     const handleResolve = async (flagId: string, actionType: "resolved" | "dismissed") => {
         if (!user) return;
+        setSubmittingAction(true);
         try {
             const { error } = await supabase
                 .from("flagged_questions")
@@ -101,6 +118,9 @@ export default function FlagReportsPage() {
         } catch (error: any) {
             console.error("Error updating flag status:", error);
             toast.error(error.message || "Failed to update report status");
+        } finally {
+            setSubmittingAction(false);
+            setPendingAction(null);
         }
     };
 
@@ -317,7 +337,11 @@ export default function FlagReportsPage() {
                                                                 variant="default"
                                                                 size="sm"
                                                                 className="h-8 gap-1 bg-green-600 hover:bg-green-700 text-white"
-                                                                onClick={() => handleResolve(flag.id, "resolved")}
+                                                                onClick={() => setPendingAction({
+                                                                    flagId: flag.id,
+                                                                    actionType: "resolved",
+                                                                    questionText: flag.question_text
+                                                                })}
                                                             >
                                                                 <CheckCircle className="h-3.5 w-3.5" />
                                                                 Resolve
@@ -326,7 +350,11 @@ export default function FlagReportsPage() {
                                                                 variant="ghost"
                                                                 size="sm"
                                                                 className="h-8 gap-1 text-destructive hover:bg-destructive/10"
-                                                                onClick={() => handleResolve(flag.id, "dismissed")}
+                                                                onClick={() => setPendingAction({
+                                                                    flagId: flag.id,
+                                                                    actionType: "dismissed",
+                                                                    questionText: flag.question_text
+                                                                })}
                                                             >
                                                                 <XCircle className="h-3.5 w-3.5" />
                                                                 Dismiss
@@ -343,6 +371,57 @@ export default function FlagReportsPage() {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Confirmation Dialog for Resolve / Dismiss */}
+            <AlertDialog
+                open={!!pendingAction}
+                onOpenChange={(open) => {
+                    if (!open && !submittingAction) setPendingAction(null);
+                }}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            {pendingAction?.actionType === "resolved"
+                                ? "Mark Report as Resolved?"
+                                : "Dismiss Question Report?"}
+                        </AlertDialogTitle>
+                        <AlertDialogDescription className="space-y-3">
+                            <span className="block text-sm text-muted-foreground">
+                                {pendingAction?.actionType === "resolved"
+                                    ? "Are you sure you want to mark this flagged question report as resolved? This confirms that the issue has been inspected or addressed."
+                                    : "Are you sure you want to dismiss this flagged question report? The report will be closed without modifications."}
+                            </span>
+                            {pendingAction?.questionText && (
+                                <div className="p-3 bg-muted rounded-md text-xs italic text-foreground line-clamp-3">
+                                    "{pendingAction.questionText}"
+                                </div>
+                            )}
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={submittingAction}>
+                            Cancel
+                        </AlertDialogCancel>
+                        <AlertDialogAction
+                            disabled={submittingAction}
+                            className={
+                                pendingAction?.actionType === "resolved"
+                                    ? "bg-green-600 hover:bg-green-700 text-white"
+                                    : "bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            }
+                            onClick={async (e) => {
+                                e.preventDefault();
+                                if (!pendingAction) return;
+                                await handleResolve(pendingAction.flagId, pendingAction.actionType);
+                            }}
+                        >
+                            {submittingAction && <Loader2 className="h-4 w-4 mr-1 animate-spin" />}
+                            {pendingAction?.actionType === "resolved" ? "Confirm Resolve" : "Confirm Dismiss"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
 
             {/* Edit Question Dialog Integration */}
             {selectedQuestion && (
