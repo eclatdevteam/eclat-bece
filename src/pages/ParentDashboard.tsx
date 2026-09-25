@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Users, TrendingUp, Plus, Award, Target, ChevronRight, AlertTriangle, Search, Bell, Settings, BookOpen, FileText, Zap, BarChart3, MessageCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useParentAccount } from "@/hooks/useParentAccount";
 import { StudentReportDialog } from "@/components/StudentReportDialog";
 import { AssignPracticeDialog } from "@/components/AssignPracticeDialog";
 import { ChildOverviewCard } from "@/components/parent/ChildOverviewCard";
@@ -45,6 +46,7 @@ export default function ParentDashboard() {
   const [editNameOpen, setEditNameOpen] = useState(false);
   const [editUsernameOpen, setEditUsernameOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [activeChildIndex, setActiveChildIndex] = useState(0);
 
   // Derived Top-Level Metrics
   const totalChildren = linkedChildren.length;
@@ -60,32 +62,9 @@ export default function ParentDashboard() {
 
   const overallAverage = totalQuizzesGlobal > 0 ? Math.round(totalScoreGlobal / totalQuizzesGlobal) : 0;
 
-  useEffect(() => {
-    const fetchParentData = async () => {
-      if (!user) return;
+  const { parentId, loading: parentAccountLoading } = useParentAccount();
 
-      try {
-        const { data: parentData } = await supabase
-          .from("parents")
-          .select("id")
-          .eq("user_id", user.id)
-          .single();
-
-        if (parentData) {
-          setParentUserId(parentData.id);
-          await fetchLinkedChildren(parentData.id);
-        }
-      } catch (error) {
-        console.error("Error fetching parent data:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchParentData();
-  }, [user]);
-
-  const fetchLinkedChildren = async (parentId: string) => {
+  const fetchLinkedChildren = useCallback(async (pId: string) => {
     try {
       setGlobalActivities([]); // Reset global activities before fetching
       const { data, error } = await supabase
@@ -97,23 +76,92 @@ export default function ParentDashboard() {
           is_premium,
           profile:profiles(full_name, unique_id, username)
         `)
-        .eq("parent_id", parentId);
+        .eq("parent_id", pId);
 
       if (error) throw error;
 
-      if (data) {
-        setLinkedChildren(data as unknown as LinkedChild[]);
-        // Fetch analytics and assignments for each child
-        data.forEach((child) => {
-          fetchChildAnalytics(child.id, child.profile?.full_name || "Unknown");
-          fetchChildAssignments(child.id);
+      if (data && data.length > 0) {
+        const studentIds = data.map((c) => c.id);
+        const nameMap = new Map(data.map((c) => [c.id, c.profile?.full_name || "Unknown"]));
+
+        // Batched parallel queries for all linked children
+        const [quizzesRes, assignmentsRes] = await Promise.all([
+          supabase
+            .from("quiz_results")
+            .select("*")
+            .in("student_id", studentIds)
+            .order("completed_at", { ascending: false }),
+          supabase
+            .from("practice_assignments")
+            .select("*")
+            .in("student_id", studentIds)
+            .order("created_at", { ascending: false }),
+        ]);
+
+        const allQuizzes = (quizzesRes.data || []) as QuizResult[];
+        const allAssignments = (assignmentsRes.data || []) as Assignment[];
+
+        const analyticsMap = new Map<string, ChildAnalytics>();
+        studentIds.forEach((sId) => {
+          const childQuizzes = allQuizzes.filter((q) => q.student_id === sId);
+          if (childQuizzes.length > 0) {
+            const averageScore = childQuizzes.reduce((acc, result) => acc + result.score, 0) / childQuizzes.length;
+            const subjectMap = new Map<string, { totalScore: number; count: number }>();
+            childQuizzes.forEach((result) => {
+              const existing = subjectMap.get(result.subject) || { totalScore: 0, count: 0 };
+              subjectMap.set(result.subject, {
+                totalScore: existing.totalScore + result.score,
+                count: existing.count + 1,
+              });
+            });
+
+            const subjectPerformance = Array.from(subjectMap.entries()).map(([subject, subData]) => ({
+              subject: subject.charAt(0).toUpperCase() + subject.slice(1),
+              avgScore: Math.round(subData.totalScore / subData.count),
+              count: subData.count,
+            }));
+
+            analyticsMap.set(sId, {
+              studentId: sId,
+              averageScore: Math.round(averageScore),
+              totalQuizzes: childQuizzes.length,
+              subjectPerformance,
+              recentQuizzes: childQuizzes.slice(0, 5),
+            });
+          }
         });
+        setChildrenAnalytics(analyticsMap);
+
+        const childrenWithAssignments = (data as unknown as LinkedChild[]).map((child) => ({
+          ...child,
+          assignments: allAssignments.filter((a) => a.student_id === child.id).slice(0, 5),
+        }));
+        setLinkedChildren(childrenWithAssignments);
+
+        const activitiesWithName = allQuizzes.map((q) => ({
+          ...q,
+          student_name: nameMap.get(q.student_id) || "Student",
+        }));
+        setGlobalActivities(activitiesWithName.slice(0, 3));
+      } else {
+        setLinkedChildren([]);
       }
     } catch (error) {
       console.error("Error fetching linked children:", error);
       toast.error("Failed to load linked children");
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (parentId) {
+      setParentUserId(parentId);
+      fetchLinkedChildren(parentId);
+    } else if (!parentAccountLoading) {
+      setIsLoading(false);
+    }
+  }, [parentId, parentAccountLoading, fetchLinkedChildren]);
 
   const handleDeleteChild = async () => {
     if (!managedChild) return;
@@ -142,79 +190,6 @@ export default function ParentDashboard() {
       toast.error(error instanceof Error ? error.message : "Failed to delete student account");
     } finally {
       setIsDeleting(false);
-    }
-  };
-
-  const fetchChildAnalytics = async (studentId: string, studentName: string) => {
-    try {
-      const { data: quizResults, error } = await supabase
-        .from("quiz_results")
-        .select("*")
-        .eq("student_id", studentId)
-        .order("completed_at", { ascending: false });
-
-      if (error) throw error;
-
-      if (quizResults && quizResults.length > 0) {
-        const averageScore = quizResults.reduce((acc, result) => acc + result.score, 0) / quizResults.length;
-        const subjectMap = new Map<string, { totalScore: number; count: number }>();
-        quizResults.forEach((result) => {
-          const existing = subjectMap.get(result.subject) || { totalScore: 0, count: 0 };
-          subjectMap.set(result.subject, {
-            totalScore: existing.totalScore + result.score,
-            count: existing.count + 1,
-          });
-        });
-
-        const subjectPerformance = Array.from(subjectMap.entries()).map(([subject, data]) => ({
-          subject: subject.charAt(0).toUpperCase() + subject.slice(1),
-          avgScore: Math.round(data.totalScore / data.count),
-          count: data.count,
-        }));
-
-        const analytics: ChildAnalytics = {
-          studentId,
-          averageScore: Math.round(averageScore),
-          totalQuizzes: quizResults.length,
-          subjectPerformance,
-          recentQuizzes: quizResults.slice(0, 5) as QuizResult[],
-        };
-
-        setChildrenAnalytics((prev) => new Map(prev).set(studentId, analytics));
-
-        const activitiesWithName = quizResults.map(q => ({ ...q, student_name: studentName })) as QuizResult[];
-
-        setGlobalActivities(prev => {
-          const combined = [...prev, ...activitiesWithName];
-          const unique = combined.filter((activity, index, self) => 
-            self.findIndex(a => a.id === activity.id) === index
-          );
-          return unique.sort((a, b) => new Date(b.completed_at).getTime() - new Date(a.completed_at).getTime()).slice(0, 3);
-        });
-      }
-    } catch (error) {
-      console.error("Error fetching child analytics:", error);
-    }
-  };
-
-  const fetchChildAssignments = async (studentId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("practice_assignments")
-        .select("*")
-        .eq("student_id", studentId)
-        .order("created_at", { ascending: false })
-        .limit(5);
-
-      if (error) throw error;
-
-      setLinkedChildren((prev) =>
-        prev.map((child) =>
-          child.id === studentId ? { ...child, assignments: data as Assignment[] } : child
-        )
-      );
-    } catch (error) {
-      console.error("Error fetching child assignments:", error);
     }
   };
 
@@ -339,44 +314,71 @@ export default function ParentDashboard() {
               </Button>
             </div>
 
+            {linkedChildren.length > 1 && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-1">
+                {linkedChildren.map((child, index) => {
+                  const isActive = (activeChildIndex === index) || (activeChildIndex >= linkedChildren.length && index === 0);
+                  return (
+                    <Button
+                      key={child.id}
+                      variant={isActive ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setActiveChildIndex(index)}
+                      className={`rounded-xl font-bold text-xs transition-all ${isActive ? 'bg-primary text-primary-foreground shadow-sm' : 'border-border/60 hover:bg-primary/10'}`}
+                    >
+                      {child.profile?.full_name || `Child ${index + 1}`}
+                      {child.is_premium && (
+                        <span className="ml-1.5 rounded-full bg-amber-500/20 px-1.5 py-0.2 text-[9px] font-black text-amber-500">PRO</span>
+                      )}
+                    </Button>
+                  );
+                })}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 gap-6">
-              {linkedChildren.slice(0, 1).map((child, index) => (
-                <ChildOverviewCard
-                  key={child.id}
-                  child={child}
-                  index={index}
-                  analytics={childrenAnalytics.get(child.id)}
-                  assignments={child.assignments}
-                  onViewReport={(c) => {
-                    setSelectedChild(c);
-                    setReportOpen(true);
-                  }}
-                  onAssignPractice={(c) => {
-                    setSelectedChild(c);
-                    setAssignOpen(true);
-                  }}
-                  onUpgradePremium={(c) => {
-                    setSelectedPaymentChild({ id: c.id, name: c.profile.full_name || "Unknown" });
-                    setPaymentModalOpen(true);
-                  }}
-                  onDeleteChild={(c) => {
-                    setManagedChild(c);
-                    setDeleteDialogOpen(true);
-                  }}
-                  onEditName={(c) => {
-                    setManagedChild(c);
-                    setEditNameOpen(true);
-                  }}
-                  onEditUsername={(c) => {
-                    setManagedChild(c);
-                    setEditUsernameOpen(true);
-                  }}
-                  onChangePassword={(c) => {
-                    setManagedChild(c);
-                    setChangePasswordOpen(true);
-                  }}
-                />
-              ))}
+              {(() => {
+                const effectiveIndex = activeChildIndex < linkedChildren.length ? activeChildIndex : 0;
+                const child = linkedChildren[effectiveIndex];
+                if (!child) return null;
+                return (
+                  <ChildOverviewCard
+                    key={child.id}
+                    child={child}
+                    index={effectiveIndex}
+                    analytics={childrenAnalytics.get(child.id)}
+                    assignments={child.assignments}
+                    onViewReport={(c) => {
+                      setSelectedChild(c);
+                      setReportOpen(true);
+                    }}
+                    onAssignPractice={(c) => {
+                      setSelectedChild(c);
+                      setAssignOpen(true);
+                    }}
+                    onUpgradePremium={(c) => {
+                      setSelectedPaymentChild({ id: c.id, name: c.profile.full_name || "Unknown" });
+                      setPaymentModalOpen(true);
+                    }}
+                    onDeleteChild={(c) => {
+                      setManagedChild(c);
+                      setDeleteDialogOpen(true);
+                    }}
+                    onEditName={(c) => {
+                      setManagedChild(c);
+                      setEditNameOpen(true);
+                    }}
+                    onEditUsername={(c) => {
+                      setManagedChild(c);
+                      setEditUsernameOpen(true);
+                    }}
+                    onChangePassword={(c) => {
+                      setManagedChild(c);
+                      setChangePasswordOpen(true);
+                    }}
+                  />
+                );
+              })()}
             </div>
           </div>
         </div>

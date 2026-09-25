@@ -16,6 +16,7 @@ import { EditChildUsernameDialog } from "@/components/parent/EditChildUsernameDi
 import { ChangeChildPasswordDialog } from "@/components/parent/ChangeChildPasswordDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useParentAccount } from "@/hooks/useParentAccount";
 import { LinkedChild, ChildAnalytics, Assignment, QuizResult } from "@/types/parent";
 import { getEdgeFunctionError } from "@/lib/errorUtils";
 
@@ -25,11 +26,13 @@ const getErrorMessage = (error: unknown, fallback: string) =>
 export default function MyChildren() {
     const navigate = useNavigate();
     const { user } = useAuth();
+    const { parentId, loading: parentAccountLoading } = useParentAccount();
 
     const [children, setChildren] = useState<LinkedChild[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [parentUserId, setParentUserId] = useState<string | null>(null);
     const [childrenAnalytics, setChildrenAnalytics] = useState<Map<string, ChildAnalytics>>(new Map());
+    const [childrenAssignments, setChildrenAssignments] = useState<Map<string, Assignment[]>>(new Map());
 
     const [reportOpen, setReportOpen] = useState(false);
     const [assignOpen, setAssignOpen] = useState(false);
@@ -43,128 +46,113 @@ export default function MyChildren() {
     const [selectedChild, setSelectedChild] = useState<LinkedChild | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
 
-    const fetchAnalytics = useCallback(async (studentId: string) => {
-        try {
-            const { data: quizResults } = await supabase
-                .from("quiz_results")
-                .select("*")
-                .eq("student_id", studentId)
-                .order("completed_at", { ascending: false });
-
-            if (quizResults && quizResults.length > 0) {
-                const averageScore = quizResults.reduce((acc, result) => acc + result.score, 0) / quizResults.length;
-                const subjectMap = new Map<string, { totalScore: number; count: number }>();
-                quizResults.forEach((result) => {
-                    const existing = subjectMap.get(result.subject) || { totalScore: 0, count: 0 };
-                    subjectMap.set(result.subject, {
-                        totalScore: existing.totalScore + result.score,
-                        count: existing.count + 1,
-                    });
-                });
-
-                const subjectPerformance = Array.from(subjectMap.entries()).map(([subject, data]) => ({
-                    subject: subject.charAt(0).toUpperCase() + subject.slice(1),
-                    avgScore: Math.round(data.totalScore / data.count),
-                    count: data.count,
-                }));
-
-                const analytics: ChildAnalytics = {
-                    studentId,
-                    averageScore: Math.round(averageScore),
-                    totalQuizzes: quizResults.length,
-                    subjectPerformance,
-                    recentQuizzes: quizResults.slice(0, 5) as QuizResult[],
-                };
-                setChildrenAnalytics((prev) => new Map(prev).set(studentId, analytics));
-            }
-        } catch (error) {
-            console.error("Error fetching child analytics:", error);
-        }
-    }, []);
-
-    const fetchAssignments = useCallback(async (studentId: string) => {
-        try {
-            const { data, error } = await supabase
-                .from("practice_assignments")
-                .select("*")
-                .eq("student_id", studentId)
-                .order("created_at", { ascending: false });
-
-            if (error) throw error;
-            if (data) {
-                setChildrenAnalytics((prev) => {
-                    const current = prev.get(studentId) || {
-                        studentId,
-                        averageScore: 0,
-                        totalQuizzes: 0,
-                        subjectPerformance: [],
-                        recentQuizzes: [],
-                        pendingAssignments: 0,
-                        completedAssignments: 0,
-                    };
-                    const pending = data.filter((a) => a.status === "pending").length;
-                    const completed = data.filter((a) => a.status === "completed").length;
-                    return new Map(prev).set(studentId, {
-                        ...current,
-                        pendingAssignments: pending,
-                        completedAssignments: completed,
-                    });
-                });
-            }
-        } catch (error) {
-            console.error("Error fetching child assignments:", error);
-        }
-    }, []);
-
-    const fetchChildren = useCallback(async (parentId: string) => {
+    const fetchChildren = useCallback(async (pId: string) => {
         try {
             const { data, error } = await supabase
                 .from("students")
                 .select(`
-          id,
-          user_id,
-          class_year,
-          is_premium,
-          profile:profiles(full_name, unique_id, username)
-        `)
-                .eq("parent_id", parentId);
+                    id,
+                    user_id,
+                    class_year,
+                    is_premium,
+                    profile:profiles(full_name, unique_id, username)
+                `)
+                .eq("parent_id", pId);
 
             if (error) throw error;
-            if (data) {
-                setChildren(data as unknown as LinkedChild[]);
-                data.forEach((child) => {
-                    fetchAnalytics(child.id);
-                    fetchAssignments(child.id);
+
+            if (data && data.length > 0) {
+                const studentIds = data.map((c) => c.id);
+
+                // Batched parallel queries for all children
+                const [quizzesRes, assignmentsRes] = await Promise.all([
+                    supabase
+                        .from("quiz_results")
+                        .select("*")
+                        .in("student_id", studentIds)
+                        .order("completed_at", { ascending: false }),
+                    supabase
+                        .from("practice_assignments")
+                        .select("*")
+                        .in("student_id", studentIds)
+                        .order("created_at", { ascending: false }),
+                ]);
+
+                const allQuizzes = (quizzesRes.data || []) as QuizResult[];
+                const allAssignments = (assignmentsRes.data || []) as Assignment[];
+
+                const assignMap = new Map<string, Assignment[]>();
+                const analyticsMap = new Map<string, ChildAnalytics>();
+
+                studentIds.forEach((sId) => {
+                    const childAssignments = allAssignments.filter((a) => a.student_id === sId);
+                    assignMap.set(sId, childAssignments);
+
+                    const childQuizzes = allQuizzes.filter((q) => q.student_id === sId);
+                    const pending = childAssignments.filter((a) => a.status === "pending").length;
+                    const completed = childAssignments.filter((a) => a.status === "completed").length;
+
+                    if (childQuizzes.length > 0) {
+                        const averageScore = childQuizzes.reduce((acc, result) => acc + result.score, 0) / childQuizzes.length;
+                        const subjectMap = new Map<string, { totalScore: number; count: number }>();
+                        childQuizzes.forEach((result) => {
+                            const existing = subjectMap.get(result.subject) || { totalScore: 0, count: 0 };
+                            subjectMap.set(result.subject, {
+                                totalScore: existing.totalScore + result.score,
+                                count: existing.count + 1,
+                            });
+                        });
+
+                        const subjectPerformance = Array.from(subjectMap.entries()).map(([subject, subData]) => ({
+                            subject: subject.charAt(0).toUpperCase() + subject.slice(1),
+                            avgScore: Math.round(subData.totalScore / subData.count),
+                            count: subData.count,
+                        }));
+
+                        analyticsMap.set(sId, {
+                            studentId: sId,
+                            averageScore: Math.round(averageScore),
+                            totalQuizzes: childQuizzes.length,
+                            subjectPerformance,
+                            recentQuizzes: childQuizzes.slice(0, 5) as QuizResult[],
+                            pendingAssignments: pending,
+                            completedAssignments: completed,
+                        });
+                    } else {
+                        analyticsMap.set(sId, {
+                            studentId: sId,
+                            averageScore: 0,
+                            totalQuizzes: 0,
+                            subjectPerformance: [],
+                            recentQuizzes: [],
+                            pendingAssignments: pending,
+                            completedAssignments: completed,
+                        });
+                    }
                 });
+
+                setChildren(data as unknown as LinkedChild[]);
+                setChildrenAssignments(assignMap);
+                setChildrenAnalytics(analyticsMap);
+            } else {
+                setChildren([]);
             }
         } catch (error) {
             console.error("Error fetching children:", error);
             toast.error("Failed to load students");
+        } finally {
+            setIsLoading(false);
         }
-    }, [fetchAnalytics, fetchAssignments]);
+    }, []);
 
     useEffect(() => {
-        const fetchParentData = async () => {
-            if (!user) return;
-            try {
-                const { data: parentData } = await supabase
-                    .from("parents")
-                    .select("id")
-                    .eq("user_id", user.id)
-                    .single();
-
-                if (parentData) {
-                    setParentUserId(parentData.id);
-                    await fetchChildren(parentData.id);
-                }
-            } catch (error) {
-                console.error("Error fetching parent data:", error);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchParentData();
-    }, [user, fetchChildren]);
+        if (parentId) {
+            setParentUserId(parentId);
+            fetchChildren(parentId);
+        } else if (!parentAccountLoading) {
+            setIsLoading(false);
+        }
+    }, [parentId, parentAccountLoading, fetchChildren]);
 
     const handleDeleteChild = async () => {
         if (!selectedChild) return;
@@ -268,7 +256,7 @@ export default function MyChildren() {
                             child={child}
                             index={index}
                             analytics={childrenAnalytics.get(child.id)}
-                            assignments={child.assignments}
+                            assignments={childrenAssignments.get(child.id) || []}
                             onViewReport={(c) => {
                                 setSelectedChild(c);
                                 setReportOpen(true);

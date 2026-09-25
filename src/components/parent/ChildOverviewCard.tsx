@@ -197,46 +197,57 @@ export function ChildOverviewCard({
 
             <CardContent className="space-y-6 pt-2">
                 {/* Homework & Assignments Tracking */}
-                {(assignments.length > 0 || !analytics) && (
-                    <div className="space-y-3">
+                <div className="space-y-3">
+                    <div className="flex items-center justify-between">
                         <h4 className="font-black text-[11px] uppercase tracking-widest text-muted-foreground flex items-center gap-2">
                             <span className="w-2 h-2 rounded-full bg-emerald-500/60" />
                             Homework Progress
                         </h4>
-                        <div className="space-y-2">
-                            {assignments.length > 0 ? (
-                                assignments.map((assignment) => (
-                                    <div key={assignment.id} className="group/assignment flex items-center justify-between p-3 rounded-2xl bg-muted/20 border border-border/50 hover:border-primary/30 transition-all">
-                                        <div className="flex items-center gap-3">
-                                            <div className={`p-2 rounded-lg ${assignment.status === 'completed' ? 'bg-emerald-500/10' : 'bg-primary/10 animate-pulse'}`}>
-                                                <Target className={`h-4 w-4 ${assignment.status === 'completed' ? 'text-emerald-600' : 'text-primary'}`} />
-                                            </div>
-                                            <div>
-                                                <p className="text-xs font-bold leading-none mb-1">{assignment.subject}</p>
-                                                <p className="text-[10px] text-muted-foreground font-medium">
-                                                    {assignment.num_questions} Questions • {assignment.status === 'completed' ? 'Done' : 'In Progress'}
-                                                </p>
-                                            </div>
-                                        </div>
-                                        {assignment.status === 'completed' ? (
-                                            <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-black text-[10px]">
-                                                {assignment.score}%
-                                            </Badge>
-                                        ) : (
-                                            <Badge variant="outline" className="text-primary border-primary/20 font-black text-[10px] animate-pulse">
-                                                PENDING
-                                            </Badge>
-                                        )}
-                                    </div>
-                                ))
-                            ) : (
-                                <div className="text-center py-4 rounded-2xl bg-muted/10 border border-dashed">
-                                    <p className="text-[10px] font-bold text-muted-foreground uppercase">No active assignments</p>
-                                </div>
-                            )}
-                        </div>
+                        {assignments.length > 3 && (
+                            <span className="text-[10px] font-bold text-muted-foreground">Showing 3 of {assignments.length}</span>
+                        )}
                     </div>
-                )}
+                    <div className="space-y-2">
+                        {assignments.length > 0 ? (
+                            assignments.slice(0, 3).map((assignment) => (
+                                <div key={assignment.id} className="group/assignment flex items-center justify-between p-3 rounded-2xl bg-muted/20 border border-border/50 hover:border-primary/30 transition-all">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`p-2 rounded-lg ${assignment.status === 'completed' ? 'bg-emerald-500/10' : 'bg-primary/10 animate-pulse'}`}>
+                                            <Target className={`h-4 w-4 ${assignment.status === 'completed' ? 'text-emerald-600' : 'text-primary'}`} />
+                                        </div>
+                                        <div>
+                                            <p className="text-xs font-bold leading-none mb-1">{assignment.subject}</p>
+                                            <p className="text-[10px] text-muted-foreground font-medium">
+                                                {assignment.num_questions} Questions • {assignment.status === 'completed' ? 'Done' : 'In Progress'}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    {assignment.status === 'completed' ? (
+                                        <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-black text-[10px]">
+                                            {assignment.score}%
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="outline" className="text-primary border-primary/20 font-black text-[10px] animate-pulse">
+                                            PENDING
+                                        </Badge>
+                                    )}
+                                </div>
+                            ))
+                        ) : (
+                            <div className="text-center py-4 rounded-2xl bg-muted/10 border border-dashed flex flex-col items-center justify-center gap-1.5">
+                                <p className="text-[11px] font-bold text-muted-foreground">No active tasks assigned yet</p>
+                                <Button 
+                                    variant="link" 
+                                    size="sm" 
+                                    onClick={() => onAssignPractice(child)} 
+                                    className="h-auto p-0 text-xs font-bold text-primary hover:underline"
+                                >
+                                    + Assign First Task
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                </div>
 
                 {analytics ? (
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
