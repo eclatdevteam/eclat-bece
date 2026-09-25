@@ -20,13 +20,46 @@ serve(async (req) => {
   }
 
   try {
+    const authHeader = req.headers.get('Authorization') || req.headers.get('authorization')
+    if (!authHeader) {
+      return new Response(
+        JSON.stringify({ error: 'Authentication required to send invitations' }),
+        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      )
+    }
+
+    const clientWithAuth = createClient(
+      Deno.env.get('SUPABASE_URL') ?? '',
+      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+      { global: { headers: { Authorization: authHeader } } }
+    )
+
+    const { data: { user: callerUser }, error: callerError } = await clientWithAuth.auth.getUser()
+    if (callerError || !callerUser) {
+      return new Response(
+        JSON.stringify({ error: 'Unauthorized: Invalid authentication session' }),
+        { status: 401, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      )
+    }
+
+    // Verify caller is an active super admin
+    const { data: isSuper, error: superError } = await clientWithAuth
+      .rpc('is_super_admin', { _user_id: callerUser.id })
+
+    if (superError || !isSuper) {
+      return new Response(
+        JSON.stringify({ error: 'Forbidden: Only active super administrators can dispatch admin invitations' }),
+        { status: 403, headers: { 'Content-Type': 'application/json', ...corsHeaders } }
+      )
+    }
+
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? Deno.env.get('SUPABASE_ANON_KEY') ?? ''
     )
 
-    // Get the invitation ID and optional siteUrl from the request
-    const { invitationId, siteUrl: payloadSiteUrl } = await req.json() as InvitationEmailRequest
+    // Get the invitation ID from the request
+    const { invitationId } = await req.json() as InvitationEmailRequest
 
     if (!invitationId) {
       throw new Error("Missing invitationId in request payload")
@@ -65,9 +98,18 @@ serve(async (req) => {
       }
     }
 
-    // Generate invitation link dynamically
-    const headerOrigin = req.headers.get('origin')
-    const siteUrl = payloadSiteUrl || headerOrigin || Deno.env.get('PUBLIC_SITE_URL') || 'https://eclatapp.xyz'
+    // Generate invitation link safely using whitelisted origins to prevent phishing URL injection
+    const ALLOWED_ORIGINS = new Set([
+      'https://eclatapp.xyz',
+      'https://www.eclatapp.xyz',
+      'http://localhost:8080',
+      'http://localhost:5173',
+      'http://localhost:3000',
+    ])
+
+    const headerOrigin = req.headers.get('origin') || ''
+    const envPublicUrl = Deno.env.get('PUBLIC_SITE_URL')
+    const siteUrl = envPublicUrl || (ALLOWED_ORIGINS.has(headerOrigin) ? headerOrigin : 'https://eclatapp.xyz')
     const invitationLink = `${siteUrl.replace(/\/+$/, '')}/admin/setup/${invitation.token}`
 
     // Format expiration date
