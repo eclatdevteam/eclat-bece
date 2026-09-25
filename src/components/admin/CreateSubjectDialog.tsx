@@ -27,12 +27,14 @@ interface CreateSubjectDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSubmit: (input: CreateSubjectInput) => Promise<{ success: boolean; error?: string }>;
+  defaultDisplayOrder?: number;
 }
 
 export function CreateSubjectDialog({
   open,
   onOpenChange,
   onSubmit,
+  defaultDisplayOrder = 1,
 }: CreateSubjectDialogProps) {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
@@ -40,7 +42,7 @@ export function CreateSubjectDialog({
   const [description, setDescription] = useState("");
   const [availableYear6, setAvailableYear6] = useState(true);
   const [availableYear9, setAvailableYear9] = useState(true);
-  const [displayOrder, setDisplayOrder] = useState<number>(10);
+  const [displayOrder, setDisplayOrder] = useState<number>(defaultDisplayOrder);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [codeManuallyEdited, setCodeManuallyEdited] = useState(false);
 
@@ -52,10 +54,10 @@ export function CreateSubjectDialog({
       setDescription("");
       setAvailableYear6(true);
       setAvailableYear9(true);
-      setDisplayOrder(10);
+      setDisplayOrder(defaultDisplayOrder);
       setCodeManuallyEdited(false);
     }
-  }, [open]);
+  }, [open, defaultDisplayOrder]);
 
   // Auto-generate code from subject name unless manually changed
   const handleNameChange = (val: string) => {
@@ -94,7 +96,7 @@ export function CreateSubjectDialog({
         description: description.trim() || undefined,
         available_year_6: availableYear6,
         available_year_9: availableYear9,
-        display_order: Number(displayOrder) || 10,
+        display_order: Number(displayOrder) || defaultDisplayOrder || 1,
         is_active: true,
       });
 
@@ -123,7 +125,9 @@ export function CreateSubjectDialog({
           {/* Name & Code */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2 space-y-1.5">
-              <Label htmlFor="subject-name">Subject Name *</Label>
+              <Label htmlFor="subject-name" className="h-5 flex items-center">
+                Subject Name *
+              </Label>
               <Input
                 id="subject-name"
                 placeholder="e.g. French Language"
@@ -133,7 +137,7 @@ export function CreateSubjectDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="subject-code" className="flex items-center gap-1">
+              <Label htmlFor="subject-code" className="h-5 flex items-center gap-1">
                 Short Code *
                 <Sparkles className="h-3 w-3 text-muted-foreground" title="Auto-generated" />
               </Label>

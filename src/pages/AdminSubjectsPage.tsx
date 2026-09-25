@@ -393,6 +393,7 @@ export default function AdminSubjectsPage() {
         open={createOpen}
         onOpenChange={setCreateOpen}
         onSubmit={createSubject}
+        defaultDisplayOrder={subjects.length + 1}
       />
 
       <EditSubjectDialog

@@ -138,7 +138,9 @@ export function EditSubjectDialog({
           {/* Name & Code */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div className="sm:col-span-2 space-y-1.5">
-              <Label htmlFor="edit-name">Subject Name *</Label>
+              <Label htmlFor="edit-name" className="h-5 flex items-center">
+                Subject Name *
+              </Label>
               <Input
                 id="edit-name"
                 value={name}
@@ -147,7 +149,9 @@ export function EditSubjectDialog({
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="edit-code">Short Code *</Label>
+              <Label htmlFor="edit-code" className="h-5 flex items-center">
+                Short Code *
+              </Label>
               <Input
                 id="edit-code"
                 value={code}
