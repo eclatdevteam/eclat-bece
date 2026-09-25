@@ -113,20 +113,30 @@ export default function PassagesPage() {
 
             if (error) throw error;
 
-            // Fetch question counts for each passage
-            const passagesWithCounts = await Promise.all(
-                (data || []).map(async (passage) => {
-                    const { count: questionCount } = await supabase
-                        .from(questionsTableName)
-                        .select("*", { count: 'exact', head: true })
-                        .eq('passage_id', passage.id);
+            // Fetch question counts in a single batch query (eliminating N+1)
+            const passageIds = (data || []).map(p => p.id);
+            let countMap: Record<string, number> = {};
 
-                    return {
-                        ...passage,
-                        question_count: questionCount || 0
-                    };
-                })
-            );
+            if (passageIds.length > 0) {
+                const { data: questionsData } = await supabase
+                    .from(questionsTableName)
+                    .select('passage_id')
+                    .in('passage_id', passageIds);
+
+                if (questionsData) {
+                    countMap = questionsData.reduce((acc, curr) => {
+                        if (curr.passage_id) {
+                            acc[curr.passage_id] = (acc[curr.passage_id] || 0) + 1;
+                        }
+                        return acc;
+                    }, {} as Record<string, number>);
+                }
+            }
+
+            const passagesWithCounts = (data || []).map(passage => ({
+                ...passage,
+                question_count: countMap[passage.id] || 0
+            }));
 
             setPassages(passagesWithCounts);
             setTotalItems(count || 0);
