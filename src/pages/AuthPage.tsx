@@ -27,7 +27,7 @@ const signupSchema = z.object({
 export default function AuthPage() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const role = searchParams.get("role") || "student";
+  const role = searchParams.get("role") || "parent";
   const [isLoading, setIsLoading] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -214,7 +214,7 @@ export default function AuthPage() {
                     </p>
                     <Button
                       variant="outline"
-                      onClick={() => navigate(`/auth?role=student`)}
+                      onClick={() => navigate("/student-login")}
                       className="mt-4"
                     >
                       Return to Login
