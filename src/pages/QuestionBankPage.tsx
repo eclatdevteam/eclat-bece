@@ -95,14 +95,11 @@ export default function QuestionBankPage() {
 
     const fetchDuplicateCount = useCallback(async () => {
         try {
-            const { data, error } = await supabase.rpc("find_duplicate_question_clusters", {
+            const { data, error } = await supabase.rpc("count_duplicate_question_clusters" as any, {
                 p_class_year: classYear,
-                p_subject: null,
-                p_match_type: "all",
-                p_threshold: 0.85,
             });
-            if (!error && Array.isArray(data)) {
-                setDuplicateClusterCount(data.length);
+            if (!error && typeof data === "number") {
+                setDuplicateClusterCount(data);
             }
         } catch (err) {
             console.error("Error checking duplicate count:", err);
