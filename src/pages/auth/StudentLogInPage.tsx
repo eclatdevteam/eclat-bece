@@ -94,9 +94,8 @@ export default function StudentLogInPage() {
         </div>
 
         <section className="mt-8 w-full max-w-[330px] animate-scale-in border border-slate-300 bg-white px-6 pb-6 pt-5 shadow-[0_10px_28px_rgba(15,23,42,0.12)] dark:border-[#2a3a53] dark:bg-[#1b283d] dark:shadow-[0_10px_28px_rgba(0,0,0,0.22)]">
-          <div className="mb-5 grid grid-cols-2 text-center text-[12px] font-bold tracking-[1px]">
-            <button type="button" className="border-b-2 border-sky-600 pb-3 text-sky-600 dark:border-[#72c8f6] dark:text-[#72c8f6]">Login</button>
-            <button type="button" onClick={() => navigate("/student-signup")} className="border-b border-slate-300 pb-3 text-slate-500 transition-colors hover:text-slate-900 dark:border-[#3a485c] dark:text-[#b6c0d1] dark:hover:text-white">Sign Up</button>
+          <div className="mb-5 border-b-2 border-sky-600 pb-3 text-center text-[12px] font-bold tracking-[1px] text-sky-600 dark:border-[#72c8f6] dark:text-[#72c8f6]">
+            STUDENT LOGIN
           </div>
 
           <form onSubmit={handleLogin} className="space-y-4">
@@ -126,6 +125,10 @@ export default function StudentLogInPage() {
               {isLoading ? <><Loader2 className="h-4 w-4 animate-spin" />Signing in...</> : <>Sign In <ArrowRight size={16} /></>}
             </button>
           </form>
+
+          <p className="mt-4 text-center text-[11px] leading-relaxed text-slate-500 dark:text-[#8d9bb1]">
+            Student accounts are created by parents. Don&apos;t have an account? Ask your parent to register you.
+          </p>
         </section>
 
         <button type="button" onClick={() => navigate("/auth/login/role-selection")} className="mt-7 flex items-center gap-2 text-[11px] font-medium text-slate-600 transition-colors hover:text-slate-900 dark:text-[#c1cada] dark:hover:text-white"><ArrowLeft size={14} /> Back to Role Selection</button>
