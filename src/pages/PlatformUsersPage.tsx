@@ -37,10 +37,14 @@ interface Profile {
 }
 
 interface Student extends Profile {
+    username: string | null;
+    unique_id?: string;
     class_year: string;
     onboarding_completed: boolean;
-    parent_id?: string;
-    school_id?: string;
+    parent_id?: string | null;
+    school_id?: string | null;
+    parent_name?: string | null;
+    school_name?: string | null;
 }
 
 type Parent = Profile;
@@ -73,26 +77,68 @@ export default function PlatformUsersPage() {
             return;
         }
 
-        // 2. Fetch profiles for these students
+        // 2. Fetch profiles for these students (including username & unique_id)
         const userIds = studentsData.map(s => s.user_id);
         const { data: profilesData, error: profilesError } = await supabase
             .from("profiles")
-            .select("id, email, full_name, email_verified, created_at")
+            .select("id, email, full_name, username, unique_id, email_verified, created_at")
             .in("id", userIds);
 
         if (profilesError) throw profilesError;
 
-        // 3. Merge data
+        // 3. Fetch linked parents and schools for attribution
+        const parentIds = Array.from(new Set(studentsData.map(s => s.parent_id).filter(Boolean))) as string[];
+        const schoolIds = Array.from(new Set(studentsData.map(s => s.school_id).filter(Boolean))) as string[];
+
+        const parentNameMap = new Map<string, string>();
+        const schoolNameMap = new Map<string, string>();
+
+        const [parentsRes, schoolsRes] = await Promise.all([
+            parentIds.length > 0
+                ? supabase.from("parents").select("id, user_id").in("id", parentIds)
+                : Promise.resolve({ data: [] }),
+            schoolIds.length > 0
+                ? supabase.from("schools").select("id, school_name, school_code").in("id", schoolIds)
+                : Promise.resolve({ data: [] })
+        ]);
+
+        if (schoolsRes.data) {
+            schoolsRes.data.forEach((s: any) => {
+                schoolNameMap.set(s.id, s.school_name || s.school_code || "School");
+            });
+        }
+
+        if (parentsRes.data && parentsRes.data.length > 0) {
+            const parentUserIds = (parentsRes.data as any[]).map((p: any) => p.user_id).filter(Boolean);
+            if (parentUserIds.length > 0) {
+                const { data: parentProfiles } = await supabase
+                    .from("profiles")
+                    .select("id, full_name")
+                    .in("id", parentUserIds);
+
+                if (parentProfiles) {
+                    const profileMap = new Map(parentProfiles.map((p: any) => [p.id, p.full_name]));
+                    (parentsRes.data as any[]).forEach((parent: any) => {
+                        const name = profileMap.get(parent.user_id) || "Parent";
+                        parentNameMap.set(parent.id, name);
+                    });
+                }
+            }
+        }
+
+        // 4. Merge data
         const mergedStudents = studentsData.map(student => {
             const profile = profilesData?.find(p => p.id === student.user_id);
             return {
                 ...student,
-                ...(profile || {
-                    email: "Unknown",
-                    full_name: "Unknown",
-                    email_verified: false,
-                    created_at: student.created_at
-                })
+                username: profile?.username || null,
+                unique_id: profile?.unique_id,
+                email: profile?.email || "Unknown",
+                full_name: profile?.full_name || profile?.username || "Unknown Student",
+                email_verified: profile?.email_verified || false,
+                created_at: profile?.created_at || student.created_at,
+                parent_name: student.parent_id ? parentNameMap.get(student.parent_id) || null : null,
+                school_name: student.school_id ? schoolNameMap.get(student.school_id) || null : null,
             };
         });
 
@@ -200,7 +246,9 @@ export default function PlatformUsersPage() {
         const lowerQuery = searchQuery.toLowerCase();
         return users.filter(user =>
             user.full_name?.toLowerCase().includes(lowerQuery) ||
+            user.username?.toLowerCase().includes(lowerQuery) ||
             user.email?.toLowerCase().includes(lowerQuery) ||
+            user.parent_name?.toLowerCase().includes(lowerQuery) ||
             user.school_name?.toLowerCase().includes(lowerQuery) ||
             user.school_code?.toLowerCase().includes(lowerQuery)
         );
@@ -219,7 +267,7 @@ export default function PlatformUsersPage() {
                 <div className="relative flex-1 max-w-sm">
                     <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                     <Input
-                        placeholder="Search by name, email, or school code..."
+                        placeholder="Search by name, username, email, parent..."
                         className="pl-8"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
@@ -248,8 +296,9 @@ export default function PlatformUsersPage() {
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Student Name</TableHead>
-                                    <TableHead>Email</TableHead>
+                                    <TableHead>Student</TableHead>
+                                    <TableHead>Username</TableHead>
+                                    <TableHead>Managed By</TableHead>
                                     <TableHead>Class Year</TableHead>
                                     <TableHead>Onboarding</TableHead>
                                     <TableHead>Joined</TableHead>
@@ -258,7 +307,7 @@ export default function PlatformUsersPage() {
                             <TableBody>
                                 {loading ? (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="h-24 text-center">
+                                        <TableCell colSpan={6} className="h-24 text-center">
                                             <div className="flex justify-center items-center gap-2">
                                                 <Loader2 className="h-4 w-4 animate-spin" />
                                                 Loading students...
@@ -267,21 +316,38 @@ export default function PlatformUsersPage() {
                                     </TableRow>
                                 ) : filterUsers(students).length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                                        <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
                                             No students found.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     filterUsers(students).map((student) => (
                                         <TableRow key={student.id}>
-                                            <TableCell className="font-medium">{student.full_name}</TableCell>
                                             <TableCell>
-                                                <div className="flex items-center gap-2">
-                                                    {student.email}
-                                                    {student.email_verified && (
-                                                        <CheckCircle2 className="h-3 w-3 text-green-500" />
-                                                    )}
-                                                </div>
+                                                <div className="font-medium">{student.full_name}</div>
+                                                <div className="text-xs text-muted-foreground">{student.email}</div>
+                                            </TableCell>
+                                            <TableCell>
+                                                {student.username ? (
+                                                    <Badge variant="outline" className="font-mono text-xs font-normal">
+                                                        @{student.username}
+                                                    </Badge>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground">—</span>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                {student.parent_name ? (
+                                                    <Badge variant="secondary" className="bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border-blue-200">
+                                                        Parent: {student.parent_name}
+                                                    </Badge>
+                                                ) : student.school_name ? (
+                                                    <Badge variant="secondary" className="bg-purple-50 text-purple-700 dark:bg-purple-950/40 dark:text-purple-300 border-purple-200">
+                                                        School: {student.school_name}
+                                                    </Badge>
+                                                ) : (
+                                                    <span className="text-xs text-muted-foreground">Self / Independent</span>
+                                                )}
                                             </TableCell>
                                             <TableCell>
                                                 <Badge variant="outline">
@@ -299,7 +365,7 @@ export default function PlatformUsersPage() {
                                                     </Badge>
                                                 )}
                                             </TableCell>
-                                            <TableCell className="text-muted-foreground">
+                                            <TableCell className="text-muted-foreground text-sm">
                                                 {format(new Date(student.created_at), "MMM d, yyyy")}
                                             </TableCell>
                                         </TableRow>
