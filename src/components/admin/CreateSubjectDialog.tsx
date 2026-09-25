@@ -29,8 +29,6 @@ interface CreateSubjectDialogProps {
   onSubmit: (input: CreateSubjectInput) => Promise<{ success: boolean; error?: string }>;
 }
 
-const COMMON_EMOJIS = ["📚", "📐", "🔬", "🌍", "📝", "💼", "💻", "🎨", "🧪", "🧬", "⚡", "📖", "🏃", "🎶", "⚖️", "🌱"];
-
 export function CreateSubjectDialog({
   open,
   onOpenChange,
@@ -38,7 +36,6 @@ export function CreateSubjectDialog({
 }: CreateSubjectDialogProps) {
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
-  const [icon, setIcon] = useState("📚");
   const [category, setCategory] = useState<SubjectCategory>("core");
   const [description, setDescription] = useState("");
   const [availableYear6, setAvailableYear6] = useState(true);
@@ -51,7 +48,6 @@ export function CreateSubjectDialog({
     if (open) {
       setName("");
       setCode("");
-      setIcon("📚");
       setCategory("core");
       setDescription("");
       setAvailableYear6(true);
@@ -94,7 +90,6 @@ export function CreateSubjectDialog({
       const res = await onSubmit({
         name: name.trim(),
         code: code.trim().toUpperCase(),
-        icon,
         category,
         description: description.trim() || undefined,
         available_year_6: availableYear6,
@@ -153,46 +148,18 @@ export function CreateSubjectDialog({
             </div>
           </div>
 
-          {/* Icon & Category */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="space-y-1.5">
-              <Label>Subject Icon</Label>
-              <div className="flex items-center gap-2">
-                <Input
-                  value={icon}
-                  onChange={(e) => setIcon(e.target.value)}
-                  className="w-16 text-center text-xl h-10 p-0"
-                  maxLength={4}
-                />
-                <div className="flex flex-wrap gap-1 max-w-[170px]">
-                  {COMMON_EMOJIS.slice(0, 8).map((emoji) => (
-                    <button
-                      key={emoji}
-                      type="button"
-                      onClick={() => setIcon(emoji)}
-                      className={`h-7 w-7 text-sm rounded border flex items-center justify-center transition hover:bg-muted ${
-                        icon === emoji ? "border-primary bg-primary/10" : "border-border"
-                      }`}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-1.5">
-              <Label>Curriculum Category</Label>
-              <Select value={category} onValueChange={(v: SubjectCategory) => setCategory(v)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="core">Core Subject</SelectItem>
-                  <SelectItem value="elective">Elective Subject</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          {/* Curriculum Category */}
+          <div className="space-y-1.5">
+            <Label>Curriculum Category</Label>
+            <Select value={category} onValueChange={(v: SubjectCategory) => setCategory(v)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="core">Core Subject</SelectItem>
+                <SelectItem value="elective">Elective Subject</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Cohort Applicability */}

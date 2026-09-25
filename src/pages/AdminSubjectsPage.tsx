@@ -288,25 +288,20 @@ export default function AdminSubjectsPage() {
                     {subject.display_order ?? idx + 1}
                   </TableCell>
 
-                  {/* Name, Icon & Code */}
+                  {/* Name & Code */}
                   <TableCell>
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl h-9 w-9 rounded-lg bg-muted/60 flex items-center justify-center shrink-0 border">
-                        {subject.icon || "📚"}
-                      </span>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold text-sm">{subject.name}</span>
-                          <Badge variant="outline" className="text-[10px] uppercase font-mono tracking-wider">
-                            {subject.code}
-                          </Badge>
-                        </div>
-                        {subject.description && (
-                          <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
-                            {subject.description}
-                          </p>
-                        )}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-sm">{subject.name}</span>
+                        <Badge variant="outline" className="text-[10px] uppercase font-mono tracking-wider">
+                          {subject.code}
+                        </Badge>
                       </div>
+                      {subject.description && (
+                        <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">
+                          {subject.description}
+                        </p>
+                      )}
                     </div>
                   </TableCell>
 

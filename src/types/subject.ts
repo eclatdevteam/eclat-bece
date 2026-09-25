@@ -4,7 +4,7 @@ export interface Subject {
   id: string;
   name: string;
   code: string;
-  icon: string;
+  icon?: string | null;
   category: SubjectCategory;
   description: string | null;
   available_year_6: boolean;
@@ -25,7 +25,7 @@ export interface SubjectWithCounts extends Subject {
 export interface CreateSubjectInput {
   name: string;
   code: string;
-  icon: string;
+  icon?: string;
   category: SubjectCategory;
   description?: string;
   available_year_6: boolean;
