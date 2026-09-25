@@ -16,7 +16,6 @@ import ParentLoginInPage from "./pages/auth/ParentLoginInPage";
 import ParentSignUpPage from "./pages/auth/ParentSignUpPage";
 import SchoolLogInPage from "./pages/auth/SchoolLogInPage";
 import StudentLogInPage from "./pages/auth/StudentLogInPage";
-import StudentSignUpPage from "./pages/auth/StudentSignUpPage";
 import AuthCallback from "./pages/AuthCallback";
 import PasswordResetPage from "./pages/PasswordResetPage";
 import EmailVerificationPage from "./pages/EmailVerificationPage";
@@ -97,7 +96,7 @@ const App = () => (
               <Route path="/parent-login" element={<ParentLoginInPage />} />
               <Route path="/parent-signup" element={<ParentSignUpPage />} />
               <Route path="/student-login" element={<StudentLogInPage />} />
-              <Route path="/student-signup" element={<StudentSignUpPage />} />
+              <Route path="/student-signup" element={<Navigate to="/student-login" replace />} />
               <Route path="/school-login" element={<SchoolLogInPage />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/password-reset" element={<PasswordResetPage />} />
