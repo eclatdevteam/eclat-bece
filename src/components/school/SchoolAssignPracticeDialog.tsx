@@ -89,7 +89,15 @@ export function SchoolAssignPracticeDialog({
       if (error) throw error;
       const metadata = data?.metadata || {};
       setSubjectsMetadata(metadata);
-      setAvailableSubjects(Object.keys(metadata).sort());
+
+      // Also merge any configured subjects from database for this cohort
+      const { data: dbSubjects } = await (supabase.from("subjects" as any) as any)
+        .select("name")
+        .eq(cohort === "year_6" ? "available_year_6" : "available_year_9", true)
+        .eq("is_active", true);
+
+      const allKeys = new Set([...Object.keys(metadata), ...(dbSubjects || []).map((s: any) => s.name)]);
+      setAvailableSubjects(Array.from(allKeys).sort());
     } catch (error: any) {
       console.error("Error fetching subject metadata:", error);
       // Fallback subjects if edge function is unreachable

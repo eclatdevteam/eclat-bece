@@ -22,6 +22,8 @@ export default function StudentPractice() {
   const [search, setSearch] = useState("");
   const [difficulty, setDifficulty] = useState("all");
 
+  const [cohortSubjects, setCohortSubjects] = useState<Array<{ name: string; icon: string; category: string }>>([]);
+
   useEffect(() => {
     const fetchQuestionData = async () => {
       if (!user) return;
@@ -43,19 +45,27 @@ export default function StudentPractice() {
         ? 'topic_question_counts_year6'
         : 'topic_question_counts_year9';
 
-      // 1. Fetch subject counts efficiently using count: 'exact' and head: true
-      const subjectsToFetch = ["Mathematics", "English Language", "Basic Science", "Social Studies"];
+      // 1. Fetch active subjects configured for this student's cohort
+      const { data: dbSubjects } = await (supabase.from("subjects" as any) as any)
+        .select("name, icon, category")
+        .eq(classYear === "year_6" ? "available_year_6" : "available_year_9", true)
+        .eq("is_active", true)
+        .order("display_order", { ascending: true })
+        .order("name", { ascending: true });
+
+      const activeSubjectList = (dbSubjects as Array<{ name: string; icon: string; category: string }>) || [];
+      setCohortSubjects(activeSubjectList);
+
       const counts: Record<string, number> = {};
-      
       await Promise.all(
-        subjectsToFetch.map(async (subject) => {
+        activeSubjectList.map(async (sub) => {
           const { count, error } = await supabase
             .from(tableName)
             .select("*", { count: 'exact', head: true })
-            .eq("subject", subject);
+            .eq("subject", sub.name);
           
           if (!error && count !== null) {
-            counts[subject] = count;
+            counts[sub.name] = count;
           }
         })
       );
@@ -91,12 +101,12 @@ export default function StudentPractice() {
     fetchQuestionData();
   }, [user]);
 
-  const subjects = [
-    { name: "Mathematics", icon: "📐", difficulty: "Core Subject", questions: subjectCounts["Mathematics"] || 0 },
-    { name: "English Language", icon: "📚", difficulty: "Core Subject", questions: subjectCounts["English Language"] || 0 },
-    { name: "Basic Science", icon: "🔬", difficulty: "Core Subject", questions: subjectCounts["Basic Science"] || 0 },
-    { name: "Social Studies", icon: "🌍", difficulty: "Core Subject", questions: subjectCounts["Social Studies"] || 0 },
-  ];
+  const subjects = cohortSubjects.map((sub) => ({
+    name: sub.name,
+    icon: sub.icon || "📚",
+    difficulty: sub.category === "core" ? "Core Subject" : "Elective",
+    questions: subjectCounts[sub.name] || 0,
+  }));
 
   const filteredSubjects = subjects.filter((subject) => subject.name.toLowerCase().includes(search.toLowerCase()));
   const filteredTopics = topics.filter((topic) => `${topic.name} ${topic.subject}`.toLowerCase().includes(search.toLowerCase()));
