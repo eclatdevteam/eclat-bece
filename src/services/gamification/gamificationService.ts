@@ -165,7 +165,22 @@ export async function recordSessionGamification(
   let dailyChallengeOutcome: DailyChallengeResult | undefined = undefined;
 
   if (isDailyChallenge) {
-    const alreadyCompleted = lastDailyChallengeDate === todayUTC;
+    let alreadyCompleted = lastDailyChallengeDate === todayUTC;
+    if (!alreadyCompleted) {
+      const todayStart = `${todayUTC}T00:00:00.000Z`;
+      const { data: existingLedger } = await supabase
+        .from("student_points_ledger")
+        .select("id")
+        .eq("student_id", studentId)
+        .eq("source_type", "daily_challenge")
+        .gte("created_at", todayStart)
+        .limit(1);
+
+      if (existingLedger && existingLedger.length > 0) {
+        alreadyCompleted = true;
+      }
+    }
+
     dailyChallengeOutcome = evaluateDailyChallenge({
       completedQuestions: questions.length,
       scorePercentage: pointResult.accuracyPercentage,
@@ -286,14 +301,21 @@ export async function recordSessionGamification(
     updated_at: new Date().toISOString(),
   };
 
-  if (dailyChallengeOutcome?.eligible) {
+  if (isDailyChallenge || dailyChallengeOutcome?.eligible) {
     profileUpdates.last_daily_challenge_date = todayUTC;
   }
 
-  await (supabase.from("student_gamification_profile" as any) as any).upsert(
+  const { error: upsertErr } = await (supabase.from("student_gamification_profile" as any) as any).upsert(
     profileUpdates,
     { onConflict: "student_id" }
   );
+
+  if (upsertErr) {
+    console.warn("Gamification profile upsert failed, attempting direct update:", upsertErr);
+    await (supabase.from("student_gamification_profile" as any) as any)
+      .update(profileUpdates)
+      .eq("student_id", studentId);
+  }
 
   // 9. Synchronize Weekly 30-Player League Cohort points
   try {

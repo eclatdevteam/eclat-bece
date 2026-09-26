@@ -120,11 +120,26 @@ export default function StudentDashboardOverview() {
             setCurrentStreak(Number(gameProfile.streak_count));
           }
           const todayUTC = new Date().toISOString().split("T")[0];
+          const todayStart = `${todayUTC}T00:00:00.000Z`;
           let challengeDone = gameProfile.last_daily_challenge_date === todayUTC;
 
-          // Fallback: check quiz_results for pre-change completions
+          // Fallback 1: check student_points_ledger for daily_challenge entries today
           if (!challengeDone) {
-            const todayStart = `${todayUTC}T00:00:00.000Z`;
+            const { data: todayLedger } = await supabase
+              .from("student_points_ledger" as any)
+              .select("id")
+              .eq("student_id", studentData.id)
+              .eq("source_type", "daily_challenge")
+              .gte("created_at", todayStart)
+              .limit(1);
+
+            if (todayLedger && todayLedger.length > 0) {
+              challengeDone = true;
+            }
+          }
+
+          // Fallback 2: check quiz_results for pre-change completions
+          if (!challengeDone) {
             const { data: todayDailyResults } = await supabase
               .from("quiz_results")
               .select("id")
@@ -135,13 +150,14 @@ export default function StudentDashboardOverview() {
 
             if (todayDailyResults && todayDailyResults.length > 0) {
               challengeDone = true;
-
-              // Backfill so future checks are instant
-              await (supabase.from("student_gamification_profile" as any) as any).upsert(
-                { student_id: studentData.id, last_daily_challenge_date: todayUTC },
-                { onConflict: "student_id" }
-              );
             }
+          }
+
+          if (challengeDone && gameProfile.last_daily_challenge_date !== todayUTC) {
+            // Backfill so future checks are instant
+            await (supabase.from("student_gamification_profile" as any) as any)
+              .update({ last_daily_challenge_date: todayUTC })
+              .eq("student_id", studentData.id);
           }
 
           setDailyChallengeCompleted(challengeDone);

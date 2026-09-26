@@ -47,6 +47,15 @@ describe("Daily Challenge Integration via gamificationService", () => {
       if (table === "student_points_ledger") {
         return {
           insert: mockInsert,
+          select: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              eq: vi.fn().mockReturnValue({
+                gte: vi.fn().mockReturnValue({
+                  limit: vi.fn().mockResolvedValue({ data: [], error: null }),
+                }),
+              }),
+            }),
+          }),
         };
       }
       if (table === "student_badges") {
