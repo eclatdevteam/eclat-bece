@@ -216,6 +216,72 @@ export const INITIAL_18_BADGES: BadgeDefinition[] = [
   },
 ];
 
+// Category 12: Ultra-Rare Mythic Achievements (PRD Section 8.3 & Section 11.3)
+export const MYTHIC_BADGES: BadgeDefinition[] = [
+  {
+    id: "perfect_week",
+    title: "Perfect Week",
+    category: "Category 12: Mythic Achievements",
+    rarity: "mythic",
+    rewardEP: 500,
+    triggerCriteria: "Complete 7 Daily Challenges in a single week with 95%+ accuracy.",
+    celebrationCopy: "Immaculate consistency! 7 flawless daily challenges in 7 days.",
+    icon: "👑",
+  },
+  {
+    id: "grandmaster",
+    title: "Grandmaster",
+    category: "Category 12: Mythic Achievements",
+    rarity: "mythic",
+    rewardEP: 750,
+    triggerCriteria: "Achieve promotion to League Tier 8 (Éclat Champion).",
+    celebrationCopy: "Peak academic elite! You stand in the highest league tier in the country.",
+    icon: "🏆",
+  },
+  {
+    id: "double_grandmaster",
+    title: "Double Grandmaster",
+    category: "Category 12: Mythic Achievements",
+    rarity: "mythic",
+    rewardEP: 1000,
+    triggerCriteria: "Achieve 90%+ curriculum mastery across both Mathematics and English Language.",
+    celebrationCopy: "Bilingual genius of equations and language! Total mastery of core disciplines.",
+    icon: "⚡",
+  },
+  {
+    id: "the_one_percent",
+    title: "The One Percent",
+    category: "Category 12: Mythic Achievements",
+    rarity: "mythic",
+    rewardEP: 1000,
+    triggerCriteria: "Rank within the top 1% nationally in an official term or national championship.",
+    celebrationCopy: "One in a hundred! You are among the top 1% of all scholars nationally.",
+    icon: "🌌",
+  },
+  {
+    id: "invincible",
+    title: "Invincible",
+    category: "Category 12: Mythic Achievements",
+    rarity: "mythic",
+    rewardEP: 750,
+    triggerCriteria: "Win 20 consecutive arena duel matches without a single defeat.",
+    celebrationCopy: "Undefeated champion! 20 consecutive arena duel victories.",
+    icon: "⚔️",
+  },
+  {
+    id: "eclat_legend",
+    title: "Éclat Legend",
+    category: "Category 12: Mythic Achievements",
+    rarity: "mythic",
+    rewardEP: 2000,
+    triggerCriteria: "Reach Student Level 50, maintain 90%+ overall mastery, and hold Champion League status.",
+    celebrationCopy: "The pinnacle of educational excellence. Your name is etched in Éclat history.",
+    icon: "🌟",
+  },
+];
+
+export const ALL_BADGES: BadgeDefinition[] = [...INITIAL_18_BADGES, ...MYTHIC_BADGES];
+
 export interface StudentContextData {
   totalSessionsCompleted: number;
   currentStreak: number;
@@ -232,20 +298,28 @@ export interface StudentContextData {
   competitiveWinsCount?: number;
   weeklyLeaderboardRank?: number;
   overallAccuracyImprovementPercent?: number;
+  // Category 12 Mythic Context Fields
+  consecutiveDailyChallenge95PlusCount?: number;
+  leagueTier?: number;
+  consecutiveArenaWinsCount?: number;
+  nationalPercentileRank?: number; // e.g. <= 1 for top 1%
+  currentLevel?: number;
+  overallMasteryPercent?: number;
 }
 
 /**
- * Checks all 18 initial badges against current student context data
+ * Checks all available badges (initial 18 + Category 12 Mythic) against current student context data
  * Returns any newly unlocked badges that have not yet been earned
  */
 export function evaluateBadgesToUnlock(
   context: StudentContextData,
-  alreadyEarnedBadgeIds: string[]
+  alreadyEarnedBadgeIds: string[],
+  badgeList: BadgeDefinition[] = ALL_BADGES
 ): BadgeDefinition[] {
   const earnedSet = new Set(alreadyEarnedBadgeIds);
   const newlyUnlocked: BadgeDefinition[] = [];
 
-  for (const badge of INITIAL_18_BADGES) {
+  for (const badge of badgeList) {
     if (earnedSet.has(badge.id)) continue;
 
     let unlocked = false;
@@ -295,6 +369,28 @@ export function evaluateBadgesToUnlock(
         break;
       case "level_up":
         unlocked = (context.overallAccuracyImprovementPercent ?? 0) >= 10;
+        break;
+      // Category 12 Ultra-Rare Mythic Achievements
+      case "perfect_week":
+        unlocked = (context.consecutiveDailyChallenge95PlusCount ?? 0) >= 7;
+        break;
+      case "grandmaster":
+        unlocked = (context.leagueTier ?? 1) >= 8;
+        break;
+      case "double_grandmaster":
+        unlocked = (context.mathMasteryPercent ?? 0) >= 90 && (context.englishMasteryPercent ?? 0) >= 90;
+        break;
+      case "the_one_percent":
+        unlocked = (context.nationalPercentileRank !== undefined && context.nationalPercentileRank <= 1);
+        break;
+      case "invincible":
+        unlocked = (context.consecutiveArenaWinsCount ?? 0) >= 20;
+        break;
+      case "eclat_legend":
+        unlocked =
+          (context.currentLevel ?? 1) >= 50 &&
+          (context.overallMasteryPercent ?? 0) >= 90 &&
+          (context.leagueTier ?? 1) >= 8;
         break;
       default:
         break;

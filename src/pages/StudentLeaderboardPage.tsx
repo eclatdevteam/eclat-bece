@@ -21,6 +21,7 @@ export default function StudentLeaderboardPage() {
   const [annualLeaders, setAnnualLeaders] = useState<LeaderboardStudent[]>([]);
   const [mathLeaders, setMathLeaders] = useState<LeaderboardStudent[]>([]);
   const [englishLeaders, setEnglishLeaders] = useState<LeaderboardStudent[]>([]);
+  const [schoolLeaders, setSchoolLeaders] = useState<any[]>([]);
 
   const [currentUserRanks, setCurrentUserRanks] = useState<CurrentUserRankInfo>({
     weekly: 0,
@@ -80,13 +81,14 @@ export default function StudentLeaderboardPage() {
 
         // 3. Fetch comprehensive leaderboards
         const data = await fetchLeaderboardData(user.id);
-        setWeeklyLeaders(data.weekly);
-        setMonthlyLeaders(data.monthly);
-        setAnnualLeaders(data.annual);
-        setMathLeaders(data.math);
-        setEnglishLeaders(data.english);
-        setCurrentUserRanks(data.currentUserRanks);
-        setCurrentUserPoints(data.currentUserPoints);
+        setWeeklyLeaders(data.weeklyLeaders || []);
+        setMonthlyLeaders(data.monthlyLeaders || []);
+        setAnnualLeaders(data.annualLeaders || []);
+        setMathLeaders(data.mathLeaders || []);
+        setEnglishLeaders(data.englishLeaders || []);
+        setSchoolLeaders(data.schoolLeaders || []);
+        setCurrentUserRanks(data.currentUserRanks || { weekly: 0, monthly: 0, annual: 0, math: 0, english: 0 });
+        setCurrentUserPoints(data.currentUserPoints || { weekly: 0, monthly: 0, annual: 0, math: 0, english: 0 });
       } catch (error) {
         console.error("Error loading leaderboards:", error);
         toast.error("Failed to load competitive standings");
@@ -243,6 +245,7 @@ export default function StudentLeaderboardPage() {
             weeklyLeaders={weeklyLeaders}
             monthlyLeaders={monthlyLeaders}
             annualLeaders={annualLeaders}
+            schoolLeaders={schoolLeaders}
             mathLeaders={mathLeaders}
             englishLeaders={englishLeaders}
             currentUserRanks={currentUserRanks}

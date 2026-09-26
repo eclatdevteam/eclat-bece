@@ -13,12 +13,23 @@ export interface LeaderboardStudent {
   leagueTier?: number;
 }
 
+export interface SchoolLeaderboardItem {
+  rank: number;
+  schoolId: string;
+  schoolName: string;
+  totalEP: number;
+  activeStudentsCount: number;
+  avgEPPerStudent: number;
+  tierBadge?: string;
+}
+
 export interface LeaderboardData {
   weeklyLeaders: LeaderboardStudent[];
   monthlyLeaders: LeaderboardStudent[];
   annualLeaders: LeaderboardStudent[]; // All-time Hall of Fame
   mathLeaders: LeaderboardStudent[];
   englishLeaders: LeaderboardStudent[];
+  schoolLeaders?: SchoolLeaderboardItem[];
   currentUserRanks?: {
     weekly: number;
     monthly: number;
@@ -164,9 +175,45 @@ export const fetchLeaderboardData = async (userId?: string): Promise<Leaderboard
         .map((item, idx) => ({ ...item, rank: idx + 1 }));
     };
 
+    const buildSchoolList = (): SchoolLeaderboardItem[] => {
+      if (!schoolsData || schoolsData.length === 0) return [];
+      const schoolStudentsMap = new Map<string, any[]>();
+      (studentsData || []).forEach((s) => {
+        if (s.school_id) {
+          if (!schoolStudentsMap.has(s.school_id)) {
+            schoolStudentsMap.set(s.school_id, []);
+          }
+          schoolStudentsMap.get(s.school_id)!.push(s);
+        }
+      });
+
+      return schoolsData
+        .map((sch) => {
+          const schStudents = schoolStudentsMap.get(sch.id) || [];
+          const totalEP = schStudents.reduce((sum, s) => {
+            const g = gameMap.get(s.id);
+            return sum + Number(g?.lifetime_ep || 0);
+          }, 0);
+          const activeStudentsCount = schStudents.length;
+          const avgEPPerStudent = activeStudentsCount > 0 ? Math.round(totalEP / activeStudentsCount) : 0;
+
+          return {
+            rank: 0,
+            schoolId: sch.id,
+            schoolName: sch.school_name,
+            totalEP,
+            activeStudentsCount,
+            avgEPPerStudent,
+          };
+        })
+        .sort((a, b) => b.totalEP - a.totalEP)
+        .map((item, idx) => ({ ...item, rank: idx + 1 }));
+    };
+
     const weeklyLeaders = buildList("weekly_ep");
     const monthlyLeaders = buildList("monthly_ep");
     const annualLeaders = buildList("lifetime_ep");
+    const schoolLeaders = buildSchoolList();
 
     return {
       weeklyLeaders,
@@ -174,6 +221,7 @@ export const fetchLeaderboardData = async (userId?: string): Promise<Leaderboard
       annualLeaders,
       mathLeaders: [],
       englishLeaders: [],
+      schoolLeaders,
       currentUserRanks: {
         weekly: weeklyLeaders.find((s) => s.isCurrentUser)?.rank || 0,
         monthly: monthlyLeaders.find((s) => s.isCurrentUser)?.rank || 0,
@@ -197,6 +245,7 @@ export const fetchLeaderboardData = async (userId?: string): Promise<Leaderboard
       annualLeaders: [],
       mathLeaders: [],
       englishLeaders: [],
+      schoolLeaders: [],
       currentUserRanks: { weekly: 0, monthly: 0, annual: 0, math: 0, english: 0 },
       currentUserPoints: { weekly: 0, monthly: 0, annual: 0, math: 0, english: 0 },
     };

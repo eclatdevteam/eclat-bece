@@ -16,6 +16,7 @@ export default function PublicLeaderboardPage() {
   const [annualLeaders, setAnnualLeaders] = useState<LeaderboardStudent[]>([]);
   const [mathLeaders, setMathLeaders] = useState<LeaderboardStudent[]>([]);
   const [englishLeaders, setEnglishLeaders] = useState<LeaderboardStudent[]>([]);
+  const [schoolLeaders, setSchoolLeaders] = useState<any[]>([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -28,6 +29,7 @@ export default function PublicLeaderboardPage() {
           setAnnualLeaders(data.annualLeaders || []);
           setMathLeaders(data.mathLeaders || []);
           setEnglishLeaders(data.englishLeaders || []);
+          setSchoolLeaders(data.schoolLeaders || []);
         }
       } catch (err) {
         console.error("Error loading public leaderboard:", err);
@@ -118,6 +120,7 @@ export default function PublicLeaderboardPage() {
               weeklyLeaders={weeklyLeaders}
               monthlyLeaders={monthlyLeaders}
               annualLeaders={annualLeaders}
+              schoolLeaders={schoolLeaders}
               mathLeaders={mathLeaders}
               englishLeaders={englishLeaders}
               limit={5}

@@ -63,6 +63,7 @@ import AboutPage from "./pages/AboutPage";
 import PricingPage from "./pages/PricingPage";
 import FeaturesPage from "./pages/FeaturesPage";
 import PublicLeaderboardPage from "./pages/PublicLeaderboardPage";
+import CertificateVerificationPage from "./pages/CertificateVerificationPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -88,6 +89,7 @@ const App = () => (
               <Route path="/pricing" element={<PricingPage />} />
               <Route path="/features" element={<FeaturesPage />} />
               <Route path="/leaderboard" element={<PublicLeaderboardPage />} />
+              <Route path="/verify-certificate" element={<CertificateVerificationPage />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/terms-of-service" element={<TermsOfService />} />
               <Route path="/role-selection" element={<Navigate to="/auth/login/role-selection" replace />} />

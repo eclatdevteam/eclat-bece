@@ -1,8 +1,10 @@
 import { useState, useMemo } from "react";
-import { Trophy, Calendar, Crown, Clock, Medal, Flame, Calculator, BookOpen, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { Trophy, Calendar, Crown, Clock, Medal, Flame, Calculator, BookOpen, ChevronLeft, ChevronRight, Sparkles, School, Building2, Award, Gift } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { SchoolLeaderboardItem } from "@/utils/leaderboard";
 
 export interface LeaderboardStudent {
   rank: number;
@@ -41,10 +43,11 @@ interface CompetitionLeaderboardsProps {
   annualLeaders?: LeaderboardStudent[];
   mathLeaders?: LeaderboardStudent[];
   englishLeaders?: LeaderboardStudent[];
+  schoolLeaders?: SchoolLeaderboardItem[];
   currentUserRanks?: CurrentUserRankInfo;
   currentUserPoints?: CurrentUserPointInfo;
   limit?: number;
-  defaultTab?: "weekly" | "monthly" | "annual" | "math" | "english";
+  defaultTab?: "weekly" | "monthly" | "annual" | "math" | "english" | "schools";
 }
 
 const ITEMS_PER_PAGE = 10;
@@ -104,6 +107,7 @@ export const CompetitionLeaderboards = ({
   annualLeaders = [],
   mathLeaders = [],
   englishLeaders = [],
+  schoolLeaders = [],
   currentUserRanks = { weekly: 0, monthly: 0, annual: 0, math: 0, english: 0 },
   currentUserPoints = { weekly: 0, monthly: 0, annual: 0, math: 0, english: 0 },
   limit,
@@ -114,6 +118,7 @@ export const CompetitionLeaderboards = ({
   const [annualPage, setAnnualPage] = useState(1);
   const [mathPage, setMathPage] = useState(1);
   const [englishPage, setEnglishPage] = useState(1);
+  const [schoolsPage, setSchoolsPage] = useState(1);
 
   const weeklyCountdown = useMemo(() => getWeeklyCountdown(), []);
   const monthlyCountdown = useMemo(() => getMonthlyCountdown(), []);
@@ -362,9 +367,179 @@ export const CompetitionLeaderboards = ({
     );
   };
 
+  const renderSchoolLeaderboard = (
+    schools: SchoolLeaderboardItem[],
+    currentPage: number,
+    onPageChange: (page: number) => void
+  ) => {
+    const isPaginated = schools.length > ITEMS_PER_PAGE;
+    const totalPages = Math.max(1, Math.ceil(schools.length / ITEMS_PER_PAGE));
+    const safeCurrentPage = Math.min(currentPage, totalPages);
+    const startIndex = (safeCurrentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = startIndex + ITEMS_PER_PAGE;
+    const paginatedSchools = isPaginated ? schools.slice(startIndex, endIndex) : schools;
+
+    const podium = schools.filter((s) => s.rank <= 3).sort((a, b) => a.rank - b.rank);
+
+    return (
+      <div className="space-y-5 animate-fade-in">
+        {/* Banner */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3 rounded-lg border border-[#2b3a54] bg-[#111d32] px-4 py-3">
+            <span className="rounded-md bg-[#183149] p-2 text-orange-400">
+              <School size={20} />
+            </span>
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.16em] text-slate-400 font-bold">Inter-School League</p>
+              <p className="text-sm font-semibold text-slate-100">National Institutional Standings • Ranked by Collective Éclat Points</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 rounded-lg border border-[#2b3a54] bg-[#111d32] px-4 py-3 text-xs text-slate-300">
+            <Sparkles size={15} className="text-amber-400" />
+            <span>Seasonal Tournament:</span>
+            <strong className="text-white font-mono">2026 Academic Cup</strong>
+          </div>
+        </div>
+
+        {schools.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-[#2b3a54] bg-[#0e192b] py-16 text-center text-sm text-slate-400">
+            <Building2 className="h-10 w-10 text-slate-500 mx-auto mb-2" />
+            <p className="font-semibold text-slate-300">No schools currently competing in the National League.</p>
+            <p className="mt-1 text-xs text-slate-500">Schools can link students using their official School Code to climb collective rankings.</p>
+          </div>
+        ) : (
+          <>
+            {/* Top 3 Schools Podium */}
+            {safeCurrentPage === 1 && podium.length > 0 && (
+              <div className="grid min-h-[220px] grid-cols-3 items-end gap-2 rounded-xl border border-[#2b3a54] bg-[#0e192b] px-3 pb-5 pt-8 sm:gap-6 sm:px-12 shadow-inner">
+                {[2, 1, 3].map((rank) => {
+                  const sch = podium.find((item) => item.rank === rank);
+                  if (!sch) return <div key={rank} />;
+                  const winner = rank === 1;
+
+                  return (
+                    <div
+                      key={sch.rank}
+                      className={`relative flex flex-col items-center justify-end rounded-t-xl border px-2 pb-4 pt-5 transition-all ${
+                        winner
+                          ? "h-[200px] border-amber-400/50 bg-gradient-to-t from-[#1b2b48] to-[#12233f] shadow-lg"
+                          : rank === 2
+                          ? "h-[165px] border-slate-400/30 bg-[#121f37]"
+                          : "h-[145px] border-amber-700/30 bg-[#121f37]"
+                      }`}
+                    >
+                      <div className="absolute -top-4 rounded-full border border-[#2b3a54] bg-[#0e192b] px-3 py-0.5 text-xs font-black shadow-md flex items-center gap-1">
+                        {winner ? "🥇 #1" : rank === 2 ? "🥈 #2" : "🥉 #3"}
+                      </div>
+                      <span className="text-3xl mb-1">🏫</span>
+                      <p className="w-full truncate text-center text-xs font-bold text-white mt-1 px-1">
+                        {sch.schoolName}
+                      </p>
+                      <p className="text-[10px] text-slate-400">{sch.activeStudentsCount} scholars</p>
+                      <p className="text-sm font-black text-amber-400 mt-1">
+                        {sch.totalEP.toLocaleString()} <span className="text-[9px] uppercase font-bold text-slate-400">EP</span>
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
+            {/* School Rankings Table */}
+            <div className="overflow-hidden rounded-xl border border-[#2b3a54] bg-[#0e192b]">
+              <div className="divide-y divide-[#20314c]">
+                {paginatedSchools.map((sch) => (
+                  <div
+                    key={sch.schoolId}
+                    className="flex items-center justify-between px-4 py-3.5 hover:bg-[#14233c] transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="w-7 text-center font-mono text-sm font-bold text-slate-400">
+                        #{sch.rank}
+                      </span>
+                      <div className="flex items-center justify-center w-9 h-9 rounded-xl bg-[#1b2d49] text-lg border border-[#2c436b]">
+                        🏫
+                      </div>
+                      <div className="min-w-0">
+                        <p className="font-bold text-sm text-white truncate">{sch.schoolName}</p>
+                        <p className="text-xs text-slate-400">
+                          {sch.activeStudentsCount} enrolled {sch.activeStudentsCount === 1 ? 'scholar' : 'scholars'} • avg {sch.avgEPPerStudent.toLocaleString()} EP/scholar
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="text-right flex-shrink-0">
+                      <div className="text-base font-black text-amber-400 leading-tight">
+                        {sch.totalEP.toLocaleString()}{" "}
+                        <span className="text-[10px] uppercase font-bold text-slate-400">EP</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Pagination Controls */}
+            {isPaginated && (
+              <div className="flex items-center justify-between border-t border-[#2b3a54]/60 pt-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={safeCurrentPage <= 1}
+                  onClick={() => onPageChange(Math.max(1, safeCurrentPage - 1))}
+                  className="h-8 gap-1 border-[#2b3a54] bg-[#111d32] text-xs text-slate-300 hover:bg-[#192b47]"
+                >
+                  <ChevronLeft size={14} /> Previous
+                </Button>
+                <span className="text-xs text-slate-400">
+                  Page {safeCurrentPage} of {totalPages}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={safeCurrentPage >= totalPages}
+                  onClick={() => onPageChange(Math.min(totalPages, safeCurrentPage + 1))}
+                  className="h-8 gap-1 border-[#2b3a54] bg-[#111d32] text-xs text-slate-300 hover:bg-[#192b47]"
+                >
+                  Next <ChevronRight size={14} />
+                </Button>
+              </div>
+            )}
+          </>
+        )}
+      </div>
+    );
+  };
+
   return (
     <Card className="overflow-hidden rounded-xl border border-[#2b3a54] bg-transparent shadow-none">
       <CardContent className="pt-6">
+        {/* Sponsored Challenge Foundation Banner (PRD §11.3 Feature 5) */}
+        <div className="mb-6 p-4 rounded-2xl border-2 border-amber-500/40 bg-gradient-to-r from-amber-500/10 via-[#111d32] to-primary/10 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30">
+              <Trophy className="h-6 w-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h4 className="font-black text-sm text-white">
+                  2026 National Championship &amp; Institutional Foundation Challenge
+                </h4>
+                <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-black uppercase">
+                  Sponsored Foundation
+                </Badge>
+              </div>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Supported by Zenith Bank &amp; MTN Foundation STEM Grants • ₦1,500,000 Grand Academic Prize Pool
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-xs font-bold text-amber-400 bg-[#162642] px-3 py-1.5 rounded-xl border border-amber-500/30 flex-shrink-0">
+            <Gift className="h-4 w-4" />
+            <span>Verified Scholarship Grants</span>
+          </div>
+        </div>
+
         <Tabs defaultValue={defaultTab} className="w-full flex flex-col">
           {/* Scrollable / Responsive Tab Header */}
           <div className="overflow-x-auto pb-2 mb-6">
@@ -397,6 +572,15 @@ export const CompetitionLeaderboards = ({
               >
                 <Crown size={15} className="text-yellow-400" />
                 All-Time Hall of Fame
+              </TabsTrigger>
+
+              <TabsTrigger
+                value="schools"
+                className="gap-2 rounded-md px-5 py-2 text-xs sm:text-sm font-semibold text-slate-400 transition-all duration-200
+                  data-[state=active]:bg-[#243553] data-[state=active]:text-orange-300 data-[state=active]:shadow-md hover:text-white"
+              >
+                <School size={15} className="text-orange-400" />
+                Inter-School League
               </TabsTrigger>
 
               <TabsTrigger
@@ -467,7 +651,16 @@ export const CompetitionLeaderboards = ({
             )}
           </TabsContent>
 
-          {/* 4. Mathematics Specialist Content */}
+          {/* 4. Inter-School League Tab Content */}
+          <TabsContent value="schools" className="mt-0">
+            {renderSchoolLeaderboard(
+              schoolLeaders,
+              schoolsPage,
+              setSchoolsPage
+            )}
+          </TabsContent>
+
+          {/* 5. Mathematics Specialist Content */}
           <TabsContent value="math" className="mt-0">
             {renderLeaderboard(
               mathLeaders,
@@ -483,7 +676,7 @@ export const CompetitionLeaderboards = ({
             )}
           </TabsContent>
 
-          {/* 5. English Scholars Content */}
+          {/* 6. English Scholars Content */}
           <TabsContent value="english" className="mt-0">
             {renderLeaderboard(
               englishLeaders,

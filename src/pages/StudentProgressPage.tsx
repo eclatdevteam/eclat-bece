@@ -1,17 +1,25 @@
-import { TrendingUp, Loader2, BookOpen } from "lucide-react";
+import { TrendingUp, Loader2, BookOpen, Award, ShieldCheck, Printer, Sparkles } from "lucide-react";
 import { ProgressReport } from "@/components/ProgressReport";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { fetchStudentCertificates, StudentCertificate } from "@/services/gamification/certificateService";
+import { DistinctionCertificateModal } from "@/components/certificate/DistinctionCertificateModal";
 
 export default function StudentProgressPage() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  
+  // Certificates State
+  const [certificates, setCertificates] = useState<StudentCertificate[]>([]);
+  const [selectedCertificate, setSelectedCertificate] = useState<StudentCertificate | null>(null);
+  const [certModalOpen, setCertModalOpen] = useState(false);
   
   // Computed analytics
   const [totalQuestionsCompleted, setTotalQuestionsCompleted] = useState(0);
@@ -50,6 +58,10 @@ export default function StudentProgressPage() {
         }
 
         const studentId = studentData.id;
+
+        // Fetch distinction certificates
+        const studentCertificates = await fetchStudentCertificates(studentId);
+        setCertificates(studentCertificates);
 
         // 2. Fetch quiz results
         const { data: quizResults, error: quizError } = await supabase
@@ -341,8 +353,67 @@ export default function StudentProgressPage() {
             </CardContent>
           </Card>
 
+          {/* Academic Distinction Certificates */}
+          <Card className="border-2 border-amber-500/40 bg-amber-500/5 shadow-sm rounded-[2rem] overflow-hidden animate-scale-in" style={{ animationDelay: "0.2s" }}>
+            <CardHeader className="pb-3 border-b border-amber-500/20">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-base font-black text-amber-700 dark:text-amber-400">
+                  <Award className="h-5 w-5" />
+                  Distinction Certificates
+                </CardTitle>
+                <Badge variant="outline" className="border-amber-500/40 text-amber-700 dark:text-amber-400 text-xs font-bold">
+                  {certificates.length} Verified
+                </Badge>
+              </div>
+              <CardDescription className="text-xs">
+                Official collegiate and mythic credentials issued by Éclat Academy
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-3">
+              {certificates.length === 0 ? (
+                <div className="text-center py-6 space-y-2">
+                  <ShieldCheck className="h-10 w-10 text-amber-500/40 mx-auto" />
+                  <p className="text-xs font-bold text-foreground">No distinction certificates awarded yet</p>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed max-w-xs mx-auto">
+                    Attain League Tier 8 (Éclat Champion), earn 90%+ dual subject mastery, or unlock Category 12 Ultra-Rare Mythic Achievements to receive verified certificates.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {certificates.map((cert) => (
+                    <div
+                      key={cert.id}
+                      onClick={() => {
+                        setSelectedCertificate(cert);
+                        setCertModalOpen(true);
+                      }}
+                      className="p-3 rounded-xl border border-amber-500/30 bg-background/80 hover:bg-amber-500/10 cursor-pointer transition-all hover:scale-[1.02] flex items-center justify-between gap-3 shadow-xs"
+                    >
+                      <div className="min-w-0">
+                        <p className="font-bold text-xs text-foreground truncate">{cert.title}</p>
+                        <p className="text-[10px] font-mono text-muted-foreground">
+                          {cert.verification_code}
+                        </p>
+                      </div>
+                      <Button size="sm" variant="ghost" className="h-7 text-[11px] font-bold text-amber-700 dark:text-amber-400 gap-1 flex-shrink-0">
+                        <Printer className="h-3.5 w-3.5" /> View
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
         </div>
       </div>
+
+      {/* Modal */}
+      <DistinctionCertificateModal
+        open={certModalOpen}
+        onOpenChange={setCertModalOpen}
+        certificate={selectedCertificate}
+      />
     </div>
   );
 }
