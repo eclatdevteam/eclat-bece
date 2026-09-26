@@ -295,6 +295,18 @@ export async function recordSessionGamification(
     { onConflict: "student_id" }
   );
 
+  // 9. Synchronize Weekly 30-Player League Cohort points
+  try {
+    if (typeof supabase.rpc === "function") {
+      await supabase.rpc("update_student_cohort_points" as any, {
+        p_student_id: studentId,
+        p_additional_ep: netSessionEP,
+      });
+    }
+  } catch (cohortErr) {
+    console.warn("Failed to update weekly league cohort points:", cohortErr);
+  }
+
   return {
     pointResult,
     masteryOutcome,
@@ -308,4 +320,20 @@ export async function recordSessionGamification(
     levelOutcome,
     unlockedBadges,
   };
+}
+
+/**
+ * Retrieves the current week's 30-player league cohort and standings for a student.
+ */
+export async function getStudentLeagueCohort(studentId: string) {
+  try {
+    const { data, error } = await supabase.rpc("get_student_league_cohort" as any, {
+      p_student_id: studentId,
+    });
+    if (error) throw error;
+    return data;
+  } catch (err) {
+    console.error("Error retrieving league cohort:", err);
+    return null;
+  }
 }

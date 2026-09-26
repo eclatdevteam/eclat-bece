@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { getBadgeLevel, BadgeLevel } from "@/components/WinnerBadge";
 import { calculateStudentLevel, StudentLevelInfo } from "@/services/gamification/levelEngine";
+import { getLeagueTierConfig } from "@/services/gamification/leagueEngine";
 import { BadgeShowcase } from "@/components/gamification/BadgeShowcase";
 import { toast } from "sonner";
 
@@ -47,6 +48,7 @@ export default function StudentDashboardOverview() {
   // Gamification state
   const [levelInfo, setLevelInfo] = useState<StudentLevelInfo>(calculateStudentLevel(0));
   const [streakShields, setStreakShields] = useState(0);
+  const [currentLeagueTier, setCurrentLeagueTier] = useState<number>(1);
   const [pinnedBadgeIds, setPinnedBadgeIds] = useState<string[]>([]);
   const [earnedBadgeIds, setEarnedBadgeIds] = useState<string[]>([]);
   const [focusTopic, setFocusTopic] = useState<{ subject: string; topic: string; rolling_accuracy: number } | null>(null);
@@ -112,6 +114,7 @@ export default function StudentDashboardOverview() {
           const ep = Number(gameProfile.lifetime_ep || 0);
           setLevelInfo(calculateStudentLevel(ep));
           setStreakShields(Number(gameProfile.streak_shields || 0));
+          setCurrentLeagueTier(Number(gameProfile.current_league_tier || 1));
           setPinnedBadgeIds((gameProfile.pinned_badge_ids as string[]) || []);
           if (gameProfile.streak_count !== undefined) {
             setCurrentStreak(Number(gameProfile.streak_count));
@@ -528,7 +531,10 @@ export default function StudentDashboardOverview() {
         </div>
 
         {/* Pillar 3: Competitive Rank & League */}
-        <div className="rounded-lg border border-[#1d2a40] bg-[#0e192b] p-5 flex flex-col justify-between">
+        <div 
+          onClick={() => navigate('/dashboard/student/leaderboard')}
+          className="cursor-pointer group rounded-lg border border-[#1d2a40] bg-[#0e192b] p-5 flex flex-col justify-between hover:border-primary/40 transition-colors"
+        >
           <div>
             <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
@@ -537,15 +543,18 @@ export default function StudentDashboardOverview() {
                 </div>
                 <span className="text-xs font-bold text-slate-300">Competitive Rank</span>
               </div>
-              <Badge variant="outline" className="text-[10px] border-amber-400/40 text-amber-400">
-                Starter League
+              <Badge variant="outline" className={`text-[10px] ${getLeagueTierConfig(currentLeagueTier).borderColor} ${getLeagueTierConfig(currentLeagueTier).color}`}>
+                {getLeagueTierConfig(currentLeagueTier).badge} {getLeagueTierConfig(currentLeagueTier).name}
               </Badge>
             </div>
             <p className="text-2xl sm:text-3xl font-black text-amber-400">
               {monthlyRank ? `#${monthlyRank}` : "—"}
             </p>
           </div>
-          <p className="mt-3 text-[11px] text-slate-400">Nationwide cohort rank</p>
+          <p className="mt-3 text-[11px] text-slate-400 flex items-center justify-between">
+            <span>View 30-Player Cohort</span>
+            <span className="text-primary font-bold group-hover:translate-x-0.5 transition-transform">→</span>
+          </p>
         </div>
 
         {/* Pillar 4: Practice Streak & Shields */}

@@ -5,9 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 // Mock supabase client
 vi.mock("@/integrations/supabase/client", () => {
   const mockFrom = vi.fn();
+  const mockRpc = vi.fn().mockResolvedValue({ data: null, error: null });
   return {
     supabase: {
       from: mockFrom,
+      rpc: mockRpc,
     },
   };
 });

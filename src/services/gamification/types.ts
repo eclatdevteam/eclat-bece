@@ -112,3 +112,49 @@ export interface StudentLevelInfo {
   title?: string;
   unlockedFeatures: string[];
 }
+
+export type LeagueTierNumber = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8;
+
+export interface LeagueTierConfig {
+  tier: LeagueTierNumber;
+  name: string;
+  badge: string;
+  color: string;
+  borderColor: string;
+  bgColor: string;
+  description: string;
+  minLevel: number;
+}
+
+export type CohortZone = "promotion" | "retained" | "relegation";
+
+export type WeeklyLeagueOutcome = "promoted" | "retained" | "relegated" | "champion_retained";
+
+export interface CohortMember {
+  studentId: string;
+  name: string;
+  username?: string;
+  avatarUrl?: string;
+  schoolName?: string;
+  weeklyEP: number;
+  rank: number;
+  zone: CohortZone;
+  isCurrentUser?: boolean;
+}
+
+export interface WeeklyLeagueEvaluation {
+  previousTier: LeagueTierNumber;
+  newTier: LeagueTierNumber;
+  outcome: WeeklyLeagueOutcome;
+  rank: number;
+  cohortSize: number;
+  summaryMessage: string;
+}
+
+export interface WeeklyCohortWindow {
+  weekStartDate: string; // YYYY-MM-DD
+  weekEndDate: string; // YYYY-MM-DD (Sunday)
+  timeRemainingSeconds: number;
+  formattedCountdown: string;
+  isResetDay: boolean;
+}

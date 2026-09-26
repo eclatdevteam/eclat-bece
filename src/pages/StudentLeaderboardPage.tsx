@@ -1,16 +1,19 @@
-import { Trophy, Loader2, Sparkles, Flame, Calendar, Crown, Award } from "lucide-react";
+import { Trophy, Loader2, Sparkles, Flame, Calendar, Crown, Award, Users } from "lucide-react";
 import { CompetitionLeaderboards, LeaderboardStudent, CurrentUserRankInfo, CurrentUserPointInfo } from "@/components/CompetitionLeaderboards";
+import { WeeklyLeagueCohortCard } from "@/components/gamification/WeeklyLeagueCohortCard";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { fetchLeaderboardData } from "@/utils/leaderboard";
 import { Card, CardContent } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 export default function StudentLeaderboardPage() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [currentUserName, setCurrentUserName] = useState("Scholar");
+  const [activeView, setActiveView] = useState<"cohort" | "national">("cohort");
 
   // Ranks & Points state
   const [weeklyLeaders, setWeeklyLeaders] = useState<LeaderboardStudent[]>([]);
@@ -63,31 +66,30 @@ export default function StudentLeaderboardPage() {
           .maybeSingle();
 
         if (studentRecord) {
-          const { data: gameProfile } = await supabase
+          const { data: gamificationProfile } = await supabase
             .from("student_gamification_profile" as any)
             .select("current_level, current_league_tier")
             .eq("student_id", studentRecord.id)
             .maybeSingle();
 
-          if (gameProfile) {
-            setCurrentLevel(Number((gameProfile as any).current_level) || 1);
-            setLeagueTier(Number((gameProfile as any).current_league_tier) || 1);
+          if (gamificationProfile) {
+            setCurrentLevel(Number(gamificationProfile.current_level || 1));
+            setLeagueTier(Number(gamificationProfile.current_league_tier || 1));
           }
         }
 
-        // 3. Fetch leaderboard data using utility function
+        // 3. Fetch comprehensive leaderboards
         const data = await fetchLeaderboardData(user.id);
-
-        setWeeklyLeaders(data.weeklyLeaders);
-        setMonthlyLeaders(data.monthlyLeaders);
-        setAnnualLeaders(data.annualLeaders);
-        setMathLeaders(data.mathLeaders);
-        setEnglishLeaders(data.englishLeaders);
-        setCurrentUserRanks(data.currentUserRanks || { weekly: 0, monthly: 0, annual: 0, math: 0, english: 0 });
-        setCurrentUserPoints(data.currentUserPoints || { weekly: 0, monthly: 0, annual: 0, math: 0, english: 0 });
-      } catch (err) {
-        console.error("Error loading leaderboard data:", err);
-        toast.error("Failed to load leaderboard standings.");
+        setWeeklyLeaders(data.weekly);
+        setMonthlyLeaders(data.monthly);
+        setAnnualLeaders(data.annual);
+        setMathLeaders(data.math);
+        setEnglishLeaders(data.english);
+        setCurrentUserRanks(data.currentUserRanks);
+        setCurrentUserPoints(data.currentUserPoints);
+      } catch (error) {
+        console.error("Error loading leaderboards:", error);
+        toast.error("Failed to load competitive standings");
       } finally {
         setLoading(false);
       }
@@ -98,31 +100,33 @@ export default function StudentLeaderboardPage() {
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-20 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <Loader2 className="w-12 h-12 animate-spin text-sky-400 mx-auto" />
-          <p className="text-slate-400 font-medium animate-pulse text-sm">
-            Loading official national standings...
-          </p>
+      <div className="min-h-screen bg-[#071023] flex items-center justify-center p-4">
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="h-8 w-8 animate-spin text-sky-400" />
+          <p className="text-sm font-semibold text-slate-300">Loading standings...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 text-slate-100 sm:px-8">
-      {/* Header section */}
-      <div className="mb-6 animate-fade-in flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+    <div className="min-h-screen bg-[#071023] text-slate-100 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto">
+      {/* Hero Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-sky-500/30 bg-sky-500/10 px-3 py-1 text-xs font-bold text-sky-400 mb-2">
-            <Trophy size={14} />
-            <span>National Academic Arena</span>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-amber-400/20 text-amber-300 border border-amber-400/30">
+              <Trophy size={14} />
+            </span>
+            <span className="text-xs font-black uppercase tracking-wider text-amber-400">
+              Competitive Arena
+            </span>
           </div>
-          <h2 className="text-2xl font-black tracking-tight sm:text-3xl text-white">
-            Official National Leaderboards<span className="text-sky-400">.</span>
-          </h2>
-          <p className="mt-1 text-sm text-slate-400">
-            Real-time rankings powered by verified Éclat Points across BECE & Common Entrance
+          <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-white">
+            Leaderboards & League Cohorts
+          </h1>
+          <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-xl">
+            Compete in your weekly 30-scholar cohort for promotion, or challenge the nation across BECE & Common Entrance
           </p>
         </div>
 
@@ -139,7 +143,7 @@ export default function StudentLeaderboardPage() {
       </div>
 
       {/* Snapshot Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8 animate-fade-in">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6 animate-fade-in">
         {/* Weekly Rank */}
         <Card className="border border-[#2b3a54] bg-[#0e192b]/90 rounded-xl shadow-none">
           <CardContent className="p-3.5">
@@ -172,7 +176,7 @@ export default function StudentLeaderboardPage() {
             <div className="text-xl font-black text-white">
               {currentUserRanks.monthly && currentUserRanks.monthly > 0 ? `#${currentUserRanks.monthly}` : "Unranked"}
             </div>
-            <p className="text-[10px] text-slate-500 mt-0.5">₦50,000 Prize Pool</p>
+            <p className="text-[10px] text-slate-500 mt-0.5">Monthly Diligence</p>
           </CardContent>
         </Card>
 
@@ -213,21 +217,40 @@ export default function StudentLeaderboardPage() {
         </Card>
       </div>
 
-      {/* Main Leaderboards with Category Tabs */}
-      <div className="animate-scale-in">
-        <CompetitionLeaderboards
-          showCurrentUserPosition={true}
-          currentUserName={currentUserName}
-          weeklyLeaders={weeklyLeaders}
-          monthlyLeaders={monthlyLeaders}
-          annualLeaders={annualLeaders}
-          mathLeaders={mathLeaders}
-          englishLeaders={englishLeaders}
-          currentUserRanks={currentUserRanks}
-          currentUserPoints={currentUserPoints}
-          defaultTab="weekly"
-        />
-      </div>
+      {/* Main View Mode Selector: Cohort vs National */}
+      <Tabs value={activeView} onValueChange={(v) => setActiveView(v as any)} className="space-y-6">
+        <div className="flex items-center justify-between border-b border-border/40 pb-3">
+          <TabsList className="bg-[#0e192b] border border-[#2b3a54]">
+            <TabsTrigger value="cohort" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 text-xs font-bold">
+              <Users className="w-3.5 h-3.5" />
+              Weekly League Cohort (30 Scholars)
+            </TabsTrigger>
+            <TabsTrigger value="national" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 text-xs font-bold">
+              <Trophy className="w-3.5 h-3.5" />
+              National Leaderboards
+            </TabsTrigger>
+          </TabsList>
+        </div>
+
+        <TabsContent value="cohort" className="mt-0 focus-visible:outline-none">
+          <WeeklyLeagueCohortCard />
+        </TabsContent>
+
+        <TabsContent value="national" className="mt-0 focus-visible:outline-none">
+          <CompetitionLeaderboards
+            showCurrentUserPosition={true}
+            currentUserName={currentUserName}
+            weeklyLeaders={weeklyLeaders}
+            monthlyLeaders={monthlyLeaders}
+            annualLeaders={annualLeaders}
+            mathLeaders={mathLeaders}
+            englishLeaders={englishLeaders}
+            currentUserRanks={currentUserRanks}
+            currentUserPoints={currentUserPoints}
+            defaultTab="weekly"
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
