@@ -183,7 +183,7 @@ export function ParentLayout({ children }: ParentLayoutProps) {
                                             <span>Help & Resources</span>
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator className="my-1.5" />
-                                        <DropdownMenuItem onClick={signOut} className="cursor-pointer rounded-xl py-2 font-bold text-destructive focus:bg-destructive/10 focus:text-destructive">
+                                        <DropdownMenuItem onClick={() => signOut()} className="cursor-pointer rounded-xl py-2 font-bold text-destructive focus:bg-destructive/10 focus:text-destructive">
                                             <LogOut className="mr-2 h-4 w-4" />
                                             <span>Sign Out</span>
                                         </DropdownMenuItem>
@@ -224,7 +224,7 @@ export function ParentLayout({ children }: ParentLayoutProps) {
                                 );
                             })}
                             <button
-                                onClick={signOut}
+                                onClick={() => signOut()}
                                 className="flex flex-col items-center gap-1 text-muted-foreground opacity-80 hover:text-destructive"
                             >
                                 <LogOut className="h-6 w-6 stroke-[2px]" />

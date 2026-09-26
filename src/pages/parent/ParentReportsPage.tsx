@@ -167,8 +167,8 @@ export default function ParentReportsPage() {
           setQuizResults(quizRes.data as QuizItem[]);
         }
         if (gameProfRes.data) {
-          setGamificationProfile(gameProfRes.data);
-          setStreak(Number(gameProfRes.data.streak_count ?? (streakRes.data?.current_streak || 0)));
+          setGamificationProfile(gameProfRes.data as any);
+          setStreak(Number((gameProfRes.data as any)?.streak_count ?? (streakRes.data?.current_streak || 0)));
         } else {
           setStreak(streakRes.data?.current_streak || 0);
         }
@@ -222,7 +222,7 @@ export default function ParentReportsPage() {
         score: avg,
         count: data.count,
         totalQuestions: data.questions,
-        trend: latest >= avg ? "up" : "down",
+        trend: (latest >= avg ? "up" : "down") as "up" | "down",
       };
     }).sort((a, b) => b.score - a.score);
   }, [quizResults]);
