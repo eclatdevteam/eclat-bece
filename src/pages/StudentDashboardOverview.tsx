@@ -387,7 +387,15 @@ export default function StudentDashboardOverview() {
           <p className="mt-2 text-sm text-slate-400">Level {levelInfo.level} {levelInfo.title} · {levelInfo.lifetimeEP.toLocaleString()} Lifetime EP</p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Button onClick={() => navigate('/dashboard/student/practice')} className="bg-[#72c9ed] text-[#071023] hover:bg-[#91d9f4]">continue practice <ArrowRight className="ml-2 h-4 w-4" /></Button>
-            <Button onClick={() => navigate('/quiz?mode=daily_challenge')} className="bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 font-bold hover:from-amber-300 hover:to-orange-300">Daily Challenge <Flame className="ml-1.5 h-4 w-4" /></Button>
+            {dailyChallengeCompleted ? (
+              <Button disabled className="border border-emerald-500/40 bg-emerald-500/20 text-emerald-300 font-bold cursor-default">
+                Daily Challenge Done <CheckCircle2 className="ml-1.5 h-4 w-4" />
+              </Button>
+            ) : (
+              <Button onClick={() => navigate('/quiz?mode=daily_challenge')} className="bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 font-bold hover:from-amber-300 hover:to-orange-300 shadow-md shadow-amber-500/20">
+                Daily Challenge <Flame className="ml-1.5 h-4 w-4" />
+              </Button>
+            )}
             <Button onClick={() => navigate('/quiz')} variant="outline" className="border-slate-500 bg-transparent text-slate-100 hover:bg-slate-700">take mock exam</Button>
           </div>
         </div>

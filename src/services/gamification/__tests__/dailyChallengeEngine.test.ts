@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   evaluateDailyChallenge,
   DAILY_CHALLENGE_TOTAL_QUESTIONS,
+  getDailyChallengeCountdown,
 } from "../dailyChallengeEngine";
 
 describe("EP-04: Daily Challenge Service Engine", () => {
@@ -76,4 +77,27 @@ describe("EP-04: Daily Challenge Service Engine", () => {
     expect(result.totalEP).toBe(0);
     expect(result.reason).toContain("once per calendar day");
   });
+
+  describe("Daily Challenge Reset Countdown", () => {
+    it("calculates time remaining until next 00:00 UTC", () => {
+      // 18:30:00 UTC -> 5h 30m remaining until 00:00 UTC next day
+      const refDate = new Date("2026-09-26T18:30:00.000Z");
+      const countdown = getDailyChallengeCountdown(refDate);
+
+      expect(countdown.remainingHours).toBe(5);
+      expect(countdown.remainingMinutes).toBe(30);
+      expect(countdown.remainingSeconds).toBe(5 * 3600 + 30 * 60);
+      expect(countdown.formattedCountdown).toBe("5h 30m");
+    });
+
+    it("handles late night times like 23:45 UTC", () => {
+      const refDate = new Date("2026-09-26T23:45:10.000Z");
+      const countdown = getDailyChallengeCountdown(refDate);
+
+      expect(countdown.remainingHours).toBe(0);
+      expect(countdown.remainingMinutes).toBe(14);
+      expect(countdown.formattedCountdown).toBe("0h 14m");
+    });
+  });
 });
+

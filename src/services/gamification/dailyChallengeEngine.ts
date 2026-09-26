@@ -60,3 +60,35 @@ export function evaluateDailyChallenge(input: DailyChallengeInput): DailyChallen
     reason: `Claimed Daily Challenge reward: +${BASE_COMPLETION_EP} EP completion + ${accuracyTierEP} EP accuracy tier.`,
   };
 }
+
+/**
+ * Calculates time remaining until the next 00:00 UTC Daily Challenge reset
+ */
+export function getDailyChallengeCountdown(referenceDate: Date = new Date()): {
+  remainingSeconds: number;
+  remainingHours: number;
+  remainingMinutes: number;
+  formattedCountdown: string;
+} {
+  const utcNow = new Date(referenceDate.toISOString());
+  const tomorrowUTC = new Date(Date.UTC(
+    utcNow.getUTCFullYear(),
+    utcNow.getUTCMonth(),
+    utcNow.getUTCDate() + 1,
+    0, 0, 0, 0
+  ));
+
+  const diffMs = Math.max(0, tomorrowUTC.getTime() - utcNow.getTime());
+  const remainingSeconds = Math.floor(diffMs / 1000);
+  const remainingHours = Math.floor(remainingSeconds / 3600);
+  const remainingMinutes = Math.floor((remainingSeconds % 3600) / 60);
+
+  const formattedCountdown = `${remainingHours}h ${remainingMinutes}m`;
+
+  return {
+    remainingSeconds,
+    remainingHours,
+    remainingMinutes,
+    formattedCountdown,
+  };
+}

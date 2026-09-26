@@ -17,6 +17,8 @@ import {
   Eye,
   Clock,
   Swords,
+  Lock,
+  Flame,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -45,6 +47,7 @@ import { submitDuelTurn } from "@/services/gamification/arenaService";
 import { recordSessionGamification, GamificationSessionOutcome } from "@/services/gamification/gamificationService";
 import { DifficultyLevel } from "@/services/gamification/types";
 import { BadgeDefinition } from "@/services/gamification/badgeEngine";
+import { getDailyChallengeCountdown } from "@/services/gamification/dailyChallengeEngine";
 
 interface QuizOption {
   text: string;
@@ -104,6 +107,21 @@ export default function QuizPage() {
   const [gamificationOutcome, setGamificationOutcome] = useState<GamificationSessionOutcome | null>(null);
   const [badgeModalOpen, setBadgeModalOpen] = useState(false);
   const [unlockedBadges, setUnlockedBadges] = useState<BadgeDefinition[]>([]);
+
+  // Daily Challenge Hard Lock State
+  const [dailyChallengeLocked, setDailyChallengeLocked] = useState(false);
+  const [dailyChallengeCountdown, setDailyChallengeCountdown] = useState<string>("");
+
+  useEffect(() => {
+    if (!isDailyChallenge) return;
+    const updateCountdown = () => {
+      const cd = getDailyChallengeCountdown();
+      setDailyChallengeCountdown(cd.formattedCountdown);
+    };
+    updateCountdown();
+    const interval = setInterval(updateCountdown, 30000);
+    return () => clearInterval(interval);
+  }, [isDailyChallenge]);
 
   // Question Flagging States
   const [flagDialogOpen, setFlagDialogOpen] = useState(false);
@@ -222,6 +240,33 @@ export default function QuizPage() {
       setLoading(true);
 
       try {
+        // Pre-flight check: Enforce Daily Challenge single-attempt lock
+        if (isDailyChallenge) {
+          const { data: studentRecord } = await supabase
+            .from("students")
+            .select("id, class_year")
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (studentRecord?.id) {
+            const todayUTC = new Date().toISOString().split("T")[0];
+            const { data: gameProfile } = await supabase
+              .from("student_gamification_profile" as any)
+              .select("last_daily_challenge_date")
+              .eq("student_id", studentRecord.id)
+              .maybeSingle();
+
+            if (gameProfile?.last_daily_challenge_date === todayUTC) {
+              clearSessionCache();
+              const countdown = getDailyChallengeCountdown();
+              setDailyChallengeLocked(true);
+              setDailyChallengeCountdown(countdown.formattedCountdown);
+              setLoading(false);
+              return;
+            }
+          }
+        }
+
         let fetchSubject = isDailyChallenge ? null : subject;
         let fetchTopics: string[] = isDailyChallenge || !topic ? [] : [topic];
         let fetchLimit = 10;
@@ -620,6 +665,12 @@ export default function QuizPage() {
             setUnlockedBadges(outcome.unlockedBadges);
             setBadgeModalOpen(true);
           }
+
+          if (isDailyChallenge) {
+            clearSessionCache();
+            const cd = getDailyChallengeCountdown();
+            setDailyChallengeCountdown(cd.formattedCountdown);
+          }
         } catch (gameErr) {
           console.error("Error updating gamification profile:", gameErr);
         }
@@ -723,6 +774,10 @@ export default function QuizPage() {
   };
 
   const handleRetrySameQuestions = () => {
+    if (isDailyChallenge) {
+      toast.error("Daily Challenge can only be completed once per day.");
+      return;
+    }
     setCurrentQuestion(0);
     setSelectedAnswer(null);
     setShowFeedback(false);
@@ -736,6 +791,10 @@ export default function QuizPage() {
   };
 
   const handlePracticeNewQuestions = () => {
+    if (isDailyChallenge) {
+      toast.error("Daily Challenge can only be completed once per day.");
+      return;
+    }
     clearSessionCache();
     setCurrentQuestion(0);
     setSelectedAnswer(null);
@@ -759,6 +818,73 @@ export default function QuizPage() {
           <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
           <p className="text-muted-foreground">Loading questions...</p>
         </div>
+      </div>
+    );
+  }
+
+  // Daily Challenge Already Completed Gate
+  if (dailyChallengeLocked) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+        <Card className="w-full max-w-xl p-6 sm:p-8 text-center animate-scale-in shadow-2xl border-amber-500/30 bg-gradient-to-b from-card via-card to-card/95">
+          <div className="mx-auto mb-5 flex h-20 w-20 items-center justify-center rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/20 via-orange-500/10 to-transparent shadow-lg shadow-amber-500/10">
+            <Lock className="h-10 w-10 text-amber-400" />
+          </div>
+
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/15 text-emerald-400 text-xs font-bold mb-3 uppercase tracking-wider">
+            <CheckCircle2 className="w-3.5 h-3.5" />
+            Today&apos;s Challenge Completed
+          </div>
+
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-2 text-foreground">
+            Daily Challenge Locked
+          </h1>
+          <p className="text-muted-foreground text-sm max-w-md mx-auto mb-6 leading-relaxed">
+            You&apos;ve already completed your official Daily Challenge for today and claimed your rewards. Daily challenges are limited to a single attempt per day.
+          </p>
+
+          <div className="mb-6 rounded-xl border border-border/80 bg-muted/40 p-4 max-w-sm mx-auto">
+            <div className="flex items-center justify-center gap-2 text-xs font-semibold text-muted-foreground mb-1">
+              <Clock className="w-4 h-4 text-amber-400" />
+              <span>NEXT SPRINT UNLOCKS IN</span>
+            </div>
+            <div className="text-2xl font-black font-mono tracking-wider text-amber-400">
+              {dailyChallengeCountdown || getDailyChallengeCountdown().formattedCountdown}
+            </div>
+            <p className="text-[11px] text-muted-foreground mt-1">Resets at 00:00 UTC</p>
+          </div>
+
+          <div className="space-y-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Button
+                onClick={() => navigate("/dashboard/student/practice")}
+                className="w-full gap-2 font-bold h-11 bg-primary text-primary-foreground shadow-md"
+                size="lg"
+              >
+                <Sparkles className="w-4 h-4" />
+                Practice by Topic
+              </Button>
+              <Button
+                onClick={() => navigate("/dashboard/student/arena")}
+                variant="outline"
+                className="w-full gap-2 font-bold h-11 border-purple-500/40 text-purple-400 hover:bg-purple-950/30"
+                size="lg"
+              >
+                <Swords className="w-4 h-4 text-purple-400" />
+                Duel of Minds
+              </Button>
+            </div>
+            <Button
+              onClick={() => navigate("/dashboard/student")}
+              variant="ghost"
+              className="w-full font-semibold h-11"
+              size="lg"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Return to Dashboard
+            </Button>
+          </div>
+        </Card>
       </div>
     );
   }
@@ -907,26 +1033,49 @@ export default function QuizPage() {
             </div>
           </div>
 
-          <div className="space-y-3">
-            <Button
-              onClick={handleRetrySameQuestions}
-              variant="default"
-              className="w-full gap-2 font-bold text-base h-12 shadow-md"
-              size="lg"
-            >
-              <RotateCcw className="w-5 h-5" />
-              Try Again (Same Questions)
-            </Button>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Button
-                onClick={handlePracticeNewQuestions}
-                variant="outline"
-                className="w-full gap-2 font-semibold h-11"
-                size="lg"
-              >
-                <Sparkles className="w-4 h-4 text-primary" />
-                Practice New Questions
-              </Button>
+          {isDailyChallenge ? (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-amber-500/40 bg-gradient-to-r from-amber-500/10 via-slate-900 to-amber-500/5 p-4 text-left">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Flame className="h-5 w-5 text-amber-400" />
+                  <span className="text-sm font-bold text-amber-300">Daily Challenge Completed • Single Attempt Locked</span>
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Congratulations on finishing today&apos;s sprint! Daily challenges can only be attempted once per calendar day to maintain fair competitive standards and league rankings.
+                </p>
+                <div className="mt-2.5 flex items-center gap-1.5 text-xs font-semibold text-amber-200/90">
+                  <Clock className="h-3.5 w-3.5 text-amber-400" />
+                  <span>Next challenge unlocks in: <span className="font-mono text-amber-300 font-bold">{dailyChallengeCountdown || getDailyChallengeCountdown().formattedCountdown}</span> (00:00 UTC)</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Button
+                  onClick={() => {
+                    clearSessionCache();
+                    navigate("/dashboard/student/practice");
+                  }}
+                  variant="default"
+                  className="w-full gap-2 font-bold h-11 bg-primary text-primary-foreground shadow-md"
+                  size="lg"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Practice by Topic
+                </Button>
+                <Button
+                  onClick={() => {
+                    clearSessionCache();
+                    navigate("/dashboard/student/arena");
+                  }}
+                  variant="outline"
+                  className="w-full gap-2 font-bold h-11 border-purple-500/40 text-purple-300 hover:bg-purple-950/30"
+                  size="lg"
+                >
+                  <Swords className="w-4 h-4 text-purple-400" />
+                  Duel in the Arena
+                </Button>
+              </div>
+
               <Button
                 onClick={handleBackToDashboard}
                 variant="ghost"
@@ -937,7 +1086,39 @@ export default function QuizPage() {
                 Back to Dashboard
               </Button>
             </div>
-          </div>
+          ) : (
+            <div className="space-y-3">
+              <Button
+                onClick={handleRetrySameQuestions}
+                variant="default"
+                className="w-full gap-2 font-bold text-base h-12 shadow-md"
+                size="lg"
+              >
+                <RotateCcw className="w-5 h-5" />
+                Try Again (Same Questions)
+              </Button>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Button
+                  onClick={handlePracticeNewQuestions}
+                  variant="outline"
+                  className="w-full gap-2 font-semibold h-11"
+                  size="lg"
+                >
+                  <Sparkles className="w-4 h-4 text-primary" />
+                  Practice New Questions
+                </Button>
+                <Button
+                  onClick={handleBackToDashboard}
+                  variant="ghost"
+                  className="w-full font-semibold h-11"
+                  size="lg"
+                >
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Dashboard
+                </Button>
+              </div>
+            </div>
+          )}
         </Card>
 
         {/* Snapshot Modal mounted on results screen */}
