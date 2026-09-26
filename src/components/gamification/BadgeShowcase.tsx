@@ -1,15 +1,20 @@
 import { useState } from "react";
-import { Award, Plus, Sparkles, Check } from "lucide-react";
+import { Award, Plus, Sparkles, Check, Trophy } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { INITIAL_18_BADGES, BadgeDefinition } from "@/services/gamification/badgeEngine";
+import { INITIAL_18_BADGES } from "@/services/gamification/badgeEngine";
+import { BadgeGalleryModal } from "./BadgeGalleryModal";
+import { toast } from "sonner";
 
 interface BadgeShowcaseProps {
   earnedBadgeIds: string[];
   pinnedBadgeIds: string[];
   onUpdatePinnedBadges: (newPinnedIds: string[]) => Promise<void>;
   unlockedSlotsCount?: number;
+  currentStreak?: number;
+  completedQuizzesCount?: number;
+  averageScore?: number;
 }
 
 export function BadgeShowcase({
@@ -17,8 +22,12 @@ export function BadgeShowcase({
   pinnedBadgeIds,
   onUpdatePinnedBadges,
   unlockedSlotsCount = 5,
+  currentStreak = 0,
+  completedQuizzesCount = 0,
+  averageScore = 0,
 }: BadgeShowcaseProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
   const [selectedSlotIndex, setSelectedSlotIndex] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -63,9 +72,25 @@ export function BadgeShowcase({
     }
   };
 
+  const handleTogglePinBadge = async (badgeId: string) => {
+    if (pinnedBadgeIds.includes(badgeId)) {
+      const nextPinned = pinnedBadgeIds.filter((id) => id !== badgeId);
+      await onUpdatePinnedBadges(nextPinned);
+      toast.info("Badge unpinned from showcase.");
+    } else {
+      if (pinnedBadgeIds.length >= unlockedSlotsCount) {
+        toast.error(`Showcase is full (${unlockedSlotsCount} slots max). Unpin a badge first!`);
+        return;
+      }
+      const nextPinned = [...pinnedBadgeIds, badgeId];
+      await onUpdatePinnedBadges(nextPinned);
+      toast.success("Badge pinned to showcase! 🎉");
+    }
+  };
+
   return (
     <div className="rounded-xl border border-[#1d2a40] bg-[#0e192b] p-5 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
         <div>
           <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
             <Award className="w-5 h-5 text-primary" />
@@ -73,9 +98,19 @@ export function BadgeShowcase({
           </h3>
           <p className="text-xs text-slate-400">Pin your proudest achievements to your public profile</p>
         </div>
-        <span className="text-xs font-semibold text-primary">
-          {earnedBadgeIds.length} / {INITIAL_18_BADGES.length} Unlocked
-        </span>
+
+        <div className="flex items-center gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => setGalleryOpen(true)}
+            className="h-8 border-[#2b3a54] bg-[#111e33] text-xs font-bold text-sky-300 hover:bg-[#182944] shadow-xs"
+          >
+            <Trophy className="w-3.5 h-3.5 mr-1.5 text-amber-400" />
+            View All Badges ({earnedBadgeIds.length}/{INITIAL_18_BADGES.length})
+          </Button>
+        </div>
       </div>
 
       {/* 5-Slot Visual Showcase Grid */}
@@ -111,7 +146,7 @@ export function BadgeShowcase({
         ))}
       </div>
 
-      {/* Badge Selection Modal */}
+      {/* Quick Slot Selection Modal */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-md p-6">
           <DialogHeader>
@@ -176,6 +211,18 @@ export function BadgeShowcase({
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Comprehensive Badge Gallery & Hall of Honors Modal */}
+      <BadgeGalleryModal
+        open={galleryOpen}
+        onOpenChange={setGalleryOpen}
+        earnedBadgeIds={earnedBadgeIds}
+        pinnedBadgeIds={pinnedBadgeIds}
+        onTogglePinBadge={handleTogglePinBadge}
+        currentStreak={currentStreak}
+        completedQuizzesCount={completedQuizzesCount}
+        averageScore={averageScore}
+      />
     </div>
   );
 }

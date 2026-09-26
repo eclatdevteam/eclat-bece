@@ -584,6 +584,9 @@ export default function StudentDashboardOverview() {
           earnedBadgeIds={earnedBadgeIds}
           pinnedBadgeIds={pinnedBadgeIds}
           onUpdatePinnedBadges={handleUpdatePinnedBadges}
+          currentStreak={currentStreak}
+          completedQuizzesCount={completedQuizzesCount}
+          averageScore={averageScore}
         />
       </section>
 
