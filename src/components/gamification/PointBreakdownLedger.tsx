@@ -9,7 +9,13 @@ interface PointBreakdownLedgerProps {
 }
 
 export function PointBreakdownLedger({ outcome }: PointBreakdownLedgerProps) {
-  const { pointResult, masteryOutcome, streakOutcome, levelOutcome } = outcome;
+  const { pointResult, masteryOutcome, streakOutcome, dailyChallengeOutcome, levelOutcome } = outcome;
+
+  const totalSessionEP =
+    pointResult.totalEP +
+    (masteryOutcome?.totalBonusEP || 0) +
+    (streakOutcome?.milestoneBonusEP || 0) +
+    (dailyChallengeOutcome?.eligible ? dailyChallengeOutcome.totalEP : 0);
 
   const getCategoryIcon = (category: string) => {
     switch (category) {
@@ -25,6 +31,8 @@ export function PointBreakdownLedger({ outcome }: PointBreakdownLedgerProps) {
         return <Trophy className="w-4 h-4 text-amber-400" />;
       case "streak_bonus":
         return <Flame className="w-4 h-4 text-orange-500" />;
+      case "daily_challenge":
+        return <Trophy className="w-4 h-4 text-amber-400" />;
       default:
         return <Award className="w-4 h-4 text-primary" />;
     }
@@ -45,7 +53,7 @@ export function PointBreakdownLedger({ outcome }: PointBreakdownLedgerProps) {
         </div>
         <div className="text-right">
           <div className="text-3xl font-black text-primary flex items-center justify-end gap-1">
-            <span>+{pointResult.totalEP}</span>
+            <span>+{totalSessionEP}</span>
             <span className="text-sm font-bold text-primary/80">EP</span>
           </div>
           <span className="text-xs font-medium text-muted-foreground">
@@ -77,6 +85,28 @@ export function PointBreakdownLedger({ outcome }: PointBreakdownLedgerProps) {
             </div>
           </div>
         ))}
+
+        {/* Daily Challenge Reward if applicable */}
+        {dailyChallengeOutcome && dailyChallengeOutcome.eligible && (
+          <div className="flex items-center justify-between p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-amber-500/20 text-amber-500">
+                <Trophy className="w-4 h-4" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-amber-600 dark:text-amber-400 leading-none">
+                  Daily Challenge Completed!
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  +{dailyChallengeOutcome.baseCompletionEP} EP Completion +{dailyChallengeOutcome.accuracyTierEP} EP Accuracy Tier
+                </p>
+              </div>
+            </div>
+            <div className="font-black text-sm text-amber-600 dark:text-amber-400">
+              +{dailyChallengeOutcome.totalEP} EP
+            </div>
+          </div>
+        )}
 
         {/* Topic Mastery Transition Bonus if applicable */}
         {masteryOutcome && masteryOutcome.totalBonusEP > 0 && (
@@ -124,27 +154,20 @@ export function PointBreakdownLedger({ outcome }: PointBreakdownLedgerProps) {
       </div>
 
       {/* Level Progression Progress Bar */}
-      <div className="pt-4 border-t border-border/60">
-        <div className="flex items-center justify-between mb-1.5">
-          <div className="flex items-center gap-2">
-            <Badge variant="outline" className="font-bold border-primary/40 text-primary">
-              Level {levelOutcome.level}
-            </Badge>
-            <span className="text-xs font-semibold text-muted-foreground">
-              {levelOutcome.title}
-            </span>
-          </div>
-          <span className="text-xs font-bold text-muted-foreground">
-            {levelOutcome.lifetimeEP.toLocaleString()} EP Lifetime
+      <div className="p-3.5 rounded-xl bg-muted/30 border border-border/40">
+        <div className="flex items-center justify-between text-xs mb-1.5">
+          <span className="font-bold text-foreground">
+            Level {levelOutcome.level} • {levelOutcome.title}
+          </span>
+          <span className="text-muted-foreground font-semibold">
+            {levelOutcome.lifetimeEP.toLocaleString()} / {levelOutcome.nextLevelMinEP.toLocaleString()} EP
           </span>
         </div>
-
         <Progress value={levelOutcome.progressPercent} className="h-2 rounded-full" />
-
-        <div className="flex items-center justify-between mt-1 text-[11px] text-muted-foreground">
+        <p className="text-[11px] text-muted-foreground mt-1.5 flex items-center justify-between">
           <span>{levelOutcome.progressPercent}% to Level {levelOutcome.level + 1}</span>
-          <span>Next: {levelOutcome.nextLevelMinEP.toLocaleString()} EP</span>
-        </div>
+          <span>+{totalSessionEP} EP added</span>
+        </p>
       </div>
     </Card>
   );

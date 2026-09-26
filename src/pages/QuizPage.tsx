@@ -73,6 +73,7 @@ export default function QuizPage() {
   const topic = searchParams.get("topic");
   const assignmentId = searchParams.get("assignmentId");
   const isReviewMode = searchParams.get("review") === "true";
+  const isDailyChallenge = searchParams.get("mode") === "daily_challenge";
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -132,8 +133,12 @@ export default function QuizPage() {
 
   const getSessionCacheKey = useCallback(() => {
     if (!user) return null;
+    if (isDailyChallenge) {
+      const todayUTC = new Date().toISOString().split("T")[0];
+      return `eclat_daily_challenge_${user.id}_${todayUTC}`;
+    }
     return `eclat_quiz_cache_${user.id}_${assignmentId || subject || "mixed"}_${topic || "all"}`;
-  }, [user, assignmentId, subject, topic]);
+  }, [user, assignmentId, subject, topic, isDailyChallenge]);
 
   const clearSessionCache = useCallback(() => {
     const key = getSessionCacheKey();
@@ -212,8 +217,8 @@ export default function QuizPage() {
       setLoading(true);
 
       try {
-        let fetchSubject = subject;
-        let fetchTopics: string[] = topic ? [topic] : [];
+        let fetchSubject = isDailyChallenge ? null : subject;
+        let fetchTopics: string[] = isDailyChallenge || !topic ? [] : [topic];
         let fetchLimit = 10;
         let classYear = "";
 
@@ -571,9 +576,10 @@ export default function QuizPage() {
           const outcome = await recordSessionGamification({
             studentId: studentData.id,
             quizResultId: newQuizResult?.id,
-            subject: quizSubject || subject || "Mixed Topics",
-            topic: topic || questions[0]?.topic || "General",
+            subject: isDailyChallenge ? "Daily Challenge" : (quizSubject || subject || "Mixed Topics"),
+            topic: isDailyChallenge ? "Daily Sprint" : (topic || questions[0]?.topic || "General"),
             questions: sessionQuestionsInput,
+            isDailyChallenge,
           });
 
           setGamificationOutcome(outcome);
@@ -941,7 +947,13 @@ export default function QuizPage() {
 
           <div className="flex justify-between items-center mb-2">
             <div className="flex items-center gap-2">
-              <Badge variant="secondary">{quizSubject || subject || "Mixed Topics"}</Badge>
+              {isDailyChallenge ? (
+                <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black border-0 shadow-sm flex items-center gap-1.5 px-3 py-1">
+                  <Trophy className="w-3.5 h-3.5" /> Daily Challenge
+                </Badge>
+              ) : (
+                <Badge variant="secondary">{quizSubject || subject || "Mixed Topics"}</Badge>
+              )}
               {questions.length > 0 && question && (
                 <Button
                   variant="ghost"

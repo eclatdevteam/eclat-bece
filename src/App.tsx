@@ -119,6 +119,11 @@ const App = () => (
                   </StudentLayout>
                 </ProtectedRoute>
               } />
+              <Route path="/dashboard/student/daily-challenge" element={
+                <ProtectedRoute requiredRole="student">
+                  <Navigate to="/quiz?mode=daily_challenge" replace />
+                </ProtectedRoute>
+              } />
               <Route path="/dashboard/student/practice" element={
                 <ProtectedRoute requiredRole="student">
                   <StudentLayout>

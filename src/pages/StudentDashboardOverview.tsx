@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { BookOpen, ClipboardList, TrendingUp, Trophy, Target, ArrowRight, Copy, Check, Swords, Sparkles, BarChart3, Shield, Zap, Flame, Award, AlertCircle } from "lucide-react";
+import { BookOpen, ClipboardList, TrendingUp, Trophy, Target, ArrowRight, Copy, Check, Swords, Sparkles, BarChart3, Shield, Zap, Flame, Award, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -50,6 +50,7 @@ export default function StudentDashboardOverview() {
   const [pinnedBadgeIds, setPinnedBadgeIds] = useState<string[]>([]);
   const [earnedBadgeIds, setEarnedBadgeIds] = useState<string[]>([]);
   const [focusTopic, setFocusTopic] = useState<{ subject: string; topic: string; rolling_accuracy: number } | null>(null);
+  const [dailyChallengeCompleted, setDailyChallengeCompleted] = useState(false);
 
   // Badge state
   const [totalWins, setTotalWins] = useState(0);
@@ -115,6 +116,8 @@ export default function StudentDashboardOverview() {
           if (gameProfile.streak_count !== undefined) {
             setCurrentStreak(Number(gameProfile.streak_count));
           }
+          const todayUTC = new Date().toISOString().split("T")[0];
+          setDailyChallengeCompleted(gameProfile.last_daily_challenge_date === todayUTC);
         } else {
           // Fallback to legacy streak data if gamification profile is pending
           const { data: streakData } = await supabase
@@ -381,7 +384,73 @@ export default function StudentDashboardOverview() {
           <p className="mt-2 text-sm text-slate-400">Level {levelInfo.level} {levelInfo.title} · {levelInfo.lifetimeEP.toLocaleString()} Lifetime EP</p>
           <div className="mt-6 flex flex-wrap gap-3">
             <Button onClick={() => navigate('/dashboard/student/practice')} className="bg-[#72c9ed] text-[#071023] hover:bg-[#91d9f4]">continue practice <ArrowRight className="ml-2 h-4 w-4" /></Button>
+            <Button onClick={() => navigate('/quiz?mode=daily_challenge')} className="bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 font-bold hover:from-amber-300 hover:to-orange-300">Daily Challenge <Flame className="ml-1.5 h-4 w-4" /></Button>
             <Button onClick={() => navigate('/quiz')} variant="outline" className="border-slate-500 bg-transparent text-slate-100 hover:bg-slate-700">take mock exam</Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Daily Challenge Spotlight Card (PRD Section 3.6 & Epic EP-04) */}
+      <section className={`mb-7 overflow-hidden rounded-xl border p-5 shadow-lg transition-all ${
+        dailyChallengeCompleted
+          ? "border-emerald-500/40 bg-gradient-to-r from-emerald-500/15 via-[#13282c] to-[#0e192b]"
+          : "border-amber-500/50 bg-gradient-to-r from-amber-500/15 via-[#231e33] to-[#0e192b]"
+      }`}>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start gap-4">
+            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border shadow-inner ${
+              dailyChallengeCompleted
+                ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
+                : "bg-amber-500/20 text-amber-400 border-amber-500/30"
+            }`}>
+              {dailyChallengeCompleted ? (
+                <CheckCircle2 className="h-6 w-6 text-emerald-400" />
+              ) : (
+                <Flame className="h-6 w-6 text-amber-400" />
+              )}
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <span className={`text-[10px] font-black uppercase tracking-wider ${
+                  dailyChallengeCompleted ? "text-emerald-400" : "text-amber-400"
+                }`}>
+                  {dailyChallengeCompleted ? "Daily Challenge Claimed" : "Daily Challenge • 10 Questions"}
+                </span>
+                <span className={`rounded px-1.5 py-0.2 text-[9px] font-bold ${
+                  dailyChallengeCompleted ? "bg-emerald-400/20 text-emerald-300" : "bg-amber-400/20 text-amber-300"
+                }`}>
+                  +20 to +50 EP
+                </span>
+              </div>
+              <h3 className="text-lg font-black text-white mt-0.5">
+                {dailyChallengeCompleted
+                  ? "Today's Challenge Crushed! 🌟"
+                  : "Today's 10-Question Sprint"}
+              </h3>
+              <p className="text-xs text-slate-300 mt-1 max-w-xl">
+                {dailyChallengeCompleted
+                  ? "You claimed today's rewards and protected your daily streak! Fresh challenge unlocks at 00:00 UTC."
+                  : `Curated mixed questions across your curriculum. Earn +20 baseline EP up to +50 EP for high accuracy and keep your ${currentStreak}-day streak alive!`}
+              </p>
+            </div>
+          </div>
+
+          <div className="shrink-0 w-full sm:w-auto">
+            {dailyChallengeCompleted ? (
+              <Button
+                disabled
+                className="w-full sm:w-auto border border-emerald-500/40 bg-emerald-500/20 text-emerald-300 font-bold cursor-default"
+              >
+                <CheckCircle2 className="mr-1.5 h-4 w-4" /> Completed for Today
+              </Button>
+            ) : (
+              <Button
+                onClick={() => navigate("/quiz?mode=daily_challenge")}
+                className="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black hover:from-amber-400 hover:to-orange-400 shadow-lg shadow-amber-500/20"
+              >
+                Start Daily Challenge →
+              </Button>
+            )}
           </div>
         </div>
       </section>

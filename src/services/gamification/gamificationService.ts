@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { calculateSessionPoints } from "./pointsEngine";
 import { updateTopicMastery } from "./masteryEngine";
 import { evaluateDailyStreak } from "./streakEngine";
+import { evaluateDailyChallenge } from "./dailyChallengeEngine";
 import { calculateStudentLevel } from "./levelEngine";
 import { evaluateBadgesToUnlock, BadgeDefinition } from "./badgeEngine";
 import {
@@ -15,6 +16,7 @@ import {
   TopicMasteryState,
   StreakState,
   StudentLevelInfo,
+  DailyChallengeResult,
 } from "./types";
 
 export interface RecordSessionGamificationParams {
@@ -24,6 +26,7 @@ export interface RecordSessionGamificationParams {
   topic?: string;
   questions: SessionQuestionInput[];
   isDedicatedFocusSession?: boolean;
+  isDailyChallenge?: boolean;
 }
 
 export interface GamificationSessionOutcome {
@@ -41,6 +44,7 @@ export interface GamificationSessionOutcome {
     streakPreservedByShield: boolean;
     milestoneBonusEP: number;
   };
+  dailyChallengeOutcome?: DailyChallengeResult;
   levelOutcome: StudentLevelInfo;
   unlockedBadges: BadgeDefinition[];
 }
@@ -55,6 +59,7 @@ export async function recordSessionGamification(
     topic = "General",
     questions,
     isDedicatedFocusSession = false,
+    isDailyChallenge = false,
   } = params;
 
   // 1. Calculate session points and itemized breakdown
@@ -74,6 +79,7 @@ export async function recordSessionGamification(
   const longestStreak = Number(profile?.longest_streak || 0);
   const streakShields = Number(profile?.streak_shields || 0);
   const lastQualifyingDate = profile?.last_qualifying_date || null;
+  const lastDailyChallengeDate = profile?.last_daily_challenge_date || null;
 
   let netSessionEP = pointResult.totalEP;
 
@@ -93,7 +99,7 @@ export async function recordSessionGamification(
 
   // 3. Process Topic Mastery (Rolling 30-question window)
   let masteryOutcome: GamificationSessionOutcome["masteryOutcome"] = undefined;
-  if (topic && questions.length > 0) {
+  if (topic && questions.length > 0 && !isDailyChallenge) {
     const { data: existingMastery } = await supabase
       .from("student_topic_mastery" as any)
       .select("*")
@@ -154,8 +160,36 @@ export async function recordSessionGamification(
     };
   }
 
-  // 4. Evaluate Streak & Streak Shields
+  // 4. Process Daily Challenge if applicable (PRD Section 3.6 & Epic EP-04)
   const todayUTC = new Date().toISOString().split("T")[0];
+  let dailyChallengeOutcome: DailyChallengeResult | undefined = undefined;
+
+  if (isDailyChallenge) {
+    const alreadyCompleted = lastDailyChallengeDate === todayUTC;
+    dailyChallengeOutcome = evaluateDailyChallenge({
+      completedQuestions: questions.length,
+      scorePercentage: pointResult.accuracyPercentage,
+      alreadyCompletedToday: alreadyCompleted,
+    });
+
+    if (dailyChallengeOutcome.eligible && dailyChallengeOutcome.totalEP > 0) {
+      netSessionEP += dailyChallengeOutcome.totalEP;
+      ledgerEntries.push({
+        student_id: studentId,
+        amount: dailyChallengeOutcome.totalEP,
+        source_type: "daily_challenge",
+        reference_id: quizResultId || null,
+        metadata: {
+          label: "Daily Challenge Reward",
+          description: dailyChallengeOutcome.reason,
+          baseCompletionEP: dailyChallengeOutcome.baseCompletionEP,
+          accuracyTierEP: dailyChallengeOutcome.accuracyTierEP,
+        },
+      });
+    }
+  }
+
+  // 5. Evaluate Streak & Streak Shields
   const currentStreakState: StreakState = {
     currentStreak,
     longestStreak,
@@ -167,6 +201,7 @@ export async function recordSessionGamification(
     currentState: currentStreakState,
     dateUTC: todayUTC,
     questionsAnsweredToday: questions.length,
+    dailyChallengeCompletedToday: dailyChallengeOutcome?.eligible,
   });
 
   if (streakEval.streakBonusEP > 0) {
@@ -183,12 +218,12 @@ export async function recordSessionGamification(
     });
   }
 
-  // 5. Batch write ledger entries
+  // 6. Batch write ledger entries
   if (ledgerEntries.length > 0) {
     await supabase.from("student_points_ledger" as any).insert(ledgerEntries);
   }
 
-  // 6. Check and award any newly unlocked Badges
+  // 7. Check and award any newly unlocked Badges
   const { data: existingBadges } = await supabase
     .from("student_badges" as any)
     .select("badge_id")
@@ -198,7 +233,7 @@ export async function recordSessionGamification(
 
   const unlockedBadges = evaluateBadgesToUnlock(
     {
-      totalSessionsCompleted: 1, // At least 1
+      totalSessionsCompleted: 1,
       currentStreak: streakEval.newState.currentStreak,
       sessionQuestionsCount: questions.length,
       sessionAccuracyPercent: pointResult.accuracyPercentage,
@@ -234,23 +269,29 @@ export async function recordSessionGamification(
     });
   }
 
-  // 7. Update Student Gamification Profile with cumulative totals
+  // 8. Update Student Gamification Profile with cumulative totals
   const newLifetimeEP = currentLifetimeEP + netSessionEP;
   const levelOutcome = calculateStudentLevel(newLifetimeEP);
 
+  const profileUpdates: any = {
+    student_id: studentId,
+    lifetime_ep: newLifetimeEP,
+    current_level: levelOutcome.level,
+    weekly_ep: currentWeeklyEP + netSessionEP,
+    monthly_ep: currentMonthlyEP + netSessionEP,
+    streak_count: streakEval.newState.currentStreak,
+    longest_streak: streakEval.newState.longestStreak,
+    last_qualifying_date: streakEval.newState.lastQualifyingDate,
+    streak_shields: streakEval.newState.streakShields,
+    updated_at: new Date().toISOString(),
+  };
+
+  if (dailyChallengeOutcome?.eligible) {
+    profileUpdates.last_daily_challenge_date = todayUTC;
+  }
+
   await (supabase.from("student_gamification_profile" as any) as any).upsert(
-    {
-      student_id: studentId,
-      lifetime_ep: newLifetimeEP,
-      current_level: levelOutcome.level,
-      weekly_ep: currentWeeklyEP + netSessionEP,
-      monthly_ep: currentMonthlyEP + netSessionEP,
-      streak_count: streakEval.newState.currentStreak,
-      longest_streak: streakEval.newState.longestStreak,
-      last_qualifying_date: streakEval.newState.lastQualifyingDate,
-      streak_shields: streakEval.newState.streakShields,
-      updated_at: new Date().toISOString(),
-    },
+    profileUpdates,
     { onConflict: "student_id" }
   );
 
@@ -263,6 +304,7 @@ export async function recordSessionGamification(
       streakPreservedByShield: streakEval.streakPreservedByShield,
       milestoneBonusEP: streakEval.streakBonusEP,
     },
+    dailyChallengeOutcome,
     levelOutcome,
     unlockedBadges,
   };
