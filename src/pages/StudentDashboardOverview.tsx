@@ -120,7 +120,31 @@ export default function StudentDashboardOverview() {
             setCurrentStreak(Number(gameProfile.streak_count));
           }
           const todayUTC = new Date().toISOString().split("T")[0];
-          setDailyChallengeCompleted(gameProfile.last_daily_challenge_date === todayUTC);
+          let challengeDone = gameProfile.last_daily_challenge_date === todayUTC;
+
+          // Fallback: check quiz_results for pre-change completions
+          if (!challengeDone) {
+            const todayStart = `${todayUTC}T00:00:00.000Z`;
+            const { data: todayDailyResults } = await supabase
+              .from("quiz_results")
+              .select("id")
+              .eq("student_id", studentData.id)
+              .eq("subject", "Daily Challenge")
+              .gte("completed_at", todayStart)
+              .limit(1);
+
+            if (todayDailyResults && todayDailyResults.length > 0) {
+              challengeDone = true;
+
+              // Backfill so future checks are instant
+              await (supabase.from("student_gamification_profile" as any) as any).upsert(
+                { student_id: studentData.id, last_daily_challenge_date: todayUTC },
+                { onConflict: "student_id" }
+              );
+            }
+          }
+
+          setDailyChallengeCompleted(challengeDone);
         } else {
           // Fallback to legacy streak data if gamification profile is pending
           const { data: streakData } = await supabase

@@ -250,6 +250,9 @@ export default function QuizPage() {
 
           if (studentRecord?.id) {
             const todayUTC = new Date().toISOString().split("T")[0];
+            let alreadyCompletedToday = false;
+
+            // Primary check: gamification profile date stamp
             const { data: gameProfile } = await supabase
               .from("student_gamification_profile" as any)
               .select("last_daily_challenge_date")
@@ -257,6 +260,33 @@ export default function QuizPage() {
               .maybeSingle();
 
             if (gameProfile?.last_daily_challenge_date === todayUTC) {
+              alreadyCompletedToday = true;
+            }
+
+            // Fallback check: quiz_results for pre-change completions
+            // (catches challenges taken before last_daily_challenge_date was tracked)
+            if (!alreadyCompletedToday) {
+              const todayStart = `${todayUTC}T00:00:00.000Z`;
+              const { data: todayDailyResults } = await supabase
+                .from("quiz_results")
+                .select("id")
+                .eq("student_id", studentRecord.id)
+                .eq("subject", "Daily Challenge")
+                .gte("completed_at", todayStart)
+                .limit(1);
+
+              if (todayDailyResults && todayDailyResults.length > 0) {
+                alreadyCompletedToday = true;
+
+                // Backfill the gamification profile so future checks are fast
+                await (supabase.from("student_gamification_profile" as any) as any).upsert(
+                  { student_id: studentRecord.id, last_daily_challenge_date: todayUTC },
+                  { onConflict: "student_id" }
+                );
+              }
+            }
+
+            if (alreadyCompletedToday) {
               clearSessionCache();
               const countdown = getDailyChallengeCountdown();
               setDailyChallengeLocked(true);
