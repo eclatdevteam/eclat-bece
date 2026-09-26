@@ -24,6 +24,7 @@ import {
   PROMOTION_CUTOFF_RANK,
   RELEGATION_START_RANK,
 } from "@/services/gamification/leagueEngine";
+import { SocialShareModal } from "@/components/gamification/SocialShareModal";
 
 interface WeeklyLeagueCohortCardProps {
   onShareRank?: () => void;
@@ -48,6 +49,7 @@ export function WeeklyLeagueCohortCard({
   } = useLeagueCohort();
 
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -86,7 +88,8 @@ export function WeeklyLeagueCohortCard({
   }
 
   return (
-    <Card className="border border-border/80 bg-gradient-to-b from-card via-card/95 to-background shadow-md overflow-hidden">
+    <>
+      <Card className="border border-border/80 bg-gradient-to-b from-card via-card/95 to-background shadow-md overflow-hidden">
       {/* Header Banner */}
       <CardHeader className="p-5 sm:p-6 pb-4 border-b border-border/60 bg-muted/20">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -107,14 +110,12 @@ export function WeeklyLeagueCohortCard({
                 {tierConfig.description}
               </CardDescription>
             </div>
-          </div>
-
           <div className="flex items-center gap-2 self-end sm:self-center">
-            {onShareRank && currentUserMember && (
+            {currentUserMember && (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={onShareRank}
+                onClick={onShareRank ? onShareRank : () => setShareModalOpen(true)}
                 className="h-8 gap-1.5 text-xs font-medium"
               >
                 <Share2 className="w-3.5 h-3.5" />
@@ -316,5 +317,26 @@ export function WeeklyLeagueCohortCard({
         </div>
       </CardContent>
     </Card>
+
+    {currentUserMember && (
+      <SocialShareModal
+        open={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        config={{
+          type: "league",
+          studentName: currentUserMember.name,
+          leagueName: tierConfig.name,
+          leagueBadge: tierConfig.badge,
+          rank: currentUserMember.rank,
+          headline: `${tierConfig.name} Rank #${currentUserMember.rank}`,
+          narrative:
+            currentUserMember.rank <= 5
+              ? `Currently ranked in the Top 5 Promotion Zone of the 30-player weekly league!`
+              : `Holding strong with ${currentUserMember.weeklyEP.toLocaleString()} EP in this week's 30-player cohort!`,
+          rewardEP: currentUserMember.weeklyEP,
+        }}
+      />
+    )}
+  </>
   );
 }

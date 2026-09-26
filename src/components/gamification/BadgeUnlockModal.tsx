@@ -4,7 +4,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { BadgeDefinition, BadgeRarity } from "@/services/gamification/badgeEngine";
-import { toast } from "sonner";
+import { SocialShareModal } from "@/components/gamification/SocialShareModal";
+import { useAuth } from "@/hooks/useAuth";
 
 interface BadgeUnlockModalProps {
   badges: BadgeDefinition[];
@@ -67,21 +68,14 @@ const RARITY_STYLES: Record<
 };
 
 export function BadgeUnlockModal({ badges, open, onClose }: BadgeUnlockModalProps) {
-  const [copied, setCopied] = useState(false);
+  const { user } = useAuth();
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [shareModalOpen, setShareModalOpen] = useState(false);
 
   if (!badges || badges.length === 0) return null;
 
   const currentBadge = badges[currentIndex] || badges[0];
   const style = RARITY_STYLES[currentBadge.rarity] || RARITY_STYLES.common;
-
-  const handleShare = () => {
-    const text = `🏆 I just unlocked the "${currentBadge.title}" badge on Éclat! ${currentBadge.celebrationCopy} (+${currentBadge.rewardEP} EP)`;
-    navigator.clipboard.writeText(text);
-    setCopied(true);
-    toast.success("Achievement copied to clipboard! Share with your friends.");
-    setTimeout(() => setCopied(false), 2500);
-  };
 
   const handleNext = () => {
     if (currentIndex < badges.length - 1) {
@@ -92,64 +86,86 @@ export function BadgeUnlockModal({ badges, open, onClose }: BadgeUnlockModalProp
   };
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-6 text-center border-2 rounded-3xl shadow-2xl animate-scale-in">
-        <DialogHeader className="items-center">
-          <Badge
-            className={`capitalize font-black tracking-wider text-xs px-3 py-1 mb-2 ${style.text} border ${style.border}`}
-            variant="outline"
-          >
-            {currentBadge.rarity} Achievement
-          </Badge>
-          <DialogTitle className="text-2xl font-black tracking-tight text-foreground flex items-center justify-center gap-2">
-            <Sparkles className="w-5 h-5 text-primary" />
-            Badge Unlocked! 🎉
-          </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground">
-            {badges.length > 1 && `(${currentIndex + 1} of ${badges.length})`}
-          </DialogDescription>
-        </DialogHeader>
+    <>
+      <Dialog open={open} onOpenChange={onClose}>
+        <DialogContent className="max-w-md p-6 text-center border-2 rounded-3xl shadow-2xl animate-scale-in">
+          <DialogHeader className="items-center">
+            <Badge
+              className={`capitalize font-black tracking-wider text-xs px-3 py-1 mb-2 ${style.text} border ${style.border}`}
+              variant="outline"
+            >
+              {currentBadge.rarity} Achievement
+            </Badge>
+            <DialogTitle className="text-2xl font-black tracking-tight text-foreground flex items-center justify-center gap-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              Badge Unlocked! 🎉
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground">
+              {badges.length > 1 && `(${currentIndex + 1} of ${badges.length})`}
+            </DialogDescription>
+          </DialogHeader>
 
-        {/* Badge Presentation Card */}
-        <div
-          className={`my-5 p-6 rounded-2xl border-2 bg-gradient-to-b ${style.bg} ${style.border} ${style.glow} flex flex-col items-center justify-center gap-3`}
-        >
-          <div className="w-20 h-20 rounded-full flex items-center justify-center bg-background/80 border-2 border-border shadow-inner text-4xl animate-bounce">
-            {currentBadge.icon}
+          {/* Badge Icon Emblem */}
+          <div className="py-5 flex justify-center">
+            <div
+              className={`relative w-28 h-28 rounded-3xl border-2 flex items-center justify-center text-5xl bg-gradient-to-br ${style.bg} ${style.border} ${style.glow} shadow-xl transition-transform hover:scale-105`}
+            >
+              <span>{currentBadge.icon}</span>
+              <div className="absolute -top-1 -right-1 flex h-4 w-4">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 bg-primary"></span>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <h4 className="text-xl font-black text-foreground">{currentBadge.title}</h4>
-            <p className="text-xs text-muted-foreground mt-0.5">{currentBadge.category}</p>
+          {/* Title & Celebration narrative */}
+          <div className="space-y-2 mb-6">
+            <h3 className="text-xl font-black text-foreground">
+              {currentBadge.title}
+            </h3>
+            <p className="text-sm text-muted-foreground max-w-xs mx-auto leading-relaxed">
+              {currentBadge.celebrationCopy}
+            </p>
+
+            <Badge className="bg-primary/20 text-primary border-primary/30 font-black text-xs px-3 py-1 mt-1">
+              +{currentBadge.rewardEP} Éclat Points
+            </Badge>
           </div>
 
-          {/* Narrative copy */}
-          <p className="text-sm font-semibold text-foreground/90 max-w-xs px-2 italic">
-            "{currentBadge.celebrationCopy}"
-          </p>
+          {/* Action Controls */}
+          <div className="flex items-center gap-3 justify-center">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShareModalOpen(true)}
+              className="flex items-center gap-1.5 font-bold"
+            >
+              <Share2 className="w-4 h-4" />
+              Share Achievement
+            </Button>
 
-          <Badge className="bg-primary/20 text-primary border-primary/30 font-black text-xs px-3 py-1 mt-1">
-            +{currentBadge.rewardEP} Éclat Points
-          </Badge>
-        </div>
+            <Button type="button" onClick={handleNext} className="font-bold px-6">
+              {currentIndex < badges.length - 1 ? "Next Badge →" : "Awesome! ✨"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-3 justify-center">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={handleShare}
-            className="flex items-center gap-1.5 font-bold"
-          >
-            {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Share2 className="w-4 h-4" />}
-            {copied ? "Copied!" : "Share Achievement"}
-          </Button>
-
-          <Button type="button" onClick={handleNext} className="font-bold px-6">
-            {currentIndex < badges.length - 1 ? "Next Badge →" : "Awesome! ✨"}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+      {/* Branded Social Share Card Generator */}
+      <SocialShareModal
+        open={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        config={{
+          type: "badge",
+          studentName: user?.user_metadata?.full_name || "Scholar",
+          badgeTitle: currentBadge.title,
+          badgeIcon: currentBadge.icon,
+          badgeRarity: currentBadge.rarity,
+          headline: `${currentBadge.title} Unlocked`,
+          narrative: currentBadge.celebrationCopy,
+          rewardEP: currentBadge.rewardEP,
+        }}
+      />
+    </>
   );
 }
