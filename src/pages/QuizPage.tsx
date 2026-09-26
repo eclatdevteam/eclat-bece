@@ -16,6 +16,7 @@ import {
   Sparkles,
   Eye,
   Clock,
+  Swords,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -40,6 +41,7 @@ import {
 import { QuestionSnapshotDialog } from "@/components/quiz/QuestionSnapshotDialog";
 import { PointBreakdownLedger } from "@/components/gamification/PointBreakdownLedger";
 import { BadgeUnlockModal } from "@/components/gamification/BadgeUnlockModal";
+import { submitDuelTurn } from "@/services/gamification/arenaService";
 import { recordSessionGamification, GamificationSessionOutcome } from "@/services/gamification/gamificationService";
 import { DifficultyLevel } from "@/services/gamification/types";
 import { BadgeDefinition } from "@/services/gamification/badgeEngine";
@@ -74,9 +76,12 @@ export default function QuizPage() {
   const assignmentId = searchParams.get("assignmentId");
   const isReviewMode = searchParams.get("review") === "true";
   const isDailyChallenge = searchParams.get("mode") === "daily_challenge";
+  const duelId = searchParams.get("duelId");
+  const isDuel = searchParams.get("mode") === "duel" || Boolean(duelId);
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
+  const [duelOutcome, setDuelOutcome] = useState<{ isMatchComplete: boolean; matchResult?: any } | null>(null);
   const [currentQuestion, setCurrentQuestion] = useState(0);
   const [selectedAnswer, setSelectedAnswer] = useState<number | null>(null);
   const [showFeedback, setShowFeedback] = useState(false);
@@ -277,6 +282,30 @@ export default function QuizPage() {
           classYear = (assignment.student as any)?.class_year;
         }
 
+        // If duel challenge, fetch duel details and question IDs
+        let duelQuestionIds: string[] = [];
+        if (duelId) {
+          const { data: duelData } = await supabase
+            .from("arena_challenges" as any)
+            .select("subject, topic, max_time_seconds, question_ids")
+            .eq("id", duelId)
+            .maybeSingle();
+
+          if (duelData) {
+            fetchSubject = duelData.subject;
+            setQuizSubject(`Duel: ${duelData.subject}`);
+            if (duelData.max_time_seconds) {
+              const mins = Math.max(1, Math.round(duelData.max_time_seconds / 60));
+              setAssignmentDuration(mins);
+              setTimeLeft(duelData.max_time_seconds);
+            }
+            if (Array.isArray(duelData.question_ids) && duelData.question_ids.length > 0) {
+              duelQuestionIds = duelData.question_ids;
+              fetchLimit = duelData.question_ids.length;
+            }
+          }
+        }
+
         const cacheKey = getSessionCacheKey();
 
         // Check session storage cache unless forced fresh
@@ -334,12 +363,16 @@ export default function QuizPage() {
             passage:${passageTableName}(title, passage_text)
           `);
 
-        if (fetchSubject) {
-          query = query.eq("subject", fetchSubject);
-        }
+        if (duelQuestionIds.length > 0) {
+          query = query.in("id", duelQuestionIds);
+        } else {
+          if (fetchSubject) {
+            query = query.eq("subject", fetchSubject);
+          }
 
-        if (fetchTopics && fetchTopics.length > 0) {
-          query = query.in("topic", fetchTopics);
+          if (fetchTopics && fetchTopics.length > 0) {
+            query = query.in("topic", fetchTopics);
+          }
         }
 
         setQuizSubject(fetchSubject || "Mixed Topics");
@@ -590,6 +623,22 @@ export default function QuizPage() {
         } catch (gameErr) {
           console.error("Error updating gamification profile:", gameErr);
         }
+
+        // If Head-to-Head Duel, submit turn to Arena Service
+        if (duelId && studentData?.id) {
+          try {
+            const timeTaken = assignmentDuration ? Math.max(5, assignmentDuration * 60 - (timeLeft || 0)) : 45;
+            const res = await submitDuelTurn({
+              challengeId: duelId,
+              studentId: studentData.id,
+              score: finalScore,
+              timeTakenSeconds: timeTaken,
+            });
+            setDuelOutcome(res);
+          } catch (dErr) {
+            console.warn("Error submitting duel turn:", dErr);
+          }
+        }
         // If it was an assignment, update assignment status and store questions_snapshot
         if (assignmentId) {
           const questionsSnapshot = {
@@ -761,6 +810,44 @@ export default function QuizPage() {
               )}
             </div>
           </div>
+
+          {/* Head-to-Head Arena Result Banner */}
+          {duelOutcome && (
+            <div className="mb-6 p-5 rounded-xl border border-purple-500/40 bg-gradient-to-r from-purple-500/20 via-[#18112c] to-[#0e192b] text-left">
+              <div className="flex items-center gap-3 mb-2">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/20 text-purple-400 flex items-center justify-center border border-purple-500/40">
+                  <Swords className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">
+                    {duelOutcome.isMatchComplete && duelOutcome.matchResult
+                      ? duelOutcome.matchResult.outcome === "win"
+                        ? "Arena Victory! 🏆"
+                        : duelOutcome.matchResult.outcome === "draw"
+                        ? "Arena Battle Tie! 🤝"
+                        : "Arena Battle Concluded 🛡️"
+                      : "Duel Round Recorded! ⚡"}
+                  </h3>
+                  <p className="text-xs text-slate-300">
+                    {duelOutcome.isMatchComplete && duelOutcome.matchResult
+                      ? duelOutcome.matchResult.isUpset
+                        ? `Upset Victory! You took down a higher-ranked opponent and claimed +${duelOutcome.matchResult.totalEP} EP!`
+                        : `Battle completed! You earned +${duelOutcome.matchResult.totalEP} EP in the Head-to-Head Arena.`
+                      : "Your score and completion time are locked in. Awaiting your opponent's round in the Arena Hub."}
+                  </p>
+                </div>
+              </div>
+              <div className="pt-2">
+                <Button
+                  size="sm"
+                  onClick={() => navigate("/dashboard/student/duel-of-minds")}
+                  className="bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs h-8"
+                >
+                  Return to Arena Hub →
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Éclat Gamification Points Ledger */}
           {gamificationOutcome && (

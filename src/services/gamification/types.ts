@@ -158,3 +158,51 @@ export interface WeeklyCohortWindow {
   formattedCountdown: string;
   isResetDay: boolean;
 }
+
+export type ArenaMatchOutcome = "win" | "draw" | "loss";
+
+export interface ArenaMatchInput {
+  outcome: ArenaMatchOutcome;
+  playerTier: number;
+  opponentTier: number;
+  playerRank?: number;
+  opponentRank?: number;
+  currentWinStreak: number;
+  matchesBetweenPairToday: number;
+}
+
+export interface ArenaMatchResult {
+  outcome: ArenaMatchOutcome;
+  baseEP: number;
+  upsetBonusEP: number;
+  streakBonusEP: number;
+  totalEP: number;
+  newWinStreak: number;
+  isUpset: boolean;
+  cappedByCollusion: boolean;
+  breakdown: PointBreakdownItem[];
+}
+
+export interface ArenaChallenge {
+  id: string;
+  challengerId: string;
+  opponentId: string;
+  challengerName: string;
+  opponentName: string;
+  challengerSchool?: string;
+  opponentSchool?: string;
+  subject: string;
+  topic?: string;
+  numberOfQuestions: number;
+  maxTimeSeconds: number;
+  status: "pending" | "accepted" | "declined" | "completed" | "expired";
+  challengerScore?: number;
+  challengerTimeSeconds?: number;
+  opponentScore?: number;
+  opponentTimeSeconds?: number;
+  winnerId?: string | null;
+  challengerEP?: number;
+  opponentEP?: number;
+  createdAt: string;
+  completedAt?: string;
+}
