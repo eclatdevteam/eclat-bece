@@ -230,10 +230,23 @@ export default function QuizPage() {
           if (isReviewMode && assignment.questions_snapshot) {
             const snap = assignment.questions_snapshot as any;
             if (snap.questions && snap.questions.length > 0) {
-              setQuestions(snap.questions);
-              setUserResponses(snap.userResponses || []);
-              setAnswers(snap.answers || []);
-              setScore(snap.answers ? snap.answers.filter(Boolean).length : 0);
+              const sortedQuestions = [...snap.questions].sort((a: any, b: any) => {
+                const orderA = a.question_number ?? a.original_order ?? 0;
+                const orderB = b.question_number ?? b.original_order ?? 0;
+                return orderA - orderB;
+              });
+
+              const sortedAnswers = sortedQuestions.map((q: any, i: number) =>
+                q.isCorrect !== undefined ? q.isCorrect : (snap.answers?.[i] ?? false)
+              );
+              const sortedResponses = sortedQuestions.map((q: any, i: number) =>
+                q.userResponse !== undefined ? q.userResponse : (snap.userResponses?.[i] ?? null)
+              );
+
+              setQuestions(sortedQuestions);
+              setUserResponses(sortedResponses);
+              setAnswers(sortedAnswers);
+              setScore(sortedAnswers.filter(Boolean).length);
               setQuizSubject(assignment.subject || "Practice Assignment");
               setQuizComplete(true);
               setLoading(false);
@@ -528,11 +541,15 @@ export default function QuizPage() {
         // If it was an assignment, update assignment status and store questions_snapshot
         if (assignmentId) {
           const questionsSnapshot = {
-            questions: questions.map((q) => ({
+            questions: questions.map((q, idx) => ({
               id: q.id,
+              question_number: idx + 1,
+              original_order: idx + 1,
               question: q.question,
               options: q.options,
               correctAnswer: q.correctAnswer,
+              userResponse: finalResponses[idx] !== undefined ? finalResponses[idx] : null,
+              isCorrect: finalAnswers[idx] !== undefined ? finalAnswers[idx] : false,
               explanation: q.explanation,
               subject: q.subject,
               image_url: q.image_url || null,

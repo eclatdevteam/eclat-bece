@@ -56,10 +56,24 @@ export default function MyChildren() {
 
     const handleReviewAssignment = async (assignment: Assignment, childName: string) => {
         if (assignment.questions_snapshot?.questions?.length) {
+            const snap = assignment.questions_snapshot;
+            const sortedQuestions = [...snap.questions].sort((a: any, b: any) => {
+                const orderA = a.question_number ?? a.original_order ?? 0;
+                const orderB = b.question_number ?? b.original_order ?? 0;
+                return orderA - orderB;
+            });
+
+            const sortedAnswers = sortedQuestions.map((q: any, i: number) =>
+                q.isCorrect !== undefined ? q.isCorrect : (snap.answers?.[i] ?? false)
+            );
+            const sortedResponses = sortedQuestions.map((q: any, i: number) =>
+                q.userResponse !== undefined ? q.userResponse : (snap.userResponses?.[i] ?? null)
+            );
+
             setReviewSnapshot({
-                questions: assignment.questions_snapshot.questions,
-                userResponses: assignment.questions_snapshot.userResponses || [],
-                answers: assignment.questions_snapshot.answers || [],
+                questions: sortedQuestions,
+                userResponses: sortedResponses,
+                answers: sortedAnswers,
                 subjectName: assignment.subject,
                 childName,
             });

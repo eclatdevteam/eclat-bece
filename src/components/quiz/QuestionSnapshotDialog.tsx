@@ -109,10 +109,17 @@ export function QuestionSnapshotDialog({
   if (!questions || questions.length === 0) return null;
 
   const currentQ = questions[currentIndex] || questions[0];
-  const userChoice = userResponses[currentIndex] ?? null;
-  const isCorrect = answers[currentIndex] ?? false;
+  const userChoice =
+    (currentQ as any).userResponse !== undefined
+      ? (currentQ as any).userResponse
+      : (userResponses[currentIndex] ?? null);
+  const isCorrect =
+    (currentQ as any).isCorrect !== undefined
+      ? (currentQ as any).isCorrect
+      : (answers[currentIndex] ?? false);
   const isFlagged = flaggedQuestionIds.includes(currentQ.id);
 
+  const qNumber = (currentQ as any).question_number || currentIndex + 1;
   const optionLetters = ["A", "B", "C", "D", "E", "F"];
 
   // Clean explanation text from redundant prefixes
@@ -135,8 +142,14 @@ export function QuestionSnapshotDialog({
                 >
                   {subjectName || currentQ.subject || "Practice"}
                 </Badge>
+                <Badge
+                  variant="secondary"
+                  className="font-black text-xs px-2 py-0.5 shrink-0 bg-primary/10 text-primary border-primary/20"
+                >
+                  Q{qNumber}
+                </Badge>
                 <DialogTitle className="text-base sm:text-lg font-black tracking-tight truncate">
-                  Question {currentIndex + 1} of {questions.length}
+                  Question {qNumber} of {questions.length}
                 </DialogTitle>
               </div>
 
@@ -172,15 +185,19 @@ export function QuestionSnapshotDialog({
 
             <DialogDescription className="text-xs text-muted-foreground pt-1">
               {isParentView
-                ? `Reviewing questions, ${childName ? `${childName}'s` : "child's"} choices, correct answers, and full solutions.`
+                ? `Reviewing questions in the order ${childName ? `${childName}` : "child"} took them, with choices, correct answers, and full solutions.`
                 : "Review question prompt, your choice, the correct answer, and full solution."}
             </DialogDescription>
 
             {/* Quick Question Jump Pill Row */}
             <div className="flex items-center gap-1.5 overflow-x-auto pt-3 pb-1 no-scrollbar">
-              {questions.map((_, idx) => {
-                const ans = answers[idx];
+              {questions.map((q, idx) => {
+                const ans =
+                  (q as any).isCorrect !== undefined
+                    ? (q as any).isCorrect
+                    : answers[idx];
                 const active = idx === currentIndex;
+                const pillNum = (q as any).question_number || idx + 1;
                 return (
                   <button
                     key={idx}
@@ -196,9 +213,10 @@ export function QuestionSnapshotDialog({
                         ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25"
                         : "bg-rose-500/15 border-rose-500/30 text-rose-600 dark:text-rose-400 hover:bg-rose-500/25"
                     }`}
-                    aria-label={`Jump to question ${idx + 1}`}
+                    aria-label={`Jump to question ${pillNum}`}
+                    title={`Question ${pillNum} (${ans ? "Correct" : "Incorrect"})`}
                   >
-                    {idx + 1}
+                    {pillNum}
                   </button>
                 );
               })}

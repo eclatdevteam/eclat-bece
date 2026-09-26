@@ -98,12 +98,26 @@ export default function ParentAssignmentsPage() {
   const [loadingReview, setLoadingReview] = useState(false);
 
   const handleReviewAssignment = async (item: AssignmentRecord) => {
-    // 1. If questions_snapshot exists, use it directly
+    // 1. If questions_snapshot exists, use it directly with guaranteed chronological order
     if (item.questions_snapshot?.questions?.length) {
+      const snap = item.questions_snapshot;
+      const sortedQuestions = [...snap.questions].sort((a: any, b: any) => {
+        const orderA = a.question_number ?? a.original_order ?? 0;
+        const orderB = b.question_number ?? b.original_order ?? 0;
+        return orderA - orderB;
+      });
+
+      const sortedAnswers = sortedQuestions.map((q: any, i: number) =>
+        q.isCorrect !== undefined ? q.isCorrect : (snap.answers?.[i] ?? false)
+      );
+      const sortedResponses = sortedQuestions.map((q: any, i: number) =>
+        q.userResponse !== undefined ? q.userResponse : (snap.userResponses?.[i] ?? null)
+      );
+
       setReviewSnapshot({
-        questions: item.questions_snapshot.questions,
-        userResponses: item.questions_snapshot.userResponses || [],
-        answers: item.questions_snapshot.answers || [],
+        questions: sortedQuestions,
+        userResponses: sortedResponses,
+        answers: sortedAnswers,
         subjectName: item.subject,
         childName: item.student_name || "Child",
       });
