@@ -506,9 +506,10 @@ export default function QuizPage() {
   ) => {
     if (!user) return;
 
-    const finalScore = overrideScore !== undefined ? overrideScore : score;
     const finalAnswers = overrideAnswers || answers;
     const finalResponses = overrideResponses || userResponses;
+    const calculatedCorrect = finalAnswers.filter(Boolean).length;
+    const finalScore = overrideScore !== undefined ? overrideScore : calculatedCorrect;
 
     try {
       // Get student ID
@@ -523,7 +524,7 @@ export default function QuizPage() {
         return;
       }
 
-      const percentage = Math.round((finalScore / questions.length) * 100);
+      const percentage = questions.length > 0 ? Math.round((finalScore / questions.length) * 100) : 0;
 
       // Insert quiz result
       const { error } = await supabase.from("quiz_results").insert({
@@ -664,7 +665,7 @@ export default function QuizPage() {
 
   // Quiz Complete View
   if (quizComplete) {
-    const percentage = Math.round((score / questions.length) * 100);
+    const percentage = questions.length > 0 ? Math.round((score / questions.length) * 100) : 0;
     const isPassed = percentage >= 50;
 
     return (
