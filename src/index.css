@@ -219,3 +219,58 @@
     scrollbar-width: none;
   }
 }
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm 10mm 12mm 10mm;
+  }
+
+  html, body {
+    background: #ffffff !important;
+    color: #0f172a !important;
+    font-size: 11pt !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Unconditionally hide all application chrome and interactive elements */
+  header,
+  nav,
+  aside,
+  [data-sidebar],
+  button,
+  .print-hidden,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Clean full width layout */
+  .parent-shell,
+  .parent-page-shell,
+  main {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+    width: 100% !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  /* Prevent awkward page break cuts across cards, panels, and table rows */
+  .parent-panel,
+  .card,
+  [class*="rounded-"],
+  tr,
+  .print-break-inside-avoid {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  /* Clean contrast for text and borders */
+  .parent-panel {
+    background: #ffffff !important;
+    border: 1px solid #cbd5e1 !important;
+    box-shadow: none !important;
+  }
+}

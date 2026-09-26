@@ -108,10 +108,12 @@ export function ParentLayout({ children }: ParentLayoutProps) {
     return (
         <SidebarProvider>
             <div className="parent-shell min-h-screen flex w-full dashboard-theme">
-                <ParentSidebar />
+                <div className="print:hidden">
+                    <ParentSidebar />
+                </div>
 
-                <div className="flex-1 flex flex-col relative">
-                    <header className="sticky top-0 z-40 border-b border-border/40 bg-background/75 backdrop-blur-xl">
+                <div className="flex-1 flex flex-col relative print:p-0 print:m-0">
+                    <header className="sticky top-0 z-40 border-b border-border/40 bg-background/75 backdrop-blur-xl print:hidden">
                         <div className="flex items-center justify-between px-4 py-4 sm:px-6">
                             <div className="flex items-center gap-4">
                                 <SidebarTrigger className="md:hidden hover:scale-105 transition-transform" />
@@ -191,11 +193,11 @@ export function ParentLayout({ children }: ParentLayoutProps) {
                         </div>
                     </header>
 
-                    <main className="flex-1 pb-24 md:pb-8">
-                        <div className="parent-page-shell">{children}</div>
+                    <main className="flex-1 pb-24 md:pb-8 print:p-0 print:pb-0">
+                        <div className="parent-page-shell print:p-0 print:m-0 print:max-w-none">{children}</div>
                     </main>
 
-                    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/60 bg-background/95 px-2 py-3 backdrop-blur-xl shadow-[0_-10px_30px_rgba(0,0,0,0.18)] md:hidden">
+                    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/60 bg-background/95 px-2 py-3 backdrop-blur-xl shadow-[0_-10px_30px_rgba(0,0,0,0.18)] md:hidden print:hidden">
                         <div className="mx-auto flex max-w-md items-center justify-around">
                             {navItems.map((item) => {
                                 const Icon = item.icon;

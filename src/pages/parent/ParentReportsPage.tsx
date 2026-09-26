@@ -21,6 +21,7 @@ import {
   Target
 } from "lucide-react";
 import { WeeklyGrowthDigestCard } from "@/components/parent/WeeklyGrowthDigestCard";
+import logoDark from "@/assets/logo-dark.png";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -285,8 +286,61 @@ export default function ParentReportsPage() {
 
   return (
     <div className="w-full px-3 pb-20 pt-6 md:px-6 print:p-0">
-      {/* Header */}
-      <div className="mb-8 flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between print:mb-4">
+      {/* Official Institutional Report Header (Only visible when printing / saving PDF) */}
+      <div className="hidden print:block mb-6 border-b-2 border-slate-900 pb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <img src={logoDark} alt="Éclat Logo" className="h-10 w-auto object-contain" />
+            <div>
+              <h1 className="text-xl font-black uppercase tracking-wider text-slate-900 leading-tight">
+                Éclat Academic Performance &amp; Diagnostic Report
+              </h1>
+              <p className="text-xs text-slate-600 font-semibold mt-0.5">
+                Continuous Scholar Diagnostic &amp; Curriculum Mastery Summary
+              </p>
+            </div>
+          </div>
+          <div className="text-right">
+            <span className="inline-block px-2.5 py-1 rounded bg-slate-100 text-slate-800 text-[10px] font-black uppercase tracking-wider border border-slate-300">
+              Verified Academic Report
+            </span>
+            <p className="text-[10px] text-slate-500 font-bold mt-1">
+              Generated: {format(new Date(), "MMMM d, yyyy")}
+            </p>
+          </div>
+        </div>
+
+        {/* Scholar Identification Metadata Strip */}
+        <div className="mt-4 grid grid-cols-4 gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs">
+          <div>
+            <span className="text-[10px] font-bold uppercase text-slate-500 block">Scholar Name</span>
+            <span className="font-black text-slate-900 text-sm">
+              {selectedChild?.profile.full_name || "Scholar"}
+            </span>
+          </div>
+          <div>
+            <span className="text-[10px] font-bold uppercase text-slate-500 block">Exam Cohort</span>
+            <span className="font-bold text-slate-900">
+              {getFormatClassName(selectedChild?.class_year)}
+            </span>
+          </div>
+          <div>
+            <span className="text-[10px] font-bold uppercase text-slate-500 block">Student Unique ID</span>
+            <span className="font-mono font-bold text-slate-700">
+              {selectedChild?.profile.unique_id || "—"}
+            </span>
+          </div>
+          <div>
+            <span className="text-[10px] font-bold uppercase text-slate-500 block">Academic Standing</span>
+            <span className="font-bold text-slate-900">
+              Level {gamificationProfile?.current_level || 1} • {(gamificationProfile?.lifetime_ep || 0).toLocaleString()} EP
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Screen Header (Hidden on print) */}
+      <div className="mb-8 flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between print:hidden">
         <div>
           <div className="parent-section-chip">Academic Service</div>
           <h1 className="mt-4 text-4xl font-black tracking-tight text-foreground md:text-5xl">
@@ -301,7 +355,7 @@ export default function ParentReportsPage() {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3 print:hidden">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Child Selector if multiple children exist */}
           {children.length > 1 && (
             <Select value={selectedChildId} onValueChange={setSelectedChildId}>
@@ -350,43 +404,43 @@ export default function ParentReportsPage() {
       )}
 
       {/* Top 4 KPI Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4 print:grid-cols-4 print:gap-2.5 print:mb-6 print:break-inside-avoid">
         {/* Overall Score */}
-        <Card className="parent-panel rounded-[1.5rem] border border-border/60 bg-card/60 p-5 shadow-sm">
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+        <Card className="parent-panel rounded-[1.5rem] border border-border/60 bg-card/60 p-5 shadow-sm print:p-3 print:bg-white print:border print:border-slate-300 print:rounded-xl print:shadow-none">
+          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground print:text-slate-600">
             Overall Score
           </div>
-          <div className="mt-3 flex items-end gap-2">
-            <div className="text-4xl font-black text-foreground">
+          <div className="mt-3 flex items-end gap-2 print:mt-1.5">
+            <div className="text-4xl font-black text-foreground print:text-2xl print:text-slate-900">
               {totalQuizzes > 0 ? `${overallAvg}%` : "—"}
             </div>
             {totalQuizzes > 0 && (
-              <div className={`mb-1 text-sm font-bold ${overallAvg >= 75 ? "text-emerald-500" : overallAvg >= 50 ? "text-amber-500" : "text-rose-500"}`}>
+              <div className={`mb-1 text-sm font-bold print:text-xs ${overallAvg >= 75 ? "text-emerald-500 print:text-emerald-700" : overallAvg >= 50 ? "text-amber-500 print:text-amber-700" : "text-rose-500 print:text-rose-700"}`}>
                 {overallAvg >= 75 ? "+Good" : overallAvg >= 50 ? "Average" : "Needs Work"}
               </div>
             )}
           </div>
-          <div className="mt-2 text-xs text-muted-foreground">
+          <div className="mt-2 text-xs text-muted-foreground print:mt-1 print:text-[10px] print:text-slate-500">
             Based on {totalQuizzes} completed quizzes
           </div>
         </Card>
 
         {/* Assignments Progress */}
-        <Card className="parent-panel rounded-[1.5rem] border border-border/60 bg-card/60 p-5 shadow-sm">
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+        <Card className="parent-panel rounded-[1.5rem] border border-border/60 bg-card/60 p-5 shadow-sm print:p-3 print:bg-white print:border print:border-slate-300 print:rounded-xl print:shadow-none">
+          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground print:text-slate-600">
             Assignments Done
           </div>
-          <div className="mt-3 flex items-end gap-2">
-            <div className="text-4xl font-black text-foreground">
+          <div className="mt-3 flex items-end gap-2 print:mt-1.5">
+            <div className="text-4xl font-black text-foreground print:text-2xl print:text-slate-900">
               {completedAssignments}
             </div>
-            <div className="mb-1 text-sm font-bold text-muted-foreground">
+            <div className="mb-1 text-sm font-bold text-muted-foreground print:text-xs print:text-slate-600">
               /{totalAssignments}
             </div>
           </div>
-          <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted">
+          <div className="mt-3 h-2 overflow-hidden rounded-full bg-muted print:mt-1.5 print:h-1.5 print:bg-slate-200">
             <div
-              className="h-full rounded-full bg-primary transition-all duration-500"
+              className="h-full rounded-full bg-primary print:bg-slate-800 transition-all duration-500"
               style={{
                 width: `${totalAssignments > 0 ? Math.round((completedAssignments / totalAssignments) * 100) : 0}%`,
               }}
@@ -395,46 +449,46 @@ export default function ParentReportsPage() {
         </Card>
 
         {/* Current Streak */}
-        <Card className="parent-panel rounded-[1.5rem] border border-border/60 bg-card/60 p-5 shadow-sm">
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+        <Card className="parent-panel rounded-[1.5rem] border border-border/60 bg-card/60 p-5 shadow-sm print:p-3 print:bg-white print:border print:border-slate-300 print:rounded-xl print:shadow-none">
+          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground print:text-slate-600">
             Current Streak
           </div>
-          <div className="mt-3 flex items-end gap-2">
-            <div className="text-4xl font-black text-foreground">
+          <div className="mt-3 flex items-end gap-2 print:mt-1.5">
+            <div className="text-4xl font-black text-foreground print:text-2xl print:text-slate-900">
               {streak}
             </div>
-            <div className="mb-1 text-sm font-bold text-amber-500">
+            <div className="mb-1 text-sm font-bold text-amber-500 print:text-xs print:text-slate-800">
               Days
             </div>
           </div>
-          <div className="mt-2 text-xs font-semibold text-amber-500">
+          <div className="mt-2 text-xs font-semibold text-amber-500 print:mt-1 print:text-[10px] print:text-slate-600">
             {streak > 0 ? "🔥 Consistency on track" : "Complete today's quiz"}
           </div>
         </Card>
 
         {/* Areas of Concern */}
-        <Card className="parent-panel rounded-[1.5rem] border border-border/60 bg-card/60 p-5 shadow-sm">
-          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground">
+        <Card className="parent-panel rounded-[1.5rem] border border-border/60 bg-card/60 p-5 shadow-sm print:p-3 print:bg-white print:border print:border-slate-300 print:rounded-xl print:shadow-none">
+          <div className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground print:text-slate-600">
             Areas of Concern
           </div>
-          <div className="mt-3 flex items-end gap-2">
-            <div className={`text-4xl font-black ${weakSubjects.length > 0 ? "text-[#ff6a70]" : "text-emerald-500"}`}>
+          <div className="mt-3 flex items-end gap-2 print:mt-1.5">
+            <div className={`text-4xl font-black print:text-2xl ${weakSubjects.length > 0 ? "text-[#ff6a70] print:text-rose-700" : "text-emerald-500 print:text-emerald-700"}`}>
               {weakSubjects.length}
             </div>
-            <div className="mb-1 text-sm font-bold text-muted-foreground">
+            <div className="mb-1 text-sm font-bold text-muted-foreground print:text-xs print:text-slate-600">
               Subjects
             </div>
           </div>
-          <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground print:mt-1 print:text-[10px]">
             {weakSubjects.length > 0 ? (
               <>
-                <CircleAlert className="h-3.5 w-3.5 text-[#ff6a70]" />
-                <span className="text-[#ff6a70] font-semibold">Action recommended</span>
+                <CircleAlert className="h-3.5 w-3.5 text-[#ff6a70] print:text-rose-700" />
+                <span className="text-[#ff6a70] print:text-rose-700 font-semibold">Action recommended</span>
               </>
             ) : (
               <>
-                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
-                <span className="text-emerald-500 font-semibold">All subjects passing</span>
+                <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 print:text-emerald-700" />
+                <span className="text-emerald-500 print:text-emerald-700 font-semibold">All subjects passing</span>
               </>
             )}
           </div>
@@ -442,14 +496,14 @@ export default function ParentReportsPage() {
       </div>
 
       {/* Main Grid: Trend Chart & Subject Breakdown */}
-      <div className="mt-8 grid gap-6 xl:grid-cols-[1.5fr_1fr]">
+      <div className="mt-8 grid gap-6 xl:grid-cols-[1.5fr_1fr] print:mt-4 print:flex print:flex-col print:gap-5">
         {/* Left Column: Trend & Quiz History */}
-        <div className="space-y-6">
-          <div className="rounded-[1.8rem] border border-border/60 bg-card/60 p-5 shadow-sm">
-            <div className="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="space-y-6 print:space-y-4">
+          <div className="rounded-[1.8rem] border border-border/60 bg-card/60 p-5 shadow-sm print:p-4 print:bg-white print:border print:border-slate-300 print:rounded-2xl print:shadow-none print:break-inside-avoid">
+            <div className="mb-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 print:mb-3">
               <div>
-                <h2 className="text-2xl font-black tracking-tight text-foreground">Score Trend History</h2>
-                <p className="text-xs text-muted-foreground">Performance progression over recent quizzes</p>
+                <h2 className="text-2xl font-black tracking-tight text-foreground print:text-lg print:text-slate-900">Score Trend History</h2>
+                <p className="text-xs text-muted-foreground print:text-slate-600">Performance progression over recent quizzes</p>
               </div>
               <div className="flex gap-1.5 print:hidden">
                 <Button
@@ -486,26 +540,26 @@ export default function ParentReportsPage() {
                 <p className="text-xs text-muted-foreground">Assign or encourage your child to complete quizzes to see trend progression.</p>
               </div>
             ) : (
-              <div className="rounded-[1.5rem] border border-border/60 bg-background/30 p-5">
-                <div className="mb-4 flex h-52 items-end gap-2 sm:gap-3">
+              <div className="rounded-[1.5rem] border border-border/60 bg-background/30 p-5 print:p-3 print:bg-slate-50/70 print:border print:border-slate-200 print:rounded-xl">
+                <div className="mb-4 flex h-52 items-end gap-2 sm:gap-3 print:h-40 print:mb-2">
                   {chronologicalScores.map((item, index) => (
-                    <div key={index} className="flex flex-1 flex-col items-center justify-end gap-2 group relative">
-                      {/* Tooltip on hover */}
-                      <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-10 bg-popover text-popover-foreground text-[10px] font-bold py-1 px-2 rounded-lg border shadow-md pointer-events-none whitespace-nowrap z-10">
-                        {item.subject}: {item.score}%
+                    <div key={index} className="flex flex-1 flex-col items-center justify-end gap-1.5 group relative">
+                      {/* Tooltip on hover / score label on print */}
+                      <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -top-10 bg-popover text-popover-foreground text-[10px] font-bold py-1 px-2 rounded-lg border shadow-md pointer-events-none whitespace-nowrap z-10 print:opacity-100 print:static print:bg-transparent print:border-none print:shadow-none print:text-slate-800 print:p-0 print:text-[10px]">
+                        {item.score}%
                       </div>
                       <div
-                        className="w-full rounded-t-xl bg-gradient-to-t from-primary/30 via-primary/70 to-primary transition-all duration-300 hover:brightness-110"
+                        className="w-full rounded-t-xl bg-gradient-to-t from-primary/30 via-primary/70 to-primary print:bg-primary transition-all duration-300 hover:brightness-110"
                         style={{ height: `${Math.max(item.score, 6)}%` }}
                       />
-                      <span className="text-[10px] font-medium text-muted-foreground truncate w-full text-center">
+                      <span className="text-[10px] font-medium text-muted-foreground print:text-slate-600 truncate w-full text-center">
                         {item.date || `#${index + 1}`}
                       </span>
                     </div>
                   ))}
                 </div>
 
-                <div className="flex items-center justify-center gap-6 text-xs text-muted-foreground border-t border-border/40 pt-3">
+                <div className="flex items-center justify-center gap-6 text-xs text-muted-foreground print:text-slate-600 border-t border-border/40 print:border-slate-200 pt-3">
                   <span className="flex items-center gap-2">
                     <span className="inline-block h-2.5 w-2.5 rounded-full bg-primary" />
                     Quiz Score (%)
@@ -520,40 +574,40 @@ export default function ParentReportsPage() {
           </div>
 
           {/* Actionable Recommendations */}
-          <div className="rounded-[1.8rem] border border-border/60 bg-card/60 p-5 shadow-sm space-y-4">
+          <div className="rounded-[1.8rem] border border-border/60 bg-card/60 p-5 shadow-sm space-y-4 print:p-4 print:bg-white print:border print:border-slate-300 print:rounded-2xl print:shadow-none print:break-inside-avoid print:space-y-3">
             <div className="flex items-center gap-2">
               <Sparkles className="h-5 w-5 text-amber-500" />
-              <h3 className="text-xl font-black text-foreground">Curriculum Insights & Recommendations</h3>
+              <h3 className="text-xl font-black text-foreground print:text-base print:text-slate-900">Curriculum Insights & Recommendations</h3>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
               {subjectScores.length > 0 && (
-                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-1">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-500">Strongest Subject</span>
-                  <p className="font-bold text-foreground text-base">
+                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-1 print:border-slate-300 print:bg-emerald-50/40 print:p-3 print:rounded-xl">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-500 print:text-emerald-700">Strongest Subject</span>
+                  <p className="font-bold text-foreground text-base print:text-slate-900">
                     {subjectScores[0].name} ({subjectScores[0].score}%)
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground print:text-slate-700">
                     Shows outstanding grasp of concepts. Encourage child to aim for full marks in school tests.
                   </p>
                 </div>
               )}
 
               {weakSubjects.length > 0 ? (
-                <div className="rounded-2xl border border-[#ff6a70]/30 bg-[#ff6a70]/5 p-4 space-y-1">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-[#ff6a70]">Focus Needed</span>
-                  <p className="font-bold text-foreground text-base">
+                <div className="rounded-2xl border border-[#ff6a70]/30 bg-[#ff6a70]/5 p-4 space-y-1 print:border-slate-300 print:bg-rose-50/40 print:p-3 print:rounded-xl">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[#ff6a70] print:text-rose-700">Focus Needed</span>
+                  <p className="font-bold text-foreground text-base print:text-slate-900">
                     {weakSubjects[0].name} ({weakSubjects[0].score}%)
                   </p>
-                  <p className="text-xs text-muted-foreground">
+                  <p className="text-xs text-muted-foreground print:text-slate-700">
                     Performance indicates gap in key sub-topics. Consider creating targeted practice drills in this subject.
                   </p>
                 </div>
               ) : (
-                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-1">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-500">Comprehensive Mastery</span>
-                  <p className="font-bold text-foreground text-base">All subjects above target</p>
-                  <p className="text-xs text-muted-foreground">
+                <div className="rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 space-y-1 print:border-slate-300 print:bg-emerald-50/40 print:p-3 print:rounded-xl">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-emerald-500 print:text-emerald-700">Comprehensive Mastery</span>
+                  <p className="font-bold text-foreground text-base print:text-slate-900">All subjects above target</p>
+                  <p className="text-xs text-muted-foreground print:text-slate-700">
                     Great balance across syllabus. Keep practicing timed mock exams.
                   </p>
                 </div>
@@ -563,25 +617,26 @@ export default function ParentReportsPage() {
         </div>
 
         {/* Right Column: Subject Breakdown List */}
-        <div className="space-y-6">
-          <div className="rounded-[1.8rem] border border-border/60 bg-card/60 p-5 shadow-sm">
+        <div className="space-y-6 print:space-y-4">
+          <div className="rounded-[1.8rem] border border-border/60 bg-card/60 p-5 shadow-sm print:p-4 print:bg-white print:border print:border-slate-300 print:rounded-2xl print:shadow-none print:break-inside-avoid">
             <div className="mb-4 flex items-center justify-between">
               <div>
-                <h3 className="text-2xl font-black text-foreground">Subject Mastery</h3>
-                <p className="text-xs text-muted-foreground">Breakdown across all tested disciplines</p>
+                <h3 className="text-2xl font-black text-foreground print:text-lg print:text-slate-900">Subject Mastery</h3>
+                <p className="text-xs text-muted-foreground print:text-slate-600">Breakdown across all tested disciplines</p>
               </div>
-              <Badge variant="outline" className="font-black text-xs">
+              <Badge variant="outline" className="font-black text-xs print:bg-slate-100 print:text-slate-800 print:border-slate-300">
                 {subjectScores.length} Subjects
               </Badge>
             </div>
 
-            {filteredSubjects.length === 0 ? (
-              <div className="py-12 text-center text-sm text-muted-foreground">
-                No subjects found matching your search.
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {filteredSubjects.map((sub) => (
+            {/* Screen View: Interactive Cards List */}
+            <div className="space-y-3 print:hidden">
+              {filteredSubjects.length === 0 ? (
+                <div className="py-12 text-center text-sm text-muted-foreground">
+                  No subjects found matching your search.
+                </div>
+              ) : (
+                filteredSubjects.map((sub) => (
                   <div
                     key={sub.name}
                     className="rounded-2xl border border-border/60 bg-background/40 p-4 transition-all hover:border-primary/40 space-y-2.5"
@@ -612,22 +667,65 @@ export default function ParentReportsPage() {
                       <span>{sub.totalQuestions} Questions solved</span>
                     </div>
                   </div>
-                ))}
-              </div>
-            )}
+                ))
+              )}
+            </div>
+
+            {/* Print View: Structured Official Academic Table */}
+            <div className="hidden print:block overflow-hidden rounded-xl border border-slate-200">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-100 border-b border-slate-300 text-slate-700 font-black text-[10px] uppercase tracking-wider">
+                    <th className="py-2.5 px-3">Subject</th>
+                    <th className="py-2.5 px-3 text-center">Score</th>
+                    <th className="py-2.5 px-3 text-center">Quizzes</th>
+                    <th className="py-2.5 px-3 text-center">Questions</th>
+                    <th className="py-2.5 px-3 text-center">Diagnostic Level</th>
+                    <th className="py-2.5 px-3 text-right">Trend</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-200 text-slate-800">
+                  {subjectScores.map((sub) => {
+                    const status = sub.score >= 75 ? "Mastered" : sub.score >= 50 ? "Proficient" : "Needs Support";
+                    const statusColor =
+                      sub.score >= 75
+                        ? "text-emerald-700 bg-emerald-50 border-emerald-300"
+                        : sub.score >= 50
+                        ? "text-blue-700 bg-blue-50 border-blue-300"
+                        : "text-rose-700 bg-rose-50 border-rose-300";
+                    return (
+                      <tr key={sub.name} className="break-inside-avoid">
+                        <td className="py-2 px-3 font-bold text-slate-900">{sub.name}</td>
+                        <td className="py-2 px-3 text-center font-black text-slate-900">{sub.score}%</td>
+                        <td className="py-2 px-3 text-center text-slate-700">{sub.count}</td>
+                        <td className="py-2 px-3 text-center text-slate-700">{sub.totalQuestions}</td>
+                        <td className="py-2 px-3 text-center">
+                          <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-black uppercase border ${statusColor}`}>
+                            {status}
+                          </span>
+                        </td>
+                        <td className="py-2 px-3 text-right font-bold text-slate-700">
+                          {sub.trend === "up" ? "↗ Upward" : "↘ Needs Focus"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
 
           {/* PRD Pillar 2: Topic Mastery Status Matrix */}
-          <div className="rounded-[1.8rem] border border-border/60 bg-card/60 p-5 shadow-sm space-y-4">
+          <div className="rounded-[1.8rem] border border-border/60 bg-card/60 p-5 shadow-sm space-y-4 print:p-4 print:bg-white print:border print:border-slate-300 print:rounded-2xl print:shadow-none print:break-inside-avoid">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-xl font-black text-foreground flex items-center gap-2">
+                <h3 className="text-xl font-black text-foreground flex items-center gap-2 print:text-base print:text-slate-900">
                   <Target className="h-5 w-5 text-primary" />
                   Topic Mastery Matrix
                 </h3>
-                <p className="text-xs text-muted-foreground">Rolling 30-question diagnostic status per syllabus unit</p>
+                <p className="text-xs text-muted-foreground print:text-slate-600">Rolling 30-question diagnostic status per syllabus unit</p>
               </div>
-              <Badge variant="outline" className="font-bold text-[10px]">
+              <Badge variant="outline" className="font-bold text-[10px] print:bg-slate-100 print:text-slate-800 print:border-slate-300">
                 {topicMasteries.length} Topics
               </Badge>
             </div>
@@ -637,27 +735,27 @@ export default function ParentReportsPage() {
                 Topic mastery will populate as {selectedChild?.profile.full_name || "your child"} completes curriculum questions.
               </p>
             ) : (
-              <div className="space-y-2.5 max-h-[360px] overflow-y-auto pr-1">
+              <div className="space-y-2.5 max-h-[360px] overflow-y-auto pr-1 print:max-h-none print:overflow-visible print:grid print:grid-cols-2 print:gap-2.5 print:space-y-0">
                 {topicMasteries.map((m, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between rounded-xl border border-border/60 bg-background/50 p-3 hover:border-primary/30 transition-colors"
+                    className="flex items-center justify-between rounded-xl border border-border/60 bg-background/50 p-3 hover:border-primary/30 transition-colors print:bg-slate-50/70 print:border-slate-200 print:p-2.5 print:rounded-lg print:break-inside-avoid"
                   >
                     <div>
-                      <p className="text-xs font-bold text-foreground">{m.topic}</p>
-                      <p className="text-[10px] text-muted-foreground">{m.subject}</p>
+                      <p className="text-xs font-bold text-foreground print:text-slate-900">{m.topic}</p>
+                      <p className="text-[10px] text-muted-foreground print:text-slate-600">{m.subject}</p>
                     </div>
                     <div className="text-right flex items-center gap-2">
-                      <span className="text-xs font-mono font-black text-foreground">
+                      <span className="text-xs font-mono font-black text-foreground print:text-slate-900">
                         {Math.round(m.rolling_accuracy)}%
                       </span>
                       <Badge
                         className={`text-[9px] font-black uppercase ${
                           m.status === "Strong"
-                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 print:bg-emerald-50 print:text-emerald-800 print:border-emerald-300"
                             : m.status === "Developing"
-                            ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30"
-                            : "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                            ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30 print:bg-blue-50 print:text-blue-800 print:border-blue-300"
+                            : "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 print:bg-amber-50 print:text-amber-800 print:border-amber-300"
                         }`}
                       >
                         {m.status === "Weak" ? "Focus Area" : m.status}
@@ -668,6 +766,27 @@ export default function ParentReportsPage() {
               </div>
             )}
           </div>
+        </div>
+      </div>
+
+      {/* Official Institutional Report Footer (Print Only) */}
+      <div className="hidden print:flex print:flex-col print:gap-4 print:pt-6 print:mt-6 print:border-t-2 print:border-slate-300 print:break-inside-avoid text-slate-600 text-xs">
+        <div className="grid grid-cols-2 gap-8 pt-2">
+          <div className="space-y-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Parent / Guardian Verification</span>
+            <div className="border-b border-dashed border-slate-400 pt-8"></div>
+            <p className="text-[10px] text-slate-500 mt-1">Signature & Date</p>
+          </div>
+          <div className="space-y-1">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 block">Institutional Academic Attestation</span>
+            <div className="border-b border-dashed border-slate-400 pt-8"></div>
+            <p className="text-[10px] text-slate-500 mt-1">Curriculum Lead / Éclat BECE Academic Advisory</p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between pt-4 border-t border-slate-200 text-[10px] text-slate-500">
+          <span>Éclat Academic Intelligence Engine • BECE Diagnostic Framework</span>
+          <span>Confidential Academic Report • Verified Record</span>
         </div>
       </div>
     </div>
