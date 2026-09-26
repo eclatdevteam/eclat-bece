@@ -110,6 +110,8 @@ export function WeeklyLeagueCohortCard({
                 {tierConfig.description}
               </CardDescription>
             </div>
+          </div>
+
           <div className="flex items-center gap-2 self-end sm:self-center">
             {currentUserMember && (
               <Button
