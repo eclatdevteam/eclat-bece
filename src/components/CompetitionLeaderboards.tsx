@@ -523,14 +523,14 @@ export const CompetitionLeaderboards = ({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <h4 className="font-black text-sm text-white">
-                  2026 National Championship &amp; Institutional Foundation Challenge
+                  2026 National Championship &amp; Academic Prize Challenge
                 </h4>
                 <Badge className="bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-black uppercase">
-                  Sponsored Foundation
+                  Annual Championship
                 </Badge>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                Supported by Zenith Bank &amp; MTN Foundation STEM Grants • ₦1,500,000 Grand Academic Prize Pool
+                ₦1,500,000 Grand Academic Prize Pool
               </p>
             </div>
           </div>
