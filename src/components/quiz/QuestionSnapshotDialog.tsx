@@ -52,6 +52,8 @@ interface QuestionSnapshotDialogProps {
   onFlagQuestion?: (question: Question) => void;
   flaggedQuestionIds?: string[];
   subjectName?: string;
+  isParentView?: boolean;
+  childName?: string;
 }
 
 export function QuestionSnapshotDialog({
@@ -64,6 +66,8 @@ export function QuestionSnapshotDialog({
   onFlagQuestion,
   flaggedQuestionIds = [],
   subjectName,
+  isParentView = false,
+  childName,
 }: QuestionSnapshotDialogProps) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [passageExpanded, setPassageExpanded] = useState(true);
@@ -167,7 +171,9 @@ export function QuestionSnapshotDialog({
             </div>
 
             <DialogDescription className="text-xs text-muted-foreground pt-1">
-              Review question prompt, your choice, the correct answer, and full solution.
+              {isParentView
+                ? `Reviewing questions, ${childName ? `${childName}'s` : "child's"} choices, correct answers, and full solutions.`
+                : "Review question prompt, your choice, the correct answer, and full solution."}
             </DialogDescription>
 
             {/* Quick Question Jump Pill Row */}
@@ -261,7 +267,11 @@ export function QuestionSnapshotDialog({
               <div className="text-xs font-black uppercase tracking-wider text-muted-foreground flex items-center justify-between">
                 <span>Answer Options</span>
                 <span className="text-[11px] font-normal normal-case text-muted-foreground">
-                  {userChoice !== null ? "Review your choice vs. correct answer" : "No choice recorded"}
+                  {userChoice !== null
+                    ? isParentView
+                      ? `Comparing ${childName ? `${childName}'s` : "child's"} pick with correct answer`
+                      : "Review your choice vs. correct answer"
+                    : "No choice recorded"}
                 </span>
               </div>
 
@@ -269,6 +279,7 @@ export function QuestionSnapshotDialog({
                 {currentQ.options.map((option, optIdx) => {
                   const isOptionCorrect = optIdx === currentQ.correctAnswer;
                   const isStudentPick = optIdx === userChoice;
+                  const choicePrefix = isParentView ? (childName ? `${childName}'s` : "Child's") : "Your";
 
                   let cardStyle = "border-border/60 bg-muted/10 text-muted-foreground";
                   let badgeNode = null;
@@ -278,7 +289,7 @@ export function QuestionSnapshotDialog({
                       "border-emerald-500 bg-emerald-500/10 text-emerald-950 dark:text-emerald-100 font-semibold shadow-sm";
                     badgeNode = (
                       <Badge className="bg-emerald-600 text-white font-bold text-[10px] sm:text-xs px-2.5 py-0.5 flex items-center gap-1 shrink-0 shadow-sm">
-                        <Check className="w-3 h-3" /> Your Choice (Correct!)
+                        <Check className="w-3 h-3" /> {choicePrefix} Choice (Correct!)
                       </Badge>
                     );
                   } else if (isOptionCorrect) {
@@ -294,7 +305,7 @@ export function QuestionSnapshotDialog({
                       "border-rose-500 bg-rose-500/10 text-rose-950 dark:text-rose-100 font-semibold shadow-sm";
                     badgeNode = (
                       <Badge className="bg-rose-600 text-white font-bold text-[10px] sm:text-xs px-2.5 py-0.5 flex items-center gap-1 shrink-0 shadow-sm">
-                        <X className="w-3 h-3" /> Your Choice
+                        <X className="w-3 h-3" /> {choicePrefix} Choice
                       </Badge>
                     );
                   }

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -15,6 +15,7 @@ import {
   RotateCcw,
   Sparkles,
   Eye,
+  Clock,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -64,6 +65,7 @@ export default function QuizPage() {
   const subject = searchParams.get("subject");
   const topic = searchParams.get("topic");
   const assignmentId = searchParams.get("assignmentId");
+  const isReviewMode = searchParams.get("review") === "true";
 
   const [questions, setQuestions] = useState<Question[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,6 +79,10 @@ export default function QuizPage() {
   const [quizSubject, setQuizSubject] = useState(subject || "Mixed Topics");
   const [lightboxImage, setLightboxImage] = useState<string | null>(null);
 
+  // Assignment Time Limit State
+  const [assignmentDuration, setAssignmentDuration] = useState<number | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+
   // Question Snapshot Review Dialog States
   const [snapshotDialogOpen, setSnapshotDialogOpen] = useState(false);
   const [snapshotInitialIndex, setSnapshotInitialIndex] = useState(0);
@@ -88,6 +94,29 @@ export default function QuizPage() {
   const [flagDetails, setFlagDetails] = useState("");
   const [flaggedQuestionIds, setFlaggedQuestionIds] = useState<string[]>([]);
   const [submittingFlag, setSubmittingFlag] = useState(false);
+
+  // Keep a ref to latest state for auto-submit on timeout
+  const latestQuizState = useRef({
+    currentQuestion,
+    selectedAnswer,
+    score,
+    answers,
+    userResponses,
+    questions,
+    assignmentDuration,
+  });
+
+  useEffect(() => {
+    latestQuizState.current = {
+      currentQuestion,
+      selectedAnswer,
+      score,
+      answers,
+      userResponses,
+      questions,
+      assignmentDuration,
+    };
+  }, [currentQuestion, selectedAnswer, score, answers, userResponses, questions, assignmentDuration]);
 
   const getSessionCacheKey = useCallback(() => {
     if (!user) return null;
@@ -171,6 +200,53 @@ export default function QuizPage() {
       setLoading(true);
 
       try {
+        let fetchSubject = subject;
+        let fetchTopics: string[] = topic ? [topic] : [];
+        let fetchLimit = 10;
+        let classYear = "";
+
+        // If assignmentId is present, fetch assignment details including duration and past snapshot
+        if (assignmentId) {
+          const { data: assignment, error: assignError } = await supabase
+            .from("practice_assignments")
+            .select("subject, topics, num_questions, duration, questions_snapshot, status, student:students(class_year)")
+            .eq("id", assignmentId)
+            .single();
+
+          if (assignError || !assignment) {
+            toast.error("Failed to load assignment details");
+            navigate("/dashboard/student");
+            return;
+          }
+
+          if (assignment.duration) {
+            setAssignmentDuration(assignment.duration);
+            if (!isReviewMode) {
+              setTimeLeft(assignment.duration * 60);
+            }
+          }
+
+          // If in review mode and snapshot exists, open directly in review mode
+          if (isReviewMode && assignment.questions_snapshot) {
+            const snap = assignment.questions_snapshot as any;
+            if (snap.questions && snap.questions.length > 0) {
+              setQuestions(snap.questions);
+              setUserResponses(snap.userResponses || []);
+              setAnswers(snap.answers || []);
+              setScore(snap.answers ? snap.answers.filter(Boolean).length : 0);
+              setQuizSubject(assignment.subject || "Practice Assignment");
+              setQuizComplete(true);
+              setLoading(false);
+              return;
+            }
+          }
+
+          fetchSubject = assignment.subject;
+          fetchTopics = assignment.topics;
+          fetchLimit = assignment.num_questions;
+          classYear = (assignment.student as any)?.class_year;
+        }
+
         const cacheKey = getSessionCacheKey();
 
         // Check session storage cache unless forced fresh
@@ -189,31 +265,6 @@ export default function QuizPage() {
           } catch (cacheErr) {
             console.warn("Could not read quiz cache from sessionStorage:", cacheErr);
           }
-        }
-
-        let fetchSubject = subject;
-        let fetchTopics: string[] = topic ? [topic] : [];
-        let fetchLimit = 10;
-        let classYear = "";
-
-        // If assignmentId is present, fetch assignment details
-        if (assignmentId) {
-          const { data: assignment, error: assignError } = await supabase
-            .from("practice_assignments")
-            .select("subject, topics, num_questions, student:students(class_year)")
-            .eq("id", assignmentId)
-            .single();
-
-          if (assignError || !assignment) {
-            toast.error("Failed to load assignment details");
-            navigate("/dashboard/student");
-            return;
-          }
-
-          fetchSubject = assignment.subject;
-          fetchTopics = assignment.topics;
-          fetchLimit = assignment.num_questions;
-          classYear = (assignment.student as any)?.class_year;
         }
 
         // If not assignment, get student's class year
@@ -347,12 +398,60 @@ export default function QuizPage() {
         setLoading(false);
       }
     },
-    [user, subject, topic, assignmentId, navigate, getSessionCacheKey]
+    [user, subject, topic, assignmentId, navigate, isReviewMode, getSessionCacheKey]
   );
 
   useEffect(() => {
     fetchQuestions(false);
   }, [fetchQuestions]);
+
+  // Countdown timer effect
+  useEffect(() => {
+    if (timeLeft === null || quizComplete || loading) return;
+
+    if (timeLeft <= 0) {
+      toast.warning("Time has expired! Submitting your answers now...", {
+        duration: 4000,
+      });
+      handleTimeExpired();
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setTimeLeft((prev) => (prev !== null ? prev - 1 : null));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [timeLeft, quizComplete, loading]);
+
+  const handleTimeExpired = async () => {
+    const state = latestQuizState.current;
+    let finalAnswers = [...state.answers];
+    let finalResponses = [...state.userResponses];
+    let finalScore = state.score;
+
+    // If student selected an answer on the current question but hasn't submitted yet
+    if (state.selectedAnswer !== null && state.questions[state.currentQuestion]) {
+      const q = state.questions[state.currentQuestion];
+      const isCorrect = state.selectedAnswer === q.correctAnswer;
+      if (isCorrect) finalScore += 1;
+      finalAnswers.push(isCorrect);
+      finalResponses.push(state.selectedAnswer);
+    }
+
+    // Pad remaining unanswered questions with null / false
+    while (finalAnswers.length < state.questions.length) {
+      finalAnswers.push(false);
+      finalResponses.push(null);
+    }
+
+    setAnswers(finalAnswers);
+    setUserResponses(finalResponses);
+    setScore(finalScore);
+    setQuizComplete(true);
+
+    await saveQuizResults(finalScore, finalAnswers, finalResponses);
+  };
 
   const question = questions[currentQuestion];
   const progress =
@@ -387,8 +486,16 @@ export default function QuizPage() {
     }
   };
 
-  const saveQuizResults = async () => {
+  const saveQuizResults = async (
+    overrideScore?: number,
+    overrideAnswers?: boolean[],
+    overrideResponses?: (number | null)[]
+  ) => {
     if (!user) return;
+
+    const finalScore = overrideScore !== undefined ? overrideScore : score;
+    const finalAnswers = overrideAnswers || answers;
+    const finalResponses = overrideResponses || userResponses;
 
     try {
       // Get student ID
@@ -403,7 +510,7 @@ export default function QuizPage() {
         return;
       }
 
-      const percentage = (score / questions.length) * 100;
+      const percentage = Math.round((finalScore / questions.length) * 100);
 
       // Insert quiz result
       const { error } = await supabase.from("quiz_results").insert({
@@ -411,21 +518,41 @@ export default function QuizPage() {
         subject: quizSubject || subject || "Mixed Topics",
         score: percentage,
         total_questions: questions.length,
-        correct_answers: score,
+        correct_answers: finalScore,
       });
 
       if (error) {
         console.error("Error saving quiz result:", error);
         toast.error("Failed to save quiz results");
       } else {
-        // If it was an assignment, update assignment status
+        // If it was an assignment, update assignment status and store questions_snapshot
         if (assignmentId) {
+          const questionsSnapshot = {
+            questions: questions.map((q) => ({
+              id: q.id,
+              question: q.question,
+              options: q.options,
+              correctAnswer: q.correctAnswer,
+              explanation: q.explanation,
+              subject: q.subject,
+              image_url: q.image_url || null,
+              passage: q.passage || null,
+            })),
+            userResponses: finalResponses,
+            answers: finalAnswers,
+            score: percentage,
+            totalQuestions: questions.length,
+            durationMinutes: assignmentDuration,
+            completedAt: new Date().toISOString(),
+          };
+
           await supabase
             .from("practice_assignments")
             .update({
               status: "completed",
               score: percentage,
               completed_at: new Date().toISOString(),
+              questions_snapshot: questionsSnapshot,
             })
             .eq("id", assignmentId);
 
@@ -455,7 +582,7 @@ export default function QuizPage() {
                 await supabase.from("notifications").insert({
                   user_id: parentData.user_id,
                   title: "Assignment Completed",
-                  message: `${studentName} completed the assigned ${assignmentData.subject} practice task with a score of ${Math.round(percentage)}%.`,
+                  message: `${studentName} completed the assigned ${assignmentData.subject} practice task with a score of ${percentage}%.`,
                   type: "assignment_completed",
                   read: false,
                   metadata: {
@@ -485,6 +612,9 @@ export default function QuizPage() {
     setQuizComplete(false);
     setAnswers([]);
     setUserResponses([]);
+    if (assignmentDuration) {
+      setTimeLeft(assignmentDuration * 60);
+    }
   };
 
   const handlePracticeNewQuestions = () => {
@@ -544,12 +674,23 @@ export default function QuizPage() {
             <div className="text-xl sm:text-2xl font-bold mb-3">
               {percentage}% Correct
             </div>
-            <Badge
-              variant={isPassed ? "default" : "secondary"}
-              className="text-sm sm:text-base font-semibold px-4 py-1 rounded-full shadow-sm"
-            >
-              {isPassed ? "Passed! ✨" : "Keep Practicing"}
-            </Badge>
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+              <Badge
+                variant={isPassed ? "default" : "secondary"}
+                className="text-sm sm:text-base font-semibold px-4 py-1 rounded-full shadow-sm"
+              >
+                {isPassed ? "Passed! ✨" : "Keep Practicing"}
+              </Badge>
+              {assignmentDuration && (
+                <Badge
+                  variant="outline"
+                  className="text-xs sm:text-sm font-semibold px-3 py-1 rounded-full flex items-center gap-1.5 border-primary/30 bg-background/50"
+                >
+                  <Clock className="w-3.5 h-3.5 text-primary" />
+                  <span>{assignmentDuration} Min Limit</span>
+                </Badge>
+              )}
+            </div>
           </div>
 
           {/* Interactive Question Grid with prompt */}
@@ -745,9 +886,32 @@ export default function QuizPage() {
                 </Button>
               )}
             </div>
-            <span className="text-sm text-muted-foreground">
-              Question {currentQuestion + 1} of {questions.length}
-            </span>
+
+            <div className="flex items-center gap-3">
+              {/* Active Assignment Countdown Timer */}
+              {assignmentDuration && timeLeft !== null && (
+                <div
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border transition-all ${
+                    timeLeft < 120
+                      ? "bg-rose-50 text-rose-600 border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800 animate-pulse"
+                      : timeLeft < 300
+                      ? "bg-amber-50 text-amber-600 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
+                      : "bg-primary/10 text-primary border-primary/20"
+                  }`}
+                  title={`Parent assigned time limit: ${assignmentDuration} minutes`}
+                >
+                  <Clock className="w-3.5 h-3.5 shrink-0" />
+                  <span>
+                    {Math.floor(timeLeft / 60)}:{(timeLeft % 60).toString().padStart(2, "0")}
+                  </span>
+                  <span className="text-[10px] opacity-70 font-semibold hidden sm:inline">remaining</span>
+                </div>
+              )}
+
+              <span className="text-sm text-muted-foreground font-medium">
+                Question {currentQuestion + 1} of {questions.length}
+              </span>
+            </div>
           </div>
           <Progress value={progress} className="h-2" />
         </div>

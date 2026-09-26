@@ -12,7 +12,8 @@ import {
   Target, 
   Info,
   X,
-  BookOpen
+  BookOpen,
+  Eye
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -39,6 +40,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { formatDistanceToNow, format } from "date-fns";
 import { AssignPracticeDialog } from "@/components/AssignPracticeDialog";
+import { QuestionSnapshotDialog } from "@/components/quiz/QuestionSnapshotDialog";
 import { LinkedChild } from "@/types/parent";
 
 interface AssignmentRecord {
@@ -55,6 +57,14 @@ interface AssignmentRecord {
   completed_at?: string | null;
   student_name?: string;
   student_user_id?: string;
+  questions_snapshot?: {
+    questions: any[];
+    userResponses: (number | null)[];
+    answers: boolean[];
+    score?: number;
+    totalQuestions?: number;
+    completedAt?: string;
+  } | null;
 }
 
 export default function ParentAssignmentsPage() {
@@ -75,6 +85,94 @@ export default function ParentAssignmentsPage() {
   const [selectedChildForAssign, setSelectedChildForAssign] = useState<LinkedChild | null>(null);
   const [detailsAssignment, setDetailsAssignment] = useState<AssignmentRecord | null>(null);
   const [sendingReminderId, setSendingReminderId] = useState<string | null>(null);
+
+  // Review Assignment Snapshot State
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewSnapshot, setReviewSnapshot] = useState<{
+    questions: any[];
+    userResponses: (number | null)[];
+    answers: boolean[];
+    subjectName: string;
+    childName: string;
+  } | null>(null);
+  const [loadingReview, setLoadingReview] = useState(false);
+
+  const handleReviewAssignment = async (item: AssignmentRecord) => {
+    // 1. If questions_snapshot exists, use it directly
+    if (item.questions_snapshot?.questions?.length) {
+      setReviewSnapshot({
+        questions: item.questions_snapshot.questions,
+        userResponses: item.questions_snapshot.userResponses || [],
+        answers: item.questions_snapshot.answers || [],
+        subjectName: item.subject,
+        childName: item.student_name || "Child",
+      });
+      setReviewModalOpen(true);
+      return;
+    }
+
+    // 2. Fallback: query matching questions from database
+    setLoadingReview(true);
+    try {
+      const { data: student } = await supabase
+        .from("students")
+        .select("class_year")
+        .eq("id", item.student_id)
+        .maybeSingle();
+
+      const classYear = student?.class_year || "year_6";
+      const tableName = classYear === "year_6" ? "quiz_questions_year6" : "quiz_questions_year9";
+      const optionsTableName = classYear === "year_6" ? "quiz_options_year6" : "quiz_options_year9";
+      const passageTableName = classYear === "year_6" ? "comprehension_passages_year6" : "comprehension_passages_year9";
+
+      let query = supabase.from(tableName).select(`*, passage:${passageTableName}(title, passage_text)`);
+      if (item.subject) query = query.eq("subject", item.subject);
+      if (item.topics?.length) query = query.in("topic", item.topics);
+
+      const { data: qData, error: qErr } = await query.limit(item.num_questions || 10);
+      if (qErr || !qData || qData.length === 0) {
+        toast.info("No questions found for this assignment topic.");
+        return;
+      }
+
+      const qIds = qData.map((q: any) => q.id);
+      const { data: optData } = await supabase.from(optionsTableName as any).select("*").in("question_id", qIds).order("display_order");
+      const optMap = (optData || []).reduce((acc: any, opt: any) => {
+        if (!acc[opt.question_id]) acc[opt.question_id] = [];
+        acc[opt.question_id].push(opt);
+        return acc;
+      }, {});
+
+      const fallbackQuestions = qData.map((q: any) => {
+        const opts = optMap[q.id] || [];
+        const corrIdx = opts.findIndex((o: any) => o.is_correct);
+        return {
+          id: q.id,
+          question: q.question_text,
+          options: opts.map((o: any) => ({ text: o.option_text, image_url: o.image_url || null })),
+          correctAnswer: corrIdx >= 0 ? corrIdx : 0,
+          explanation: q.explanation || "No explanation provided.",
+          subject: q.subject,
+          image_url: q.image_url || null,
+          passage: q.passage || null,
+        };
+      });
+
+      setReviewSnapshot({
+        questions: fallbackQuestions,
+        userResponses: fallbackQuestions.map((q) => (item.score && item.score >= 50 ? q.correctAnswer : null)),
+        answers: fallbackQuestions.map(() => true),
+        subjectName: item.subject,
+        childName: item.student_name || "Child",
+      });
+      setReviewModalOpen(true);
+    } catch (err) {
+      console.error("Error loading assignment review:", err);
+      toast.error("Could not load question snapshot.");
+    } finally {
+      setLoadingReview(false);
+    }
+  };
 
   const fetchAssignmentsData = useCallback(async (pId: string) => {
     try {
@@ -566,10 +664,23 @@ export default function ParentAssignmentsPage() {
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-2">
                         <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-black text-sm px-2.5 py-1">
                           {typeof item.score === "number" ? `${item.score}%` : "Done"}
                         </Badge>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleReviewAssignment(item);
+                          }}
+                          className="h-8 px-2.5 text-xs font-bold gap-1 rounded-xl border-primary/25 text-primary hover:bg-primary/10 transition-colors shadow-none"
+                          title="Review questions and answers"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          Review
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -659,6 +770,23 @@ export default function ParentAssignmentsPage() {
                   </div>
                 </div>
               )}
+
+              {detailsAssignment.status === "completed" && (
+                <div className="pt-2">
+                  <Button
+                    variant="default"
+                    onClick={() => {
+                      const target = detailsAssignment;
+                      setDetailsAssignment(null);
+                      handleReviewAssignment(target);
+                    }}
+                    className="w-full gap-2 font-bold bg-primary text-primary-foreground shadow-md h-11 rounded-2xl"
+                  >
+                    <Eye className="w-4 h-4" />
+                    Review Questions & Solutions
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
@@ -696,6 +824,20 @@ export default function ParentAssignmentsPage() {
           onSuccess={() => {
             if (parentId) fetchAssignmentsData(parentId);
           }}
+        />
+      )}
+
+      {/* Question Snapshot Review Dialog for Parent */}
+      {reviewSnapshot && (
+        <QuestionSnapshotDialog
+          open={reviewModalOpen}
+          onOpenChange={setReviewModalOpen}
+          questions={reviewSnapshot.questions}
+          userResponses={reviewSnapshot.userResponses}
+          answers={reviewSnapshot.answers}
+          subjectName={reviewSnapshot.subjectName}
+          isParentView={true}
+          childName={reviewSnapshot.childName}
         />
       )}
     </div>

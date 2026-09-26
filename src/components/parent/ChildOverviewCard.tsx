@@ -1,4 +1,4 @@
-import { Award, BookOpen, Target, MoreVertical, CreditCard, ChevronRight, Trash2, User, Key, Fingerprint, Copy, Check } from "lucide-react";
+import { Award, BookOpen, Target, MoreVertical, CreditCard, ChevronRight, Trash2, User, Key, Fingerprint, Copy, Check, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ interface ChildOverviewCardProps {
     onEditName: (child: LinkedChild) => void;
     onEditUsername: (child: LinkedChild) => void;
     onChangePassword: (child: LinkedChild) => void;
+    onReviewAssignment?: (assignment: Assignment, childName: string) => void;
 }
 
 export function ChildOverviewCard({
@@ -38,7 +39,8 @@ export function ChildOverviewCard({
     onDeleteChild,
     onEditName,
     onEditUsername,
-    onChangePassword
+    onChangePassword,
+    onReviewAssignment
 }: ChildOverviewCardProps) {
     const initials = child.profile.full_name?.charAt(0).toUpperCase() || "?";
 
@@ -210,7 +212,19 @@ export function ChildOverviewCard({
                     <div className="space-y-2">
                         {assignments.length > 0 ? (
                             assignments.slice(0, 3).map((assignment) => (
-                                <div key={assignment.id} className="group/assignment flex items-center justify-between p-3 rounded-2xl bg-muted/20 border border-border/50 hover:border-primary/30 transition-all">
+                                <div
+                                    key={assignment.id}
+                                    onClick={() => {
+                                        if (assignment.status === 'completed' && onReviewAssignment) {
+                                            onReviewAssignment(assignment, child.profile.full_name || "Child");
+                                        }
+                                    }}
+                                    className={`group/assignment flex items-center justify-between p-3 rounded-2xl bg-muted/20 border border-border/50 hover:border-primary/30 transition-all ${
+                                        assignment.status === 'completed' && onReviewAssignment
+                                            ? 'cursor-pointer hover:bg-muted/30 hover:shadow-sm'
+                                            : ''
+                                    }`}
+                                >
                                     <div className="flex items-center gap-3">
                                         <div className={`p-2 rounded-lg ${assignment.status === 'completed' ? 'bg-emerald-500/10' : 'bg-primary/10 animate-pulse'}`}>
                                             <Target className={`h-4 w-4 ${assignment.status === 'completed' ? 'text-emerald-600' : 'text-primary'}`} />
@@ -222,15 +236,34 @@ export function ChildOverviewCard({
                                             </p>
                                         </div>
                                     </div>
-                                    {assignment.status === 'completed' ? (
-                                        <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-black text-[10px]">
-                                            {assignment.score}%
-                                        </Badge>
-                                    ) : (
-                                        <Badge variant="outline" className="text-primary border-primary/20 font-black text-[10px] animate-pulse">
-                                            PENDING
-                                        </Badge>
-                                    )}
+                                    <div className="flex items-center gap-2">
+                                        {assignment.status === 'completed' ? (
+                                            <>
+                                                <Badge className="bg-emerald-500/10 text-emerald-600 border-none font-black text-[10px]">
+                                                    {assignment.score}%
+                                                </Badge>
+                                                {onReviewAssignment && (
+                                                    <Button
+                                                        variant="outline"
+                                                        size="sm"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onReviewAssignment(assignment, child.profile.full_name || "Child");
+                                                        }}
+                                                        className="h-7 px-2 text-[10px] font-bold rounded-lg gap-1 border-primary/25 text-primary hover:bg-primary/10 transition-colors shadow-none"
+                                                        title="Review questions and answers"
+                                                    >
+                                                        <Eye className="w-3 h-3" />
+                                                        Review
+                                                    </Button>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <Badge variant="outline" className="text-primary border-primary/20 font-black text-[10px] animate-pulse">
+                                                PENDING
+                                            </Badge>
+                                        )}
+                                    </div>
                                 </div>
                             ))
                         ) : (

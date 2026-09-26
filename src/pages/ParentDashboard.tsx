@@ -20,6 +20,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { LinkedChild, ChildAnalytics, QuizResult, Assignment } from "@/types/parent";
 import { getEdgeFunctionError } from "@/lib/errorUtils";
+import { QuestionSnapshotDialog } from "@/components/quiz/QuestionSnapshotDialog";
 import eclatlLogo from "@/assets/logo.png";
 
 const getErrorMessage = (error: unknown, fallback: string) =>
@@ -47,6 +48,94 @@ export default function ParentDashboard() {
   const [editUsernameOpen, setEditUsernameOpen] = useState(false);
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [activeChildIndex, setActiveChildIndex] = useState(0);
+
+  // Review Assignment Snapshot State
+  const [reviewModalOpen, setReviewModalOpen] = useState(false);
+  const [reviewSnapshot, setReviewSnapshot] = useState<{
+    questions: any[];
+    userResponses: (number | null)[];
+    answers: boolean[];
+    subjectName: string;
+    childName: string;
+  } | null>(null);
+  const [loadingReview, setLoadingReview] = useState(false);
+
+  const handleReviewAssignment = async (assignment: Assignment, childName: string) => {
+    // 1. If questions_snapshot exists, use it directly
+    if (assignment.questions_snapshot?.questions?.length) {
+      setReviewSnapshot({
+        questions: assignment.questions_snapshot.questions,
+        userResponses: assignment.questions_snapshot.userResponses || [],
+        answers: assignment.questions_snapshot.answers || [],
+        subjectName: assignment.subject,
+        childName,
+      });
+      setReviewModalOpen(true);
+      return;
+    }
+
+    // 2. Fallback: fetch matching questions for this assignment's topics and subject
+    setLoadingReview(true);
+    try {
+      const { data: student } = await supabase
+        .from("students")
+        .select("class_year")
+        .eq("id", assignment.student_id)
+        .maybeSingle();
+
+      const classYear = student?.class_year || "year_6";
+      const tableName = classYear === "year_6" ? "quiz_questions_year6" : "quiz_questions_year9";
+      const optionsTableName = classYear === "year_6" ? "quiz_options_year6" : "quiz_options_year9";
+      const passageTableName = classYear === "year_6" ? "comprehension_passages_year6" : "comprehension_passages_year9";
+
+      let query = supabase.from(tableName).select(`*, passage:${passageTableName}(title, passage_text)`);
+      if (assignment.subject) query = query.eq("subject", assignment.subject);
+      if (assignment.topics?.length) query = query.in("topic", assignment.topics);
+
+      const { data: qData, error: qErr } = await query.limit(assignment.num_questions || 10);
+      if (qErr || !qData || qData.length === 0) {
+        toast.info("No question snapshot found for this assignment.");
+        return;
+      }
+
+      const qIds = qData.map((q: any) => q.id);
+      const { data: optData } = await supabase.from(optionsTableName as any).select("*").in("question_id", qIds).order("display_order");
+      const optMap = (optData || []).reduce((acc: any, opt: any) => {
+        if (!acc[opt.question_id]) acc[opt.question_id] = [];
+        acc[opt.question_id].push(opt);
+        return acc;
+      }, {});
+
+      const fallbackQuestions = qData.map((q: any) => {
+        const opts = optMap[q.id] || [];
+        const corrIdx = opts.findIndex((o: any) => o.is_correct);
+        return {
+          id: q.id,
+          question: q.question_text,
+          options: opts.map((o: any) => ({ text: o.option_text, image_url: o.image_url || null })),
+          correctAnswer: corrIdx >= 0 ? corrIdx : 0,
+          explanation: q.explanation || "No explanation provided.",
+          subject: q.subject,
+          image_url: q.image_url || null,
+          passage: q.passage || null,
+        };
+      });
+
+      setReviewSnapshot({
+        questions: fallbackQuestions,
+        userResponses: fallbackQuestions.map((q, i) => (assignment.score && assignment.score >= 50 ? q.correctAnswer : null)),
+        answers: fallbackQuestions.map(() => true),
+        subjectName: assignment.subject,
+        childName,
+      });
+      setReviewModalOpen(true);
+    } catch (err) {
+      console.error("Error loading assignment review:", err);
+      toast.error("Could not load question snapshot.");
+    } finally {
+      setLoadingReview(false);
+    }
+  };
 
   // Derived Top-Level Metrics
   const totalChildren = linkedChildren.length;
@@ -376,6 +465,7 @@ export default function ParentDashboard() {
                       setManagedChild(c);
                       setChangePasswordOpen(true);
                     }}
+                    onReviewAssignment={handleReviewAssignment}
                   />
                 );
               })()}
@@ -443,6 +533,20 @@ export default function ParentDashboard() {
         onOpenChange={setChangePasswordOpen}
         child={managedChild}
       />
+
+      {/* Question Snapshot Review Dialog for Parent */}
+      {reviewSnapshot && (
+        <QuestionSnapshotDialog
+          open={reviewModalOpen}
+          onOpenChange={setReviewModalOpen}
+          questions={reviewSnapshot.questions}
+          userResponses={reviewSnapshot.userResponses}
+          answers={reviewSnapshot.answers}
+          subjectName={reviewSnapshot.subjectName}
+          isParentView={true}
+          childName={reviewSnapshot.childName}
+        />
+      )}
     </div>
   );
 }

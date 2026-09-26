@@ -21,6 +21,14 @@ export interface Assignment {
     score?: number;
     created_at: string;
     completed_at?: string;
+    questions_snapshot?: {
+        questions: any[];
+        userResponses: (number | null)[];
+        answers: boolean[];
+        score?: number;
+        totalQuestions?: number;
+        completedAt?: string;
+    } | null;
 }
 
 export interface ChildAnalytics {
