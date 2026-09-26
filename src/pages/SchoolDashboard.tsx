@@ -69,8 +69,11 @@ export default function SchoolDashboard() {
   const [selectedStudent, setSelectedStudent] = useState<{ id: string; name: string; class: string; avatar: string } | null>(null);
 
   // Competition Leaderboard Data
+  const [weeklyLeaders, setWeeklyLeaders] = useState<LeaderboardStudent[]>([]);
   const [monthlyLeaders, setMonthlyLeaders] = useState<LeaderboardStudent[]>([]);
   const [annualLeaders, setAnnualLeaders] = useState<LeaderboardStudent[]>([]);
+  const [mathLeaders, setMathLeaders] = useState<LeaderboardStudent[]>([]);
+  const [englishLeaders, setEnglishLeaders] = useState<LeaderboardStudent[]>([]);
 
   const loadSchoolDashboardData = useCallback(async () => {
     try {
@@ -201,8 +204,11 @@ export default function SchoolDashboard() {
 
       // 6. Fetch Competition Leaderboard
       const leaderboardRes = await fetchLeaderboardData(user.id);
+      setWeeklyLeaders(leaderboardRes.weeklyLeaders);
       setMonthlyLeaders(leaderboardRes.monthlyLeaders);
       setAnnualLeaders(leaderboardRes.annualLeaders);
+      setMathLeaders(leaderboardRes.mathLeaders);
+      setEnglishLeaders(leaderboardRes.englishLeaders);
     } catch (err: unknown) {
       console.error("Error loading school dashboard data:", err);
       toast.error("Failed to load school dashboard data");
@@ -705,8 +711,11 @@ export default function SchoolDashboard() {
                 </p>
               </div>
               <CompetitionLeaderboards
+                weeklyLeaders={weeklyLeaders}
                 monthlyLeaders={monthlyLeaders}
                 annualLeaders={annualLeaders}
+                mathLeaders={mathLeaders}
+                englishLeaders={englishLeaders}
               />
             </div>
           </>

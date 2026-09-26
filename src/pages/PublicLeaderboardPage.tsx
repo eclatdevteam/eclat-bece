@@ -6,13 +6,16 @@ import { usePublicAuthAction } from "@/hooks/usePublicAuthAction";
 import { fetchLeaderboardData } from "@/utils/leaderboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Trophy, Award, Sparkles, Loader2, Gift, ArrowRight } from "lucide-react";
+import { Trophy, Award, Sparkles, Loader2, Gift, ArrowRight, Flame } from "lucide-react";
 
 export default function PublicLeaderboardPage() {
   const { handleLoginClick, handleGetStartedClick } = usePublicAuthAction();
   const [isLoading, setIsLoading] = useState(true);
+  const [weeklyLeaders, setWeeklyLeaders] = useState<LeaderboardStudent[]>([]);
   const [monthlyLeaders, setMonthlyLeaders] = useState<LeaderboardStudent[]>([]);
   const [annualLeaders, setAnnualLeaders] = useState<LeaderboardStudent[]>([]);
+  const [mathLeaders, setMathLeaders] = useState<LeaderboardStudent[]>([]);
+  const [englishLeaders, setEnglishLeaders] = useState<LeaderboardStudent[]>([]);
 
   useEffect(() => {
     let isMounted = true;
@@ -20,8 +23,11 @@ export default function PublicLeaderboardPage() {
       try {
         const data = await fetchLeaderboardData();
         if (isMounted) {
+          setWeeklyLeaders(data.weeklyLeaders || []);
           setMonthlyLeaders(data.monthlyLeaders || []);
           setAnnualLeaders(data.annualLeaders || []);
+          setMathLeaders(data.mathLeaders || []);
+          setEnglishLeaders(data.englishLeaders || []);
         }
       } catch (err) {
         console.error("Error loading public leaderboard:", err);
@@ -51,34 +57,47 @@ export default function PublicLeaderboardPage() {
             Official National Leaderboards
           </h1>
           <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto mb-8">
-            Live rankings of the top 5 Primary 6 and JSS 3 scholars across Nigeria.
+            Live rankings of top Primary 6 and JSS 3 scholars across Nigeria, ranked by verified Éclat Points.
           </p>
           
           {/* Prize Breakdown Cards */}
-          <div className="grid sm:grid-cols-2 gap-4 sm:gap-6 max-w-3xl mx-auto mb-2 text-left">
-            <Card className="border-2 border-primary/40 bg-card/80 backdrop-blur-md shadow-md rounded-2xl">
+          <div className="grid sm:grid-cols-3 gap-4 max-w-4xl mx-auto mb-2 text-left">
+            <Card className="border-2 border-amber-500/40 bg-card/80 backdrop-blur-md shadow-md rounded-2xl">
               <CardHeader className="pb-2">
-                <div className="flex items-center gap-2 text-primary font-bold text-sm">
-                  <Award className="h-5 w-5 flex-shrink-0" />
-                  <span>Monthly Championship</span>
+                <div className="flex items-center gap-2 text-amber-500 font-bold text-xs uppercase tracking-wider">
+                  <Flame className="h-4 w-4 flex-shrink-0" />
+                  <span>Weekly Sprint</span>
                 </div>
-                <CardTitle className="text-2xl sm:text-3xl font-black text-foreground">₦50,000</CardTitle>
+                <CardTitle className="text-xl sm:text-2xl font-black text-foreground">Weekly Badges</CardTitle>
               </CardHeader>
               <CardContent className="text-xs text-muted-foreground leading-relaxed">
-                Awarded every month to top point earners across BECE & Common Entrance subjects.
+                Weekly prestige & league promotions resetting every Sunday at 23:59 UTC.
+              </CardContent>
+            </Card>
+
+            <Card className="border-2 border-primary/40 bg-card/80 backdrop-blur-md shadow-md rounded-2xl">
+              <CardHeader className="pb-2">
+                <div className="flex items-center gap-2 text-primary font-bold text-xs uppercase tracking-wider">
+                  <Award className="h-4 w-4 flex-shrink-0" />
+                  <span>Monthly Championship</span>
+                </div>
+                <CardTitle className="text-xl sm:text-2xl font-black text-foreground">₦50,000</CardTitle>
+              </CardHeader>
+              <CardContent className="text-xs text-muted-foreground leading-relaxed">
+                Awarded monthly to top Éclat Point earners across BECE & Common Entrance subjects.
               </CardContent>
             </Card>
 
             <Card className="border-2 border-accent/60 bg-card/80 backdrop-blur-md shadow-md rounded-2xl">
               <CardHeader className="pb-2">
-                <div className="flex items-center gap-2 text-accent font-bold text-sm">
-                  <Gift className="h-5 w-5 flex-shrink-0" />
+                <div className="flex items-center gap-2 text-accent font-bold text-xs uppercase tracking-wider">
+                  <Gift className="h-4 w-4 flex-shrink-0" />
                   <span>Annual Grand Prize</span>
                 </div>
-                <CardTitle className="text-2xl sm:text-3xl font-black text-foreground">₦1,500,000</CardTitle>
+                <CardTitle className="text-xl sm:text-2xl font-black text-foreground">₦1,500,000</CardTitle>
               </CardHeader>
               <CardContent className="text-xs text-muted-foreground leading-relaxed">
-                Grand scholarship fund and awards presented at the conclusion of the academic year.
+                Grand scholarship fund presented at the conclusion of the academic year.
               </CardContent>
             </Card>
           </div>
@@ -96,9 +115,13 @@ export default function PublicLeaderboardPage() {
           ) : (
             <CompetitionLeaderboards
               showCurrentUserPosition={false}
+              weeklyLeaders={weeklyLeaders}
               monthlyLeaders={monthlyLeaders}
               annualLeaders={annualLeaders}
+              mathLeaders={mathLeaders}
+              englishLeaders={englishLeaders}
               limit={5}
+              defaultTab="weekly"
             />
           )}
         </div>
@@ -108,7 +131,7 @@ export default function PublicLeaderboardPage() {
       <section className="py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border-t border-border/20 text-center">
         <div className="container mx-auto max-w-3xl">
           <h2 className="text-2xl sm:text-3xl font-black text-foreground mb-3">Want your name on the national leaderboard?</h2>
-          <p className="text-sm sm:text-base text-muted-foreground mb-6">Start taking quizzes today, earn competition points, and compete for scholarships.</p>
+          <p className="text-sm sm:text-base text-muted-foreground mb-6">Start taking practice quizzes today, earn Éclat Points, and compete for scholarships.</p>
           <Button size="lg" variant="hero" onClick={handleGetStartedClick} className="font-extrabold text-base px-8 h-12 rounded-xl bg-gradient-to-r from-primary to-accent shadow-lg text-white">
             Join Competition Free <ArrowRight className="ml-2 h-5 w-5" />
           </Button>
