@@ -12,6 +12,10 @@ export interface SessionQuestionInput {
   timeSpentSeconds?: number;
   expectedTimeSeconds?: number;
   isFocusArea?: boolean;
+  questionClassYear?: "year_6" | "year_9";
+  lastAttemptedAt?: string | number | Date | null;
+  antiGamingMultiplier?: number;
+  antiGamingFlag?: string;
 }
 
 export interface PointBreakdownItem {

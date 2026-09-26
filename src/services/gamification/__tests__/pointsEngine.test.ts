@@ -206,4 +206,39 @@ describe("Calibrated Speed Bonus & Anti-Guessing Rules", () => {
 
     expect(result.speedBonus).toBe(30); // Capped at 30, not 45
   });
+
+  it("disqualifies rapid guessing under 2.5s from earning base EP and accuracy multiplier", () => {
+    const questions: SessionQuestionInput[] = Array(5).fill(null).map((_, i) => ({
+      questionId: `rapid_${i}`,
+      difficulty: "medium",
+      isCorrect: true,
+      timeSpentSeconds: 1.5, // Rapid guess (< 2.5s)
+    }));
+
+    const result = calculateSessionPoints(questions);
+
+    expect(result.baseEP).toBe(0);
+    expect(result.accuracyMultiplierBonus).toBe(0);
+    expect(result.totalEP).toBe(0);
+  });
+
+  it("scales base EP and focus bonus when antiGamingMultiplier is 0.5 (down-tier decay)", () => {
+    const questions: SessionQuestionInput[] = [
+      {
+        questionId: "down_tier_1",
+        difficulty: "medium", // 10 EP base -> 5 EP with 0.5x
+        isCorrect: true,
+        antiGamingMultiplier: 0.5,
+        isFocusArea: true, // 25% of 5 EP = 1 EP
+        timeSpentSeconds: 20,
+      },
+    ];
+
+    const result = calculateSessionPoints(questions);
+
+    expect(result.baseEP).toBe(5);
+    expect(result.focusBonus).toBe(1);
+    expect(result.totalEP).toBe(6);
+  });
 });
+

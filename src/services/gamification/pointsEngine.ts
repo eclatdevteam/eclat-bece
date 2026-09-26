@@ -9,6 +9,7 @@ import {
   SessionPointResult,
   PointBreakdownItem,
 } from "./types";
+import { RAPID_GUESSING_THRESHOLD_SECONDS } from "./antiGamingEngine";
 
 /**
  * Base EP by Difficulty Level (PRD Section 3.1)
@@ -95,25 +96,38 @@ export function calculateSessionPoints(
   let rawSpeedBonus = 0;
   let correctCount = 0;
 
-  questions.forEach((q, index) => {
+  questions.forEach((q) => {
     if (q.isCorrect) {
-      correctCount += 1;
-      const baseForQ = BASE_EP_MAP[q.difficulty] ?? 10;
-      rawBaseEP += baseForQ;
-
-      // Focus area question bonus (+25% of base EP)
-      if (q.isFocusArea) {
-        const focusForQ = Math.round(baseForQ * FOCUS_QUESTION_MULTIPLIER);
-        rawFocusBonus += focusForQ;
+      let qMultiplier = 1.0;
+      if (q.antiGamingMultiplier !== undefined) {
+        qMultiplier = q.antiGamingMultiplier;
+      } else if (
+        q.timeSpentSeconds !== undefined &&
+        q.timeSpentSeconds < RAPID_GUESSING_THRESHOLD_SECONDS
+      ) {
+        // PRD §4.3: rapid guessing floor (< 2.5s) awards 0 EP
+        qMultiplier = 0.0;
       }
 
-      // Speed bonus
-      const speedForQ = calculateQuestionSpeedBonus(
-        q.isCorrect,
-        q.timeSpentSeconds,
-        q.expectedTimeSeconds
-      );
-      rawSpeedBonus += speedForQ;
+      if (qMultiplier > 0) {
+        correctCount += 1;
+        const baseForQ = Math.round((BASE_EP_MAP[q.difficulty] ?? 10) * qMultiplier);
+        rawBaseEP += baseForQ;
+
+        // Focus area question bonus (+25% of base EP)
+        if (q.isFocusArea) {
+          const focusForQ = Math.round(baseForQ * FOCUS_QUESTION_MULTIPLIER);
+          rawFocusBonus += focusForQ;
+        }
+
+        // Speed bonus
+        const speedForQ = calculateQuestionSpeedBonus(
+          q.isCorrect,
+          q.timeSpentSeconds,
+          q.expectedTimeSeconds
+        );
+        rawSpeedBonus += speedForQ;
+      }
     }
   });
 

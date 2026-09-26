@@ -18,6 +18,10 @@ import {
   StudentLevelInfo,
   DailyChallengeResult,
 } from "./types";
+import {
+  evaluateQuestionAttemptAntiGaming,
+  applyDailySpeedBonusCap,
+} from "./antiGamingEngine";
 
 export interface RecordSessionGamificationParams {
   studentId: string;
@@ -62,8 +66,25 @@ export async function recordSessionGamification(
     isDailyChallenge = false,
   } = params;
 
-  // 1. Calculate session points and itemized breakdown
-  const pointResult = calculateSessionPoints(questions, isDedicatedFocusSession);
+  const todayUTC = new Date().toISOString().split("T")[0];
+
+  // 1. Evaluate questions with Anti-Gaming integrity engine (PRD §4)
+  const evaluatedQuestions: SessionQuestionInput[] = questions.map((q) => {
+    if (q.antiGamingMultiplier !== undefined) return q;
+    const agEval = evaluateQuestionAttemptAntiGaming({
+      timeSpentSeconds: q.timeSpentSeconds,
+      lastAttemptedAt: q.lastAttemptedAt,
+      questionClassYear: q.questionClassYear,
+    });
+    return {
+      ...q,
+      antiGamingMultiplier: agEval.epMultiplier,
+      antiGamingFlag: agEval.flaggedReason,
+    };
+  });
+
+  // Calculate session points and itemized breakdown
+  const pointResult = calculateSessionPoints(evaluatedQuestions, isDedicatedFocusSession);
 
   // 2. Fetch current gamification profile
   const { data: profile } = await supabase
@@ -71,6 +92,33 @@ export async function recordSessionGamification(
     .select("*")
     .eq("student_id", studentId)
     .maybeSingle();
+
+  // Enforce Daily Speed Bonus Cap (PRD §4.6: Max 50 EP per day)
+  if (pointResult.speedBonus > 0) {
+    const todayStart = `${todayUTC}T00:00:00.000Z`;
+    const { data: todaySpeedRows } = await supabase
+      .from("student_points_ledger" as any)
+      .select("amount")
+      .eq("student_id", studentId)
+      .eq("source_type", "speed_bonus")
+      .gte("created_at", todayStart);
+
+    const speedEarnedToday = (todaySpeedRows || []).reduce(
+      (acc: number, row: any) => acc + Number(row.amount || 0),
+      0
+    );
+    const allowedSpeed = applyDailySpeedBonusCap(speedEarnedToday, pointResult.speedBonus);
+    if (allowedSpeed < pointResult.speedBonus) {
+      const deduction = pointResult.speedBonus - allowedSpeed;
+      pointResult.speedBonus = allowedSpeed;
+      pointResult.totalEP -= deduction;
+      const speedItem = pointResult.breakdown.find((b) => b.category === "speed_bonus");
+      if (speedItem) {
+        speedItem.amount = allowedSpeed;
+        speedItem.description = `Speed bonus adjusted by daily cap (max 50 EP/day)`;
+      }
+    }
+  }
 
   const currentLifetimeEP = Number(profile?.lifetime_ep || 0);
   const currentWeeklyEP = Number(profile?.weekly_ep || 0);
@@ -161,7 +209,6 @@ export async function recordSessionGamification(
   }
 
   // 4. Process Daily Challenge if applicable (PRD Section 3.6 & Epic EP-04)
-  const todayUTC = new Date().toISOString().split("T")[0];
   let dailyChallengeOutcome: DailyChallengeResult | undefined = undefined;
 
   if (isDailyChallenge) {
