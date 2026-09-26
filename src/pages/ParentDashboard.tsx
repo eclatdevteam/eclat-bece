@@ -21,6 +21,10 @@ import { toast } from "sonner";
 import { LinkedChild, ChildAnalytics, QuizResult, Assignment } from "@/types/parent";
 import { getEdgeFunctionError } from "@/lib/errorUtils";
 import { QuestionSnapshotDialog } from "@/components/quiz/QuestionSnapshotDialog";
+import { WeeklyGrowthDigestCard } from "@/components/parent/WeeklyGrowthDigestCard";
+import { calculateStudentLevel } from "@/services/gamification/levelEngine";
+import { LEAGUE_TIERS } from "@/services/gamification/leagueEngine";
+import { LeagueTierNumber } from "@/services/gamification/types";
 import eclatlLogo from "@/assets/logo.png";
 
 const getErrorMessage = (error: unknown, fallback: string) =>
@@ -188,7 +192,7 @@ export default function ParentDashboard() {
         const nameMap = new Map(data.map((c) => [c.id, c.profile?.full_name || "Unknown"]));
 
         // Batched parallel queries for all linked children
-        const [quizzesRes, assignmentsRes] = await Promise.all([
+        const [quizzesRes, assignmentsRes, gameProfilesRes, masteriesRes] = await Promise.all([
           supabase
             .from("quiz_results")
             .select("*")
@@ -199,16 +203,38 @@ export default function ParentDashboard() {
             .select("*")
             .in("student_id", studentIds)
             .order("created_at", { ascending: false }),
+          supabase
+            .from("student_gamification_profile" as any)
+            .select("*")
+            .in("student_id", studentIds),
+          supabase
+            .from("student_topic_mastery" as any)
+            .select("student_id, subject, topic, rolling_accuracy, status")
+            .in("student_id", studentIds),
         ]);
 
         const allQuizzes = (quizzesRes.data || []) as QuizResult[];
         const allAssignments = (assignmentsRes.data || []) as Assignment[];
+        const allGameProfiles = (gameProfilesRes.data || []) as any[];
+        const allMasteries = (masteriesRes.data || []) as any[];
 
         const analyticsMap = new Map<string, ChildAnalytics>();
         studentIds.forEach((sId) => {
           const childQuizzes = allQuizzes.filter((q) => q.student_id === sId);
-          if (childQuizzes.length > 0) {
-            const averageScore = childQuizzes.reduce((acc, result) => acc + result.score, 0) / childQuizzes.length;
+          const gameProfile = allGameProfiles.find((p) => p.student_id === sId);
+          const childMasteries = allMasteries.filter((m) => m.student_id === sId);
+
+          const strongCount = childMasteries.filter((m) => m.status === "Strong").length;
+          const weakCount = childMasteries.filter((m) => m.status === "Weak").length;
+          const lifetimeEP = Number(gameProfile?.lifetime_ep || 0);
+          const lvl = calculateStudentLevel(lifetimeEP);
+          const tier = (gameProfile?.current_league_tier || 1) as LeagueTierNumber;
+          const leagueName = LEAGUE_TIERS[tier]?.name || "Starter League";
+
+          if (childQuizzes.length > 0 || gameProfile) {
+            const averageScore = childQuizzes.length > 0
+              ? childQuizzes.reduce((acc, result) => acc + result.score, 0) / childQuizzes.length
+              : 0;
             const subjectMap = new Map<string, { totalScore: number; count: number }>();
             childQuizzes.forEach((result) => {
               const existing = subjectMap.get(result.subject) || { totalScore: 0, count: 0 };
@@ -230,6 +256,15 @@ export default function ParentDashboard() {
               totalQuizzes: childQuizzes.length,
               subjectPerformance,
               recentQuizzes: childQuizzes.slice(0, 5),
+              lifetimeEP,
+              currentLevel: lvl.level,
+              levelTitle: lvl.title,
+              leagueTier: tier,
+              leagueName,
+              streakCount: Number(gameProfile?.streak_count || 0),
+              streakShields: Number(gameProfile?.streak_shields || 0),
+              strongTopicsCount: strongCount,
+              weakTopicsCount: weakCount,
             });
           }
         });
@@ -355,6 +390,17 @@ export default function ParentDashboard() {
               </div>
             </CardContent>
           </Card>
+        </div>
+      )}
+
+      {/* Weekly Parent Growth Digest (PRD §10.1 & Phase 3 Epic PAR-01) */}
+      {!isLoading && linkedChildren.length > 0 && parentId && (
+        <div className="mb-8">
+          <WeeklyGrowthDigestCard
+            parentId={parentId}
+            studentId={linkedChildren[0].id}
+            studentName={linkedChildren[0].profile?.full_name || "Your Child"}
+          />
         </div>
       )}
 

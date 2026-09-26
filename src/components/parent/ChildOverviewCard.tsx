@@ -284,33 +284,42 @@ export function ChildOverviewCard({
 
                 {analytics ? (
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
-                        {/* Optimized Metrics Grid */}
-                        <div className="grid grid-cols-3 gap-3 sm:gap-4">
-                            <div className="p-4 rounded-3xl bg-primary/5 border border-primary/10 transition-all hover:bg-primary/10 group/stat">
-                                <div className="flex items-center justify-between mb-2">
-                                    <p className="text-[10px] font-black text-primary uppercase tracking-widest opacity-70">Avg</p>
-                                    <Award className="h-4 w-4 text-primary group-hover/stat:scale-110 transition-transform" />
-                                </div>
-                                <p className="text-2xl sm:text-3xl font-black text-foreground tabular-nums">
-                                    {analytics.averageScore}<span className="text-sm font-bold opacity-50 ml-0.5">%</span>
+                        {/* Four Pillars Gamification & Performance Strip (PRD Section 2) */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                            <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20">
+                                <p className="text-[9px] font-black uppercase text-amber-500">Level & Points</p>
+                                <p className="text-lg font-black text-foreground">
+                                    Lvl {analytics.currentLevel || 1}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground font-bold">
+                                    {(analytics.lifetimeEP || 0).toLocaleString()} EP
                                 </p>
                             </div>
-                            <div className="p-4 rounded-3xl bg-emerald-500/5 border border-emerald-500/10 transition-all hover:bg-emerald-500/10 group/stat">
-                                <div className="flex items-center justify-between mb-2">
-                                    <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest opacity-70">Quizzes</p>
-                                    <Target className="h-4 w-4 text-emerald-600 group-hover/stat:rotate-12 transition-transform" />
-                                </div>
-                                <p className="text-2xl sm:text-3xl font-black text-foreground tabular-nums">
-                                    {analytics.totalQuizzes}
+                            <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20">
+                                <p className="text-[9px] font-black uppercase text-purple-400">League Cohort</p>
+                                <p className="text-sm font-black text-foreground truncate">
+                                    {analytics.leagueName || "Starter"}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground font-bold">
+                                    Tier {analytics.leagueTier || 1}
                                 </p>
                             </div>
-                            <div className="p-4 rounded-3xl bg-sky-500/5 border border-sky-500/10 transition-all hover:bg-sky-500/10 group/stat">
-                                <div className="flex items-center justify-between mb-2">
-                                    <p className="text-[10px] font-black text-sky-600 uppercase tracking-widest opacity-70">Subjects</p>
-                                    <BookOpen className="h-4 w-4 text-sky-600 group-hover/stat:-translate-y-1 transition-transform" />
-                                </div>
-                                <p className="text-2xl sm:text-3xl font-black text-foreground tabular-nums">
-                                    {analytics.subjectPerformance.length}
+                            <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20">
+                                <p className="text-[9px] font-black uppercase text-emerald-500">Conquered</p>
+                                <p className="text-lg font-black text-emerald-500">
+                                    {analytics.strongTopicsCount || 0}
+                                </p>
+                                <p className="text-[10px] text-muted-foreground font-bold">
+                                    Strong Topics
+                                </p>
+                            </div>
+                            <div className="p-3 rounded-2xl bg-orange-500/10 border border-orange-500/20">
+                                <p className="text-[9px] font-black uppercase text-orange-500">Practice Streak</p>
+                                <p className="text-lg font-black text-orange-500">
+                                    {analytics.streakCount || 0}d
+                                </p>
+                                <p className="text-[10px] text-muted-foreground font-bold">
+                                    {analytics.streakShields || 0} Shields
                                 </p>
                             </div>
                         </div>

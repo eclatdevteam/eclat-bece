@@ -21,6 +21,8 @@ interface SchoolAssignPracticeDialogProps {
   onOpenChange: (open: boolean) => void;
   schoolId: string;
   defaultCohort?: "year_6" | "year_9";
+  initialSubject?: string;
+  initialTopic?: string;
   students: StudentOption[];
   onSuccess?: () => void;
 }
@@ -32,6 +34,8 @@ export function SchoolAssignPracticeDialog({
   onOpenChange,
   schoolId,
   defaultCohort = "year_9",
+  initialSubject,
+  initialTopic,
   students,
   onSuccess,
 }: SchoolAssignPracticeDialogProps) {
@@ -61,7 +65,7 @@ export function SchoolAssignPracticeDialog({
     }
   }, [defaultCohort]);
 
-  // Reset form when dialog closes
+  // Reset or pre-fill form when dialog opens/closes
   useEffect(() => {
     if (!open) {
       setStep("target");
@@ -73,8 +77,15 @@ export function SchoolAssignPracticeDialog({
       setSelectedStudentId("");
     } else {
       fetchMetadata(selectedCohort);
+      if (initialSubject) {
+        setSelectedSubject(initialSubject);
+        if (initialTopic) {
+          setSelectedTopics([initialTopic]);
+        }
+        setStep("config");
+      }
     }
-  }, [open, selectedCohort]);
+  }, [open, selectedCohort, initialSubject, initialTopic]);
 
   const fetchMetadata = async (cohort: "year_6" | "year_9") => {
     setIsLoading(true);

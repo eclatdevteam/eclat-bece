@@ -14,8 +14,13 @@ import {
   Award, 
   Calendar,
   Sparkles,
-  Printer
+  Printer,
+  Shield,
+  Trophy,
+  Flame,
+  Target
 } from "lucide-react";
+import { WeeklyGrowthDigestCard } from "@/components/parent/WeeklyGrowthDigestCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -76,6 +81,8 @@ export default function ParentReportsPage() {
   const [streak, setStreak] = useState<number>(0);
   const [totalAssignments, setTotalAssignments] = useState<number>(0);
   const [completedAssignments, setCompletedAssignments] = useState<number>(0);
+  const [gamificationProfile, setGamificationProfile] = useState<any>(null);
+  const [topicMasteries, setTopicMasteries] = useState<Array<{ subject: string; topic: string; rolling_accuracy: number; status: string }>>([]);
 
   const selectedChild = useMemo(() => {
     return children.find((c) => c.id === selectedChildId) || children[0] || null;
@@ -133,7 +140,7 @@ export default function ParentReportsPage() {
           query = query.gte("completed_at", oneMonthAgo);
         }
 
-        const [quizRes, streakRes, assignRes] = await Promise.all([
+        const [quizRes, streakRes, assignRes, gameProfRes, masteryRes] = await Promise.all([
           query,
           supabase
             .from("student_streaks")
@@ -144,12 +151,30 @@ export default function ParentReportsPage() {
             .from("practice_assignments")
             .select("status")
             .eq("student_id", selectedChild.id),
+          supabase
+            .from("student_gamification_profile" as any)
+            .select("*")
+            .eq("student_id", selectedChild.id)
+            .maybeSingle(),
+          supabase
+            .from("student_topic_mastery" as any)
+            .select("subject, topic, rolling_accuracy, status")
+            .eq("student_id", selectedChild.id),
         ]);
 
         if (quizRes.data) {
           setQuizResults(quizRes.data as QuizItem[]);
         }
-        setStreak(streakRes.data?.current_streak || 0);
+        if (gameProfRes.data) {
+          setGamificationProfile(gameProfRes.data);
+          setStreak(Number(gameProfRes.data.streak_count ?? (streakRes.data?.current_streak || 0)));
+        } else {
+          setStreak(streakRes.data?.current_streak || 0);
+        }
+
+        if (masteryRes.data) {
+          setTopicMasteries(masteryRes.data as any);
+        }
 
         if (assignRes.data) {
           setTotalAssignments(assignRes.data.length);
@@ -312,6 +337,17 @@ export default function ParentReportsPage() {
           </Button>
         </div>
       </div>
+
+      {/* Weekly Parent Growth Digest (PRD §10.1 & Phase 3 Epic PAR-01) */}
+      {parentId && selectedChild && (
+        <div className="mb-8">
+          <WeeklyGrowthDigestCard
+            parentId={parentId}
+            studentId={selectedChild.id}
+            studentName={selectedChild.profile.full_name || "Child"}
+          />
+        </div>
+      )}
 
       {/* Top 4 KPI Cards */}
       <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
@@ -574,6 +610,58 @@ export default function ParentReportsPage() {
                     <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                       <span>{sub.count} Quizzes completed</span>
                       <span>{sub.totalQuestions} Questions solved</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* PRD Pillar 2: Topic Mastery Status Matrix */}
+          <div className="rounded-[1.8rem] border border-border/60 bg-card/60 p-5 shadow-sm space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-black text-foreground flex items-center gap-2">
+                  <Target className="h-5 w-5 text-primary" />
+                  Topic Mastery Matrix
+                </h3>
+                <p className="text-xs text-muted-foreground">Rolling 30-question diagnostic status per syllabus unit</p>
+              </div>
+              <Badge variant="outline" className="font-bold text-[10px]">
+                {topicMasteries.length} Topics
+              </Badge>
+            </div>
+
+            {topicMasteries.length === 0 ? (
+              <p className="py-6 text-center text-xs text-muted-foreground font-semibold">
+                Topic mastery will populate as {selectedChild?.profile.full_name || "your child"} completes curriculum questions.
+              </p>
+            ) : (
+              <div className="space-y-2.5 max-h-[360px] overflow-y-auto pr-1">
+                {topicMasteries.map((m, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between rounded-xl border border-border/60 bg-background/50 p-3 hover:border-primary/30 transition-colors"
+                  >
+                    <div>
+                      <p className="text-xs font-bold text-foreground">{m.topic}</p>
+                      <p className="text-[10px] text-muted-foreground">{m.subject}</p>
+                    </div>
+                    <div className="text-right flex items-center gap-2">
+                      <span className="text-xs font-mono font-black text-foreground">
+                        {Math.round(m.rolling_accuracy)}%
+                      </span>
+                      <Badge
+                        className={`text-[9px] font-black uppercase ${
+                          m.status === "Strong"
+                            ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                            : m.status === "Developing"
+                            ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30"
+                            : "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                        }`}
+                      >
+                        {m.status === "Weak" ? "Focus Area" : m.status}
+                      </Badge>
                     </div>
                   </div>
                 ))}

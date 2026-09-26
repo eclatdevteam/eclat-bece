@@ -37,6 +37,15 @@ export interface ChildAnalytics {
     totalQuizzes: number;
     subjectPerformance: { subject: string; avgScore: number; count: number }[];
     recentQuizzes: QuizResult[];
+    lifetimeEP?: number;
+    currentLevel?: number;
+    levelTitle?: string;
+    leagueTier?: number;
+    leagueName?: string;
+    streakCount?: number;
+    streakShields?: number;
+    strongTopicsCount?: number;
+    weakTopicsCount?: number;
 }
 
 export interface LinkedChild {
