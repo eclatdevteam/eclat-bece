@@ -38,6 +38,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { QuestionSnapshotDialog } from "@/components/quiz/QuestionSnapshotDialog";
+import { PointBreakdownLedger } from "@/components/gamification/PointBreakdownLedger";
+import { BadgeUnlockModal } from "@/components/gamification/BadgeUnlockModal";
+import { recordSessionGamification, GamificationSessionOutcome } from "@/services/gamification/gamificationService";
+import { DifficultyLevel } from "@/services/gamification/types";
+import { BadgeDefinition } from "@/services/gamification/badgeEngine";
 
 interface QuizOption {
   text: string;
@@ -51,6 +56,8 @@ interface Question {
   correctAnswer: number;
   explanation: string;
   subject: string;
+  difficulty?: DifficultyLevel;
+  topic?: string;
   image_url?: string | null;
   passage?: {
     title: string | null;
@@ -86,6 +93,11 @@ export default function QuizPage() {
   // Question Snapshot Review Dialog States
   const [snapshotDialogOpen, setSnapshotDialogOpen] = useState(false);
   const [snapshotInitialIndex, setSnapshotInitialIndex] = useState(0);
+
+  // Gamification State
+  const [gamificationOutcome, setGamificationOutcome] = useState<GamificationSessionOutcome | null>(null);
+  const [badgeModalOpen, setBadgeModalOpen] = useState(false);
+  const [unlockedBadges, setUnlockedBadges] = useState<BadgeDefinition[]>([]);
 
   // Question Flagging States
   const [flagDialogOpen, setFlagDialogOpen] = useState(false);
@@ -388,6 +400,8 @@ export default function QuizPage() {
             correctAnswer: correctOptionIndex >= 0 ? correctOptionIndex : 0,
             explanation: q.explanation || "No explanation available.",
             subject: q.subject,
+            topic: q.topic || undefined,
+            difficulty: (q.difficulty as any) || "medium",
             passage: q.passage || null,
             image_url: q.image_url || null,
           };
@@ -527,18 +541,49 @@ export default function QuizPage() {
       const percentage = questions.length > 0 ? Math.round((finalScore / questions.length) * 100) : 0;
 
       // Insert quiz result
-      const { error } = await supabase.from("quiz_results").insert({
-        student_id: studentData.id,
-        subject: quizSubject || subject || "Mixed Topics",
-        score: percentage,
-        total_questions: questions.length,
-        correct_answers: finalScore,
-      });
+      const { data: newQuizResult, error } = await supabase
+        .from("quiz_results")
+        .insert({
+          student_id: studentData.id,
+          subject: quizSubject || subject || "Mixed Topics",
+          score: percentage,
+          total_questions: questions.length,
+          correct_answers: finalScore,
+        })
+        .select("id")
+        .maybeSingle();
 
       if (error) {
         console.error("Error saving quiz result:", error);
         toast.error("Failed to save quiz results");
       } else {
+        // Record and calculate Gamification Points (EP), Mastery, Streak, and Badges
+        try {
+          const sessionQuestionsInput = questions.map((q, idx) => ({
+            questionId: q.id,
+            difficulty: q.difficulty || "medium",
+            isCorrect: finalAnswers[idx] || false,
+            timeSpentSeconds: 30,
+            expectedTimeSeconds: 60,
+            isFocusArea: false,
+          }));
+
+          const outcome = await recordSessionGamification({
+            studentId: studentData.id,
+            quizResultId: newQuizResult?.id,
+            subject: quizSubject || subject || "Mixed Topics",
+            topic: topic || questions[0]?.topic || "General",
+            questions: sessionQuestionsInput,
+          });
+
+          setGamificationOutcome(outcome);
+          if (outcome.unlockedBadges && outcome.unlockedBadges.length > 0) {
+            setUnlockedBadges(outcome.unlockedBadges);
+            setBadgeModalOpen(true);
+          }
+        } catch (gameErr) {
+          console.error("Error updating gamification profile:", gameErr);
+        }
         // If it was an assignment, update assignment status and store questions_snapshot
         if (assignmentId) {
           const questionsSnapshot = {
@@ -711,6 +756,13 @@ export default function QuizPage() {
             </div>
           </div>
 
+          {/* Éclat Gamification Points Ledger */}
+          {gamificationOutcome && (
+            <div className="mb-6">
+              <PointBreakdownLedger outcome={gamificationOutcome} />
+            </div>
+          )}
+
           {/* Interactive Question Grid with prompt */}
           <div className="mb-6">
             <div className="flex items-center justify-between mb-2.5 px-1">
@@ -806,6 +858,13 @@ export default function QuizPage() {
           onFlagQuestion={(q) => handleOpenFlagDialog(q)}
           flaggedQuestionIds={flaggedQuestionIds}
           subjectName={quizSubject}
+        />
+
+        {/* Badge Unlock Celebration Dialog */}
+        <BadgeUnlockModal
+          badges={unlockedBadges}
+          open={badgeModalOpen}
+          onClose={() => setBadgeModalOpen(false)}
         />
 
         {/* Flag Question Dialog */}
