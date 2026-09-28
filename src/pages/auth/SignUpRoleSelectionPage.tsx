@@ -11,28 +11,41 @@ export default function SignUpRoleSelectionPage({ login = false }: { login?: boo
   const navigate = useNavigate();
   useRedirectIfAuthenticated();
 
-  const allRoles = [
-    {
-      id: "student",
-      icon: GraduationCap,
-      title: "Student",
-      description: "Access your courses, track your progress, and collaborate with peers.",
-    },
-    {
-      id: "parent",
-      icon: Users,
-      title: "Parent",
-      description: "Monitor academic performance, communicate with teachers, and manage schedules.",
-    },
-    {
-      id: "school",
-      icon: Building2,
-      title: "School",
-      description: "Manage faculty, oversee curriculum delivery, and analyze institutional data.",
-    },
-  ];
-
-  const roles = login ? allRoles : allRoles.filter((r) => r.id !== "student");
+  const roles = login
+    ? [
+      {
+        id: "student",
+        icon: GraduationCap,
+        title: "Student",
+        description: "Log in to your account and continue your learning journey.",
+      },
+      {
+        id: "parent",
+        icon: Users,
+        title: "Parent",
+        description: "Monitor academic performance, manage child accounts, and review progress.",
+      },
+      {
+        id: "school",
+        icon: Building2,
+        title: "School",
+        description: "Access school tools to manage students, classes, and analytics.",
+      },
+    ]
+    : [
+      {
+        id: "parent",
+        icon: Users,
+        title: "Parent",
+        description: "Create a parent profile and manage your child’s account, performance, and assignments.",
+      },
+      {
+        id: "school",
+        icon: Building2,
+        title: "School",
+        description: "Create a school profile and manage student onboarding, classes, and performance reporting.",
+      },
+    ];
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-[#081328] p-0 font-sans text-[#dce7ff] relative">
@@ -61,8 +74,8 @@ export default function SignUpRoleSelectionPage({ login = false }: { login?: boo
                     login
                       ? `/${id === "student" ? "student-login" : `${id}-login`}`
                       : id === "parent"
-                      ? "/parent-signup"
-                      : `/auth?role=${id}`
+                        ? "/parent-signup"
+                        : `/auth?role=${id}`
                   )
                 }
               >

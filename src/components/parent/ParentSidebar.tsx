@@ -93,26 +93,19 @@ export function ParentSidebar() {
                         <Button
                             variant="ghost"
                             size="sm"
-                            onClick={signOut}
+                            onClick={() => signOut()}
                             className="h-11 w-full justify-start rounded-xl text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
                         >
-                          <Icon className={isCollapsed ? "" : "mr-2 h-4 w-4"} />
-                          {!isCollapsed && <span>{item.title}</span>}
-                        </SidebarMenuButton>
-                      </TooltipTrigger>
-                      {isCollapsed && (
-                        <TooltipContent side="right">
-                          <p>{item.title}</p>
+                            <LogOut className={isCollapsed ? "h-5 w-5" : "mr-3 h-5 w-5"} />
+                            {!isCollapsed && <span className="text-[15px] font-medium">Log out</span>}
+                        </Button>
+                    </TooltipTrigger>
+                    {isCollapsed && (
+                        <TooltipContent side="right" className="border border-border/40 bg-popover text-foreground">
+                            <p className="font-medium">Log out</p>
                         </TooltipContent>
-                      )}
-                    </Tooltip>
-                  </SidebarMenuItem>
-                );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-      </SidebarContent>
+                    )}
+                </Tooltip>
 
                 <Button
                     variant="ghost"

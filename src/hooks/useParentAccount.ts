@@ -5,12 +5,14 @@ import { supabase } from "@/integrations/supabase/client";
 export function useParentAccount() {
   const { user } = useAuth();
   const [parentId, setParentId] = useState<string | null>(null);
+  const [parentCode, setParentCode] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchOrProvisionParent = useCallback(async (): Promise<string | null> => {
     if (!user) {
       setParentId(null);
+      setParentCode(null);
       setLoading(false);
       return null;
     }
@@ -19,11 +21,25 @@ export function useParentAccount() {
       setLoading(true);
       setError(null);
 
-      let { data: parentData, error: parentError } = await supabase
-        .from("parents")
-        .select("id")
-        .eq("user_id", user.id)
-        .maybeSingle();
+      const [parentRes, profileRes] = await Promise.all([
+        supabase
+          .from("parents")
+          .select("id")
+          .eq("user_id", user.id)
+          .maybeSingle(),
+        supabase
+          .from("profiles")
+          .select("unique_id")
+          .eq("id", user.id)
+          .maybeSingle(),
+      ]);
+
+      let parentData = parentRes.data;
+      const parentError = parentRes.error;
+
+      if (profileRes.data?.unique_id) {
+        setParentCode(profileRes.data.unique_id);
+      }
 
       if (parentError && parentError.code !== "PGRST116") {
         console.warn("Parent lookup error, attempting recovery:", parentError);
@@ -37,13 +53,23 @@ export function useParentAccount() {
             headers: { Authorization: `Bearer ${session.access_token}` },
           });
 
-          const { data: retryParent } = await supabase
-            .from("parents")
-            .select("id")
-            .eq("user_id", user.id)
-            .maybeSingle();
+          const [retryParentRes, retryProfileRes] = await Promise.all([
+            supabase
+              .from("parents")
+              .select("id")
+              .eq("user_id", user.id)
+              .maybeSingle(),
+            supabase
+              .from("profiles")
+              .select("unique_id")
+              .eq("id", user.id)
+              .maybeSingle(),
+          ]);
 
-          parentData = retryParent;
+          parentData = retryParentRes.data;
+          if (retryProfileRes.data?.unique_id) {
+            setParentCode(retryProfileRes.data.unique_id);
+          }
         }
       }
 
@@ -68,5 +94,5 @@ export function useParentAccount() {
     fetchOrProvisionParent();
   }, [fetchOrProvisionParent]);
 
-  return { parentId, loading, error, refetch: fetchOrProvisionParent };
+  return { parentId, parentCode, loading, error, refetch: fetchOrProvisionParent };
 }

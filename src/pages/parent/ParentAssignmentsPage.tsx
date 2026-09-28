@@ -46,7 +46,8 @@ import { LinkedChild } from "@/types/parent";
 interface AssignmentRecord {
   id: string;
   student_id: string;
-  parent_id: string;
+  parent_id?: string | null;
+  school_id?: string | null;
   subject: string;
   topics: string[];
   num_questions: number;
@@ -227,6 +228,7 @@ export default function ParentAssignmentsPage() {
         const studentInfo = studentMap.get(a.student_id);
         return {
           ...a,
+          status: a.status === "completed" ? "completed" : "pending",
           student_name: studentInfo?.name || "Student",
           student_user_id: studentInfo?.userId,
         };
@@ -642,7 +644,6 @@ export default function ParentAssignmentsPage() {
               )}
             </div>
           </div>
-        </div>
 
           {/* Right Column: Completed / Recent Submissions */}
           <div className="space-y-6">

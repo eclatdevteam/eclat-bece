@@ -244,17 +244,16 @@ export default function AuthPage({ roleOverride }: { roleOverride?: AuthRole }) 
                     <div className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-muted-foreground">
                       <User size={19} />
                     </div>
-                    <h3 className="text-xl font-semibold">Registration Required</h3>
-                    <p className="text-muted-foreground px-4">
-                      Student accounts are created by parents. Please ask your parent to create an account for you from their dashboard.
-                    </p>
-                    <Button
-                      variant="outline"
-                      onClick={() => navigate("/student-login")}
-                      className="mt-4"
-                    >
-                      Return to Login
-                    </Button>
+                    <Input
+                      id="signup-name"
+                      name="fullName"
+                      type="text"
+                      placeholder="Jane Doe"
+                      required
+                      minLength={2}
+                      maxLength={100}
+                      className="h-9 border-slate-300 bg-slate-50 pl-10 text-[12px] text-slate-900 placeholder:text-slate-400 focus-visible:ring-sky-500 dark:border-[#2d3c55] dark:bg-[#111b30] dark:text-[#dce7ff] dark:placeholder:text-[#6f7b91] dark:focus-visible:ring-[#72c8f6]"
+                    />
                   </div>
                 </div>
 
@@ -295,12 +294,30 @@ export default function AuthPage({ roleOverride }: { roleOverride?: AuthRole }) 
                   </div>
                 )}
 
-                    <div className="relative my-4">
-                      <Separator />
-                      <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-card px-2 text-xs text-muted-foreground">
-                        OR
-                      </span>
-                    </div>
+                <div className="space-y-2">
+                  <Label htmlFor="signup-password" className="text-[11px] font-bold tracking-[1px] text-slate-700 dark:text-[#c5cee0]">
+                    Password
+                  </Label>
+                  <div className="relative">
+                    <Input
+                      id="signup-password"
+                      name="password"
+                      type={showSignupPassword ? "text" : "password"}
+                      placeholder="••••••••"
+                      required
+                      minLength={6}
+                      maxLength={100}
+                      className="h-9 border-slate-300 bg-slate-50 pr-10 text-[12px] text-slate-900 focus-visible:ring-sky-500 dark:border-[#2d3c55] dark:bg-[#111b30] dark:text-[#dce7ff] dark:focus-visible:ring-[#72c8f6]"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSignupPassword((prev) => !prev)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 transition-colors hover:text-slate-900 dark:text-[#718097] dark:hover:text-[#dce7ff]"
+                    >
+                      {showSignupPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="signup-confirm-password" className="text-[11px] font-bold tracking-[1px] text-slate-700 dark:text-[#c5cee0]">
@@ -345,6 +362,24 @@ export default function AuthPage({ roleOverride }: { roleOverride?: AuthRole }) 
                     </>
                   )}
                 </Button>
+
+                <button
+                  type="button"
+                  onClick={handleGoogleLogin}
+                  disabled={isLoading}
+                  className="mt-3 flex h-9 w-full items-center justify-center gap-2 border border-slate-300 bg-slate-50 text-[12px] font-bold tracking-[1px] text-slate-700 transition-colors hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-[#2a3a53] dark:bg-[#111b30] dark:text-[#dce7ff] dark:hover:bg-[#1a2a42]"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" aria-hidden="true">
+                    <path fill="#4285F4" d="M21.35 12.23c0-.71-.06-1.39-.18-2.05H12v3.88h5.24a4.48 4.48 0 0 1-1.94 2.94v2.43h3.14c1.84-1.69 2.91-4.18 2.91-7.2Z" />
+                    <path fill="#34A853" d="M12 21.5c2.63 0 4.84-.87 6.45-2.35l-3.14-2.43c-.87.58-1.98.93-3.31.93-2.55 0-4.71-1.72-5.49-4.04H3.27v2.51A9.74 9.74 0 0 0 12 21.5Z" />
+                    <path fill="#FBBC05" d="M6.51 13.61a5.86 5.86 0 0 1 0-3.72V7.38H3.27a9.73 9.73 0 0 0 0 8.74l3.24-2.51Z" />
+                    <path fill="#EA4335" d="M12 5.85c1.43 0 2.71.49 3.72 1.46l2.79-2.79C16.84 2.93 14.63 2 12 2a9.74 9.74 0 0 0-8.73 5.38l3.24 2.51C7.29 7.57 9.45 5.85 12 5.85Z" />
+                  </svg>
+                  Sign Up with Gmail
+                </button>
+              </form>
+            )}
+          </div>
 
           <div className="mt-6 text-center">
             <Button

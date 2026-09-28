@@ -46,6 +46,8 @@ export interface ChildAnalytics {
     streakShields?: number;
     strongTopicsCount?: number;
     weakTopicsCount?: number;
+    pendingAssignments?: number;
+    completedAssignments?: number;
 }
 
 export interface LinkedChild {

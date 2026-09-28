@@ -19,11 +19,12 @@ interface AssignPracticeDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   child: LinkedChild | null;
+  onSuccess?: () => void;
 }
 
 type Step = "subject" | "topics" | "config" | "summary";
 
-export function AssignPracticeDialog({ open, onOpenChange, child }: AssignPracticeDialogProps) {
+export function AssignPracticeDialog({ open, onOpenChange, child, onSuccess }: AssignPracticeDialogProps) {
   const [step, setStep] = useState<Step>("subject");
   const [isLoading, setIsLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -228,6 +229,7 @@ export function AssignPracticeDialog({ open, onOpenChange, child }: AssignPracti
         description: `${child.profile.full_name} will see this in their dashboard.`,
       });
       onOpenChange(false);
+      onSuccess?.();
     } catch (error: unknown) {
       console.error("Error assigning task:", error);
       toast.error(getErrorMessage(error, "Failed to assign task"));

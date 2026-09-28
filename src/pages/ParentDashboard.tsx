@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { Users, TrendingUp, Plus, Award, Target, ChevronRight, AlertTriangle, Search, Bell, Settings, BookOpen, FileText, Zap, BarChart3, MessageCircle } from "lucide-react";
+import { Users, TrendingUp, Plus, Award, Target, ChevronRight, AlertTriangle, Search, Bell, Settings, BookOpen, FileText, Zap, BarChart3, MessageCircle, Copy, Check } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -169,7 +169,17 @@ export default function ParentDashboard() {
 
   const overallAverage = totalQuizzesGlobal > 0 ? Math.round(totalScoreGlobal / totalQuizzesGlobal) : 0;
 
-  const { parentId, loading: parentAccountLoading } = useParentAccount();
+  const { parentId, parentCode, loading: parentAccountLoading } = useParentAccount();
+  const [copiedCode, setCopiedCode] = useState(false);
+
+  const handleCopyCode = async () => {
+    if (parentCode) {
+      await navigator.clipboard.writeText(parentCode);
+      setCopiedCode(true);
+      toast.success("Parent code copied to clipboard!");
+      setTimeout(() => setCopiedCode(false), 2000);
+    }
+  };
 
   const fetchLinkedChildren = useCallback(async (pId: string) => {
     try {
