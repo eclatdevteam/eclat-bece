@@ -3,6 +3,8 @@ import { ArrowRight, ArrowLeft, Building2, GraduationCap, Users } from "lucide-r
 import { useTheme } from "next-themes";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import eclatlLogo from "@/assets/logo.png";
+import logoDark from "@/assets/logo-dark.png";
+import logoLight from "@/assets/logo-light.png";
 import { useRedirectIfAuthenticated } from "@/hooks/useRedirectIfAuthenticated";
 
 export default function SignUpRoleSelectionPage({ login = false }: { login?: boolean }) {
