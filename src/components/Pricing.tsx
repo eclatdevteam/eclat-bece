@@ -38,7 +38,7 @@ export const Pricing = ({ onGetStartedClick }: PricingProps) => {
     },
     {
       name: "Annual Scholar",
-      price: "₦12,000",
+      price: "₦15,000",
       period: "/year",
       description: "Comprehensive year-round coverage. Save ₦6,000 compared to monthly.",
       features: [
@@ -79,11 +79,10 @@ export const Pricing = ({ onGetStartedClick }: PricingProps) => {
           {plans.map((plan, index) => (
             <div
               key={index}
-              className={`relative flex flex-col justify-between rounded-2xl p-7 sm:p-8 transition-all duration-300 ${
-                plan.popular
+              className={`relative flex flex-col justify-between rounded-2xl p-7 sm:p-8 transition-all duration-300 ${plan.popular
                   ? "bg-cyan-50/20 dark:bg-[#0e1c33] border-2 border-[#3bc2f3] shadow-xl dark:shadow-2xl shadow-cyan-950/40 lg:-translate-y-2"
                   : "bg-white dark:bg-[#0c1628] border border-slate-200 dark:border-[#233148] hover:border-[#3bc2f3]/50 shadow-md dark:shadow-xl"
-              }`}
+                }`}
             >
               {plan.popular && (
                 <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 bg-[#3bc2f3] text-slate-950 text-xs font-black uppercase tracking-wider rounded-full shadow-lg shadow-cyan-500/30">
@@ -123,11 +122,10 @@ export const Pricing = ({ onGetStartedClick }: PricingProps) => {
               <Button
                 size="lg"
                 onClick={onGetStartedClick}
-                className={`w-full h-12 rounded-xl text-sm font-extrabold transition-all duration-200 ${
-                  plan.popular
+                className={`w-full h-12 rounded-xl text-sm font-extrabold transition-all duration-200 ${plan.popular
                     ? "bg-[#3bc2f3] text-slate-950 hover:bg-[#32ade0] shadow-lg shadow-cyan-500/25 hover:scale-[1.02]"
                     : "bg-slate-100 dark:bg-[#080f22] text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-[#233148] hover:bg-slate-200 dark:hover:bg-[#15273f] hover:border-[#3bc2f3] hover:text-slate-950 dark:hover:text-white"
-                }`}
+                  }`}
               >
                 {plan.cta}
               </Button>

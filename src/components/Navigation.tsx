@@ -35,8 +35,8 @@ export const Navigation = ({ onLoginClick, onGetStartedClick }: NavigationProps)
       <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
         <div className="flex items-center justify-between gap-6 h-16 md:h-20">
           {/* Logo */}
-          <div 
-            className="flex items-center gap-2 sm:gap-3 cursor-pointer hover:scale-105 transition-all duration-300 hover:drop-shadow-2xl" 
+          <div
+            className="flex items-center gap-2 sm:gap-3 cursor-pointer hover:scale-105 transition-all duration-300 hover:drop-shadow-2xl"
             onClick={() => {
               navigate("/");
               window.scrollTo({ top: 0, behavior: "smooth" });
@@ -51,7 +51,7 @@ export const Navigation = ({ onLoginClick, onGetStartedClick }: NavigationProps)
               onClick={() => handleNavClick("/about", "about")}
               className="text-slate-300 hover:text-[#3bc2f3] transition-all duration-200 font-semibold text-sm xl:text-base tracking-tight hover:scale-105"
             >
-              About
+              About Us
             </button>
             <button
               onClick={() => handleNavClick("/features", "features")}
@@ -76,15 +76,15 @@ export const Navigation = ({ onLoginClick, onGetStartedClick }: NavigationProps)
           {/* CTA Buttons */}
           <div className="hidden lg:flex items-center justify-center gap-3">
             <ThemeToggle className="text-slate-200 hover:text-white hover:bg-[#15273f]" />
-            <Button 
-              variant="outline" 
-              onClick={onLoginClick} 
+            <Button
+              variant="outline"
+              onClick={onLoginClick}
               className="font-bold text-sm px-5 h-10 rounded-xl border border-[#233148] bg-[#0c1628] text-slate-200 hover:bg-[#15273f] hover:border-[#3bc2f3] hover:text-white transition-all hover:scale-105"
             >
               Login
             </Button>
-            <Button 
-              onClick={onGetStartedClick} 
+            <Button
+              onClick={onGetStartedClick}
               className="font-bold text-sm px-6 h-10 rounded-xl bg-[#3bc2f3] text-slate-950 hover:bg-[#32ade0] shadow-lg shadow-cyan-500/20 transition-all hover:scale-105"
             >
               Get Started
@@ -131,28 +131,28 @@ export const Navigation = ({ onLoginClick, onGetStartedClick }: NavigationProps)
             >
               Leaderboard
             </button>
-            
+
             {/* Mobile CTA Buttons */}
             <div className="pt-3 space-y-2 px-2">
               <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[#080f22] border border-[#233148] text-xs font-semibold text-slate-300">
                 <span>Theme</span>
                 <ThemeToggle className="text-slate-200 hover:text-white" />
               </div>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => {
                   setMobileMenuOpen(false);
                   onLoginClick();
-                }} 
+                }}
                 className="w-full font-bold text-sm h-11 rounded-xl border border-[#233148] bg-[#080f22] text-slate-200 hover:bg-[#15273f] hover:border-[#3bc2f3] hover:text-white"
               >
                 Login
               </Button>
-              <Button 
+              <Button
                 onClick={() => {
                   setMobileMenuOpen(false);
                   onGetStartedClick();
-                }} 
+                }}
                 className="w-full font-bold text-sm h-11 rounded-xl bg-[#3bc2f3] text-slate-950 hover:bg-[#32ade0] shadow-md shadow-cyan-500/20"
               >
                 Get Started
