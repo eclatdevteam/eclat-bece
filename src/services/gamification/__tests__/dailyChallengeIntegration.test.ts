@@ -20,6 +20,7 @@ describe("Daily Challenge Integration via gamificationService", () => {
   });
 
   it("awards Daily Challenge EP and marks streak as qualifying on 10 completed questions", async () => {
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
     const mockProfile = {
       student_id: "student-1",
       lifetime_ep: 100,
@@ -28,7 +29,7 @@ describe("Daily Challenge Integration via gamificationService", () => {
       streak_count: 3,
       longest_streak: 5,
       streak_shields: 1,
-      last_qualifying_date: "2026-09-25",
+      last_qualifying_date: yesterday,
       last_daily_challenge_date: null,
     };
 
