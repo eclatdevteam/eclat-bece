@@ -102,7 +102,7 @@ export function SchoolAssignPracticeDialog({
       setSubjectsMetadata(metadata);
 
       // Also merge any configured subjects from database for this cohort
-      const { data: dbSubjects } = await (supabase.from("subjects" as any) as any)
+      const { data: dbSubjects } = await supabase.from("subjects")
         .select("name")
         .eq(cohort === "year_6" ? "available_year_6" : "available_year_9", true)
         .eq("is_active", true);

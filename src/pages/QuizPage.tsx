@@ -21,6 +21,7 @@ import {
   Flame,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -256,7 +257,7 @@ export default function QuizPage() {
 
             // Primary check: gamification profile date stamp
             const { data: gameProfile } = await supabase
-              .from("student_gamification_profile" as any)
+              .from("student_gamification_profile")
               .select("last_daily_challenge_date")
               .eq("student_id", studentRecord.id)
               .maybeSingle();
@@ -268,7 +269,7 @@ export default function QuizPage() {
             // Fallback 1: points ledger for daily_challenge entries today
             if (!alreadyCompletedToday) {
               const { data: todayLedger } = await supabase
-                .from("student_points_ledger" as any)
+                .from("student_points_ledger")
                 .select("id")
                 .eq("student_id", studentRecord.id)
                 .eq("source_type", "daily_challenge")
@@ -297,7 +298,7 @@ export default function QuizPage() {
 
             if (alreadyCompletedToday) {
               // Ensure gamification profile has date recorded
-              await (supabase.from("student_gamification_profile" as any) as any)
+              await supabase.from("student_gamification_profile")
                 .update({ last_daily_challenge_date: todayUTC })
                 .eq("student_id", studentRecord.id);
 
@@ -339,7 +340,11 @@ export default function QuizPage() {
 
           // If in review mode and snapshot exists, open directly in review mode
           if (isReviewMode && assignment.questions_snapshot) {
-            const snap = assignment.questions_snapshot as any;
+            const snap = assignment.questions_snapshot as unknown as {
+              questions?: Array<Record<string, any>>;
+              answers?: (boolean | null)[];
+              userResponses?: (number | null)[];
+            };
             if (snap.questions && snap.questions.length > 0) {
               const sortedQuestions = [...snap.questions].sort((a: any, b: any) => {
                 const orderA = a.question_number ?? a.original_order ?? 0;
@@ -354,7 +359,7 @@ export default function QuizPage() {
                 q.userResponse !== undefined ? q.userResponse : (snap.userResponses?.[i] ?? null)
               );
 
-              setQuestions(sortedQuestions);
+              setQuestions(sortedQuestions as unknown as Question[]);
               setUserResponses(sortedResponses);
               setAnswers(sortedAnswers);
               setScore(sortedAnswers.filter(Boolean).length);
@@ -368,14 +373,14 @@ export default function QuizPage() {
           fetchSubject = assignment.subject;
           fetchTopics = assignment.topics;
           fetchLimit = assignment.num_questions;
-          classYear = (assignment.student as any)?.class_year;
+          classYear = (assignment.student as { class_year?: string } | null)?.class_year || "";
         }
 
         // If duel challenge, fetch duel details and question IDs
         let duelQuestionIds: string[] = [];
         if (duelId) {
           const { data: duelData } = await supabase
-            .from("arena_challenges" as any)
+            .from("arena_challenges")
             .select("subject, topic, max_time_seconds, question_ids")
             .eq("id", duelId)
             .maybeSingle();
@@ -491,7 +496,7 @@ export default function QuizPage() {
 
         // Fetch all options for selected questions in a single batched query
         const { data: allOptionsData, error: optionsError } = await supabase
-          .from(optionsTableName as any)
+          .from(optionsTableName)
           .select("*")
           .in("question_id", questionIds)
           .order("display_order");
@@ -528,7 +533,7 @@ export default function QuizPage() {
             explanation: q.explanation || "No explanation available.",
             subject: q.subject,
             topic: q.topic || undefined,
-            difficulty: (q.difficulty as any) || "medium",
+            difficulty: (q.difficulty as Question["difficulty"]) || "medium",
             passage: q.passage || null,
             image_url: q.image_url || null,
           };
@@ -765,7 +770,7 @@ export default function QuizPage() {
               status: "completed",
               score: percentage,
               completed_at: new Date().toISOString(),
-              questions_snapshot: questionsSnapshot,
+              questions_snapshot: questionsSnapshot as unknown as Database["public"]["Tables"]["practice_assignments"]["Insert"]["questions_snapshot"],
             })
             .eq("id", assignmentId);
 

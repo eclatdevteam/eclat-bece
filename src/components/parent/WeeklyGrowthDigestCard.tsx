@@ -254,7 +254,7 @@ export function WeeklyGrowthDigestCard({
                       +{turnaround.gain}% Improvement
                     </Badge>
                     <p className="text-[10px] text-muted-foreground font-semibold mt-0.5 print:text-slate-600">
-                      Now {turnaround.currentAccuracy}% ({turnaround.newStatus})
+                      Now {turnaround.currentAccuracy}% ({turnaround.newStatus === "strong" ? "Strong" : "Developing"})
                     </p>
                   </div>
                 </div>

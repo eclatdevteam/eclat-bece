@@ -151,7 +151,7 @@ export default function ParentAssignmentsPage() {
       }
 
       const qIds = qData.map((q: any) => q.id);
-      const { data: optData } = await supabase.from(optionsTableName as any).select("*").in("question_id", qIds).order("display_order");
+      const { data: optData } = await supabase.from(optionsTableName).select("*").in("question_id", qIds).order("display_order");
       const optMap = (optData || []).reduce((acc: any, opt: any) => {
         if (!acc[opt.question_id]) acc[opt.question_id] = [];
         acc[opt.question_id].push(opt);
@@ -224,7 +224,7 @@ export default function ParentAssignmentsPage() {
 
       if (assignmentsError) throw assignmentsError;
 
-      const mappedAssignments: AssignmentRecord[] = (assignmentsData || []).map((a) => {
+      const mappedAssignments = (assignmentsData || []).map((a) => {
         const studentInfo = studentMap.get(a.student_id);
         return {
           ...a,
@@ -234,7 +234,7 @@ export default function ParentAssignmentsPage() {
         };
       });
 
-      setAssignments(mappedAssignments);
+      setAssignments(mappedAssignments as unknown as AssignmentRecord[]);
     } catch (error) {
       console.error("Error loading assignments:", error);
       toast.error("Failed to load assignments");

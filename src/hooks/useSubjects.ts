@@ -27,12 +27,13 @@ export function useSubjects(options: UseSubjectsOptions = {}) {
       if (withCounts) {
         // Call RPC get_admin_subjects_with_counts
         const { data, error: rpcError } = await supabase.rpc(
-          "get_admin_subjects_with_counts" as any
+          "get_admin_subjects_with_counts"
         );
 
         if (rpcError) throw rpcError;
 
-        let filtered: SubjectWithCounts[] = (data as any) || [];
+        let filtered: SubjectWithCounts[] =
+          (data as unknown as SubjectWithCounts[]) || [];
 
         if (onlyActive) {
           filtered = filtered.filter((s) => s.is_active);
@@ -47,7 +48,7 @@ export function useSubjects(options: UseSubjectsOptions = {}) {
         setSubjects(filtered);
       } else {
         // Direct query to public.subjects
-        let query = (supabase.from("subjects" as any) as any)
+        let query = supabase.from("subjects")
           .select("*")
           .order("display_order", { ascending: true })
           .order("name", { ascending: true });
@@ -101,8 +102,8 @@ export function useSubjects(options: UseSubjectsOptions = {}) {
         created_by: userData.user?.id || null,
       };
 
-      const { data, error: insertError } = await (supabase
-        .from("subjects" as any) as any)
+      const { data, error: insertError } = await supabase
+        .from("subjects")
         .insert(insertPayload)
         .select()
         .single();
@@ -135,8 +136,8 @@ export function useSubjects(options: UseSubjectsOptions = {}) {
       if (input.is_active !== undefined) updatePayload.is_active = input.is_active;
       if (input.display_order !== undefined) updatePayload.display_order = input.display_order;
 
-      const { data, error: updateError } = await (supabase
-        .from("subjects" as any) as any)
+      const { data, error: updateError } = await supabase
+        .from("subjects")
         .update(updatePayload)
         .eq("id", id)
         .select()
@@ -157,7 +158,7 @@ export function useSubjects(options: UseSubjectsOptions = {}) {
   const renameSubjectCascade = async (id: string, newName: string) => {
     try {
       const { data, error: renameError } = await supabase.rpc(
-        "rename_subject_cascade" as any,
+        "rename_subject_cascade",
         {
           p_subject_id: id,
           p_new_name: newName.trim(),
@@ -182,7 +183,7 @@ export function useSubjects(options: UseSubjectsOptions = {}) {
   ) => {
     try {
       const { data, error: deleteError } = await supabase.rpc(
-        "delete_subject_safe" as any,
+        "delete_subject_safe",
         {
           p_subject_id: id,
           p_force_archive_if_populated: forceArchiveIfPopulated,
@@ -191,7 +192,7 @@ export function useSubjects(options: UseSubjectsOptions = {}) {
 
       if (deleteError) throw deleteError;
 
-      const result = data as any;
+      const result = data as unknown as { action?: string; message?: string } | null;
       if (result?.action === "archived") {
         toast.info(result.message || "Subject deactivated because it contains questions.");
       } else {

@@ -68,7 +68,7 @@ export default function StudentLeaderboardPage() {
 
         if (studentRecord) {
           const { data: gamificationProfile } = await supabase
-            .from("student_gamification_profile" as any)
+            .from("student_gamification_profile")
             .select("current_level, current_league_tier")
             .eq("student_id", studentRecord.id)
             .maybeSingle();

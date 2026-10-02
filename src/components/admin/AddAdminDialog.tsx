@@ -144,7 +144,7 @@ export function AddAdminDialog({ onSuccess }: AddAdminDialogProps) {
 
       // 2. Check for active pending invitation
       const { data: existingInvitation } = await supabase
-        .from("admin_invitations" as any)
+        .from("admin_invitations")
         .select("id, status, expires_at")
         .eq("target_email", values.email)
         .eq("status", "pending")
@@ -161,7 +161,7 @@ export function AddAdminDialog({ onSuccess }: AddAdminDialogProps) {
 
       // 3. Generate invitation token
       const { data: tokenData, error: tokenError } = await supabase
-        .rpc("generate_invitation_token" as any);
+        .rpc("generate_invitation_token");
 
       if (tokenError) throw tokenError;
       const token = tokenData as string;
@@ -183,7 +183,7 @@ export function AddAdminDialog({ onSuccess }: AddAdminDialogProps) {
       const { data: adminIdData } = await supabase.rpc("get_admin_id", { _user_id: user.id });
 
       const { data: insertedInvite, error: invitationError } = await supabase
-        .from("admin_invitations" as any)
+        .from("admin_invitations")
         .insert({
           target_email: values.email,
           invited_by: adminIdData,
@@ -286,7 +286,7 @@ export function AddAdminDialog({ onSuccess }: AddAdminDialogProps) {
         throw new Error(error.message || "Failed to provision admin account");
       }
 
-      const result = data as any;
+      const result = data as unknown as { success?: boolean; error?: string };
       if (!result.success) {
         throw new Error(result.error || "Failed to provision admin account");
       }

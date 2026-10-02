@@ -4,6 +4,7 @@
  */
 
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { calculateSessionPoints } from "./pointsEngine";
 import { updateTopicMastery } from "./masteryEngine";
 import { evaluateDailyStreak } from "./streakEngine";
@@ -14,6 +15,7 @@ import {
   SessionQuestionInput,
   SessionPointResult,
   TopicMasteryState,
+  TopicStatus,
   StreakState,
   StudentLevelInfo,
   DailyChallengeResult,
@@ -88,7 +90,7 @@ export async function recordSessionGamification(
 
   // 2. Fetch current gamification profile
   const { data: profile } = await supabase
-    .from("student_gamification_profile" as any)
+    .from("student_gamification_profile")
     .select("*")
     .eq("student_id", studentId)
     .maybeSingle();
@@ -97,7 +99,7 @@ export async function recordSessionGamification(
   if (pointResult.speedBonus > 0) {
     const todayStart = `${todayUTC}T00:00:00.000Z`;
     const { data: todaySpeedRows } = await supabase
-      .from("student_points_ledger" as any)
+      .from("student_points_ledger")
       .select("amount")
       .eq("student_id", studentId)
       .eq("source_type", "speed_bonus")
@@ -132,24 +134,25 @@ export async function recordSessionGamification(
   let netSessionEP = pointResult.totalEP;
 
   // Insert base point items into ledger
-  const ledgerEntries = pointResult.breakdown.map((item) => ({
-    student_id: studentId,
-    amount: item.amount,
-    source_type: item.category,
-    reference_id: quizResultId || null,
-    metadata: {
-      label: item.label,
-      description: item.description,
-      subject,
-      topic,
-    },
-  }));
+  const ledgerEntries: Database["public"]["Tables"]["student_points_ledger"]["Insert"][] =
+    pointResult.breakdown.map((item) => ({
+      student_id: studentId,
+      amount: item.amount,
+      source_type: item.category,
+      reference_id: quizResultId || null,
+      metadata: {
+        label: item.label,
+        description: item.description,
+        subject,
+        topic,
+      },
+    }));
 
   // 3. Process Topic Mastery (Rolling 30-question window)
   let masteryOutcome: GamificationSessionOutcome["masteryOutcome"] = undefined;
   if (topic && questions.length > 0 && !isDailyChallenge) {
     const { data: existingMastery } = await supabase
-      .from("student_topic_mastery" as any)
+      .from("student_topic_mastery")
       .select("*")
       .eq("student_id", studentId)
       .eq("subject", subject)
@@ -161,7 +164,7 @@ export async function recordSessionGamification(
       topic,
       rollingAnswers: (existingMastery?.rolling_answers as boolean[]) || [],
       rollingAccuracy: Number(existingMastery?.rolling_accuracy || 0),
-      status: (existingMastery?.status as any) || "developing",
+      status: (existingMastery?.status as TopicStatus) || "developing",
       totalAttempted: Number(existingMastery?.total_attempted || 0),
     };
 
@@ -169,7 +172,7 @@ export async function recordSessionGamification(
     const masteryEval = updateTopicMastery(topicState, sessionAnswers);
 
     // Save updated mastery to database
-    await (supabase.from("student_topic_mastery" as any) as any).upsert(
+    await supabase.from("student_topic_mastery").upsert(
       {
         student_id: studentId,
         subject,
@@ -282,12 +285,12 @@ export async function recordSessionGamification(
 
   // 6. Batch write ledger entries
   if (ledgerEntries.length > 0) {
-    await supabase.from("student_points_ledger" as any).insert(ledgerEntries);
+    await supabase.from("student_points_ledger").insert(ledgerEntries);
   }
 
   // 7. Check and award any newly unlocked Badges
   const { data: existingBadges } = await supabase
-    .from("student_badges" as any)
+    .from("student_badges")
     .select("badge_id")
     .eq("student_id", studentId);
 
@@ -307,7 +310,7 @@ export async function recordSessionGamification(
   for (const badge of unlockedBadges) {
     netSessionEP += badge.rewardEP;
 
-    await (supabase.from("student_badges" as any) as any).insert({
+    await supabase.from("student_badges").insert({
       student_id: studentId,
       badge_id: badge.id,
       tier: 1,
@@ -318,7 +321,7 @@ export async function recordSessionGamification(
       },
     });
 
-    await supabase.from("student_points_ledger" as any).insert({
+    await supabase.from("student_points_ledger").insert({
       student_id: studentId,
       amount: badge.rewardEP,
       source_type: "badge_unlock",
@@ -352,14 +355,14 @@ export async function recordSessionGamification(
     profileUpdates.last_daily_challenge_date = todayUTC;
   }
 
-  const { error: upsertErr } = await (supabase.from("student_gamification_profile" as any) as any).upsert(
+  const { error: upsertErr } = await supabase.from("student_gamification_profile").upsert(
     profileUpdates,
     { onConflict: "student_id" }
   );
 
   if (upsertErr) {
     console.warn("Gamification profile upsert failed, attempting direct update:", upsertErr);
-    await (supabase.from("student_gamification_profile" as any) as any)
+    await supabase.from("student_gamification_profile")
       .update(profileUpdates)
       .eq("student_id", studentId);
   }
@@ -367,7 +370,7 @@ export async function recordSessionGamification(
   // 9. Synchronize Weekly 30-Player League Cohort points
   try {
     if (typeof supabase.rpc === "function") {
-      await supabase.rpc("update_student_cohort_points" as any, {
+      await supabase.rpc("update_student_cohort_points", {
         p_student_id: studentId,
         p_additional_ep: netSessionEP,
       });
@@ -396,7 +399,7 @@ export async function recordSessionGamification(
  */
 export async function getStudentLeagueCohort(studentId: string) {
   try {
-    const { data, error } = await supabase.rpc("get_student_league_cohort" as any, {
+    const { data, error } = await supabase.rpc("get_student_league_cohort", {
       p_student_id: studentId,
     });
     if (error) throw error;

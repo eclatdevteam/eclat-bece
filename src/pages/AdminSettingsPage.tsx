@@ -124,7 +124,7 @@ export default function AdminSettingsPage() {
 
       // 2. Update admins table
       const { error: adminError } = await supabase
-        .from("admins" as any)
+        .from("admins")
         .update({
           full_name: fullName.trim(),
           updated_at: new Date().toISOString(),

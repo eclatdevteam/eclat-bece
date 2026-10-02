@@ -1,14 +1,18 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/integrations/supabase/types";
 import { calculateStudentLevel } from "./levelEngine";
 import { LEAGUE_TIERS } from "./leagueEngine";
 import { LeagueTierNumber } from "./types";
+
+/** Json shape of parent_weekly_digests.metrics as stored in Postgres. */
+type DigestMetricsJson = Database["public"]["Tables"]["parent_weekly_digests"]["Insert"]["metrics"];
 
 export interface TopicTurnaround {
   subject: string;
   topic: string;
   previousAccuracy: number;
   currentAccuracy: number;
-  newStatus: "Developing" | "Strong";
+  newStatus: "developing" | "strong";
 }
 
 export interface GrowthDigestInput {
@@ -52,7 +56,7 @@ export interface GrowthDigestMetrics {
     previousAccuracy: number;
     currentAccuracy: number;
     gain: number;
-    newStatus: "Developing" | "Strong";
+    newStatus: "developing" | "strong";
   }>;
   newBadges: Array<{
     badgeId: string;
@@ -133,8 +137,7 @@ export function composeGrowthDigest(input: GrowthDigestInput): GrowthDigestResul
     narrativeParagraphs.push(
       `${studentName} ${badgeText}showed remarkable academic resilience this week! ` +
       `${primaryTurnaround.topic} (${primaryTurnaround.subject}) was previously a challenging area; ` +
-      `recent deliberate practice lifted performance by ${primaryTurnaround.gain}% to reach ${primaryTurnaround.currentAccuracy}% accuracy (${primaryTurnaround.newStatus} status).`
-    );
+      `recent deliberate practice lifted performance by ${primaryTurnaround.gain}% to reach ${primaryTurnaround.currentAccuracy}% accuracy (${primaryTurnaround.newStatus === "strong" ? "Strong" : "Developing"} mastery).`    );
   } else if (streakCount >= 7) {
     headline = `Impressive Consistency: ${streakCount}-Day Active Streak! 🔥`;
     narrativeParagraphs.push(
@@ -237,7 +240,7 @@ export async function fetchOrGenerateWeeklyDigest(
 
   // 1. Check if a digest was already persisted for this week
   const { data: existingDigest } = await supabase
-    .from("parent_weekly_digests" as any)
+    .from("parent_weekly_digests")
     .select("*")
     .eq("parent_id", parentId)
     .eq("student_id", studentId)
@@ -251,11 +254,17 @@ export async function fetchOrGenerateWeeklyDigest(
     .eq("id", studentId)
     .maybeSingle();
 
-  const profile = (studentRecord as any)?.profile;
+  type StudentProfileRow = {
+    id: string;
+    user_id: string;
+    profile: { full_name: string | null; username: string | null } | null;
+  };
+  const profile =
+    (studentRecord as StudentProfileRow | null)?.profile ?? null;
   const studentName = profile?.full_name || profile?.username || "Your Child";
 
   if (existingDigest) {
-    const rawMetrics = existingDigest.metrics as GrowthDigestMetrics;
+    const rawMetrics = existingDigest.metrics as unknown as GrowthDigestMetrics;
     return {
       studentName,
       weekStartDate: existingDigest.week_start_date,
@@ -272,33 +281,34 @@ export async function fetchOrGenerateWeeklyDigest(
   // 3. Assemble dynamic data for this week
   const [profileRes, masteryRes, ledgerRes, badgeRes] = await Promise.all([
     supabase
-      .from("student_gamification_profile" as any)
+      .from("student_gamification_profile")
       .select("*")
       .eq("student_id", studentId)
       .maybeSingle(),
     supabase
-      .from("student_topic_mastery" as any)
+      .from("student_topic_mastery")
       .select("*")
       .eq("student_id", studentId),
     supabase
-      .from("student_points_ledger" as any)
+      .from("student_points_ledger")
       .select("amount, created_at, source_type")
       .eq("student_id", studentId)
       .gte("created_at", mondayIso)
       .lte("created_at", sundayIso),
     supabase
-      .from("student_badges" as any)
+      .from("student_badges")
       .select("badge_id, unlocked_at")
       .eq("student_id", studentId)
       .gte("unlocked_at", mondayIso),
   ]);
 
-  const gameProfile = profileRes.data || {};
+  const gameProfile = profileRes.data;
+  // student_topic_mastery.status is stored lowercase ("weak" | "developing" | "strong")
   const masteries = (masteryRes.data || []) as Array<{
     subject: string;
     topic: string;
     rolling_accuracy: number;
-    status: "Weak" | "Developing" | "Strong";
+    status: "weak" | "developing" | "strong";
     last_assessed_at: string;
   }>;
   const ledgerEntries = ledgerRes.data || [];
@@ -306,24 +316,24 @@ export async function fetchOrGenerateWeeklyDigest(
 
   // Calculate days active in the week
   const uniqueDays = new Set(ledgerEntries.map((e) => e.created_at.split("T")[0]));
-  const daysActive = Math.max(uniqueDays.size, gameProfile.streak_count > 0 ? 1 : 0);
-  const weeklyEP = ledgerEntries.reduce((sum, e) => sum + Number(e.amount || 0), 0) || Number(gameProfile.weekly_ep || 0);
+  const daysActive = Math.max(uniqueDays.size, Number(gameProfile?.streak_count || 0) > 0 ? 1 : 0);
+  const weeklyEP = ledgerEntries.reduce((sum, e) => sum + Number(e.amount || 0), 0) || Number(gameProfile?.weekly_ep || 0);
 
   // Identify turnarounds (topics with Developing or Strong status assessed this week)
   const turnarounds: TopicTurnaround[] = masteries
-    .filter((m) => m.status === "Developing" || m.status === "Strong")
+    .filter((m) => m.status === "developing" || m.status === "strong")
     .slice(0, 2)
     .map((m) => ({
       subject: m.subject,
       topic: m.topic,
       previousAccuracy: Math.max(35, Math.round(Number(m.rolling_accuracy) - 25)),
       currentAccuracy: Math.round(Number(m.rolling_accuracy)),
-      newStatus: m.status as "Developing" | "Strong",
+      newStatus: m.status as "developing" | "strong",
     }));
 
   // Identify current focus areas (Weak topics)
   const focusAreas = masteries
-    .filter((m) => m.status === "Weak")
+    .filter((m) => m.status === "weak")
     .map((m) => ({
       subject: m.subject,
       topic: m.topic,
@@ -337,11 +347,11 @@ export async function fetchOrGenerateWeeklyDigest(
     weekEndDate,
     daysActive,
     weeklyEP,
-    currentLevel: Number(gameProfile.current_level || 1),
-    leagueTier: Number(gameProfile.current_league_tier || 1),
+    currentLevel: Number(gameProfile?.current_level || 1),
+    leagueTier: Number(gameProfile?.current_league_tier || 1),
     cohortRank: 3, // Defaults to top tier cohort position for encouragement
-    streakCount: Number(gameProfile.streak_count || 0),
-    streakShields: Number(gameProfile.streak_shields || 0),
+    streakCount: Number(gameProfile?.streak_count || 0),
+    streakShields: Number(gameProfile?.streak_shields || 0),
     topicTurnarounds: turnarounds,
     newBadgesEarned: badgesEarned.map((b) => ({
       badgeId: b.badge_id,
@@ -355,7 +365,7 @@ export async function fetchOrGenerateWeeklyDigest(
 
   // Persist to parent_weekly_digests table
   try {
-    await (supabase.from("parent_weekly_digests" as any) as any).upsert(
+    await supabase.from("parent_weekly_digests").upsert(
       {
         parent_id: parentId,
         student_id: studentId,
@@ -363,7 +373,7 @@ export async function fetchOrGenerateWeeklyDigest(
         week_end_date: weekEndDate,
         headline: digest.headline,
         narrative: digest.narrative,
-        metrics: digest.metrics,
+        metrics: digest.metrics as unknown as DigestMetricsJson,
         is_read: false,
       },
       { onConflict: "parent_id,student_id,week_start_date" }

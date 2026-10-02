@@ -76,7 +76,17 @@ export default function AdminPasswordSetupPage() {
 
       if (error) throw error;
 
-      const result = data as any;
+      const result = data as unknown as {
+        success?: boolean;
+        error?: string;
+        invitation?: {
+          id: string;
+          target_email: string;
+          full_name: string;
+          is_super_admin: boolean;
+          permissions: Record<string, boolean>;
+        };
+      };
       if (!result.success || !result.invitation) {
         setError(result.error || "Invalid or expired invitation link.");
         setLoading(false);
@@ -117,7 +127,7 @@ export default function AdminPasswordSetupPage() {
         throw new Error(`Account setup error: ${error.message}`);
       }
 
-      const result = data as any;
+      const result = data as unknown as { success?: boolean; error?: string };
       if (!result.success) {
         throw new Error(result.error || "Failed to create administrator account");
       }

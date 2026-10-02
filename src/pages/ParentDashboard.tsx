@@ -117,7 +117,7 @@ export default function ParentDashboard() {
       }
 
       const qIds = qData.map((q: any) => q.id);
-      const { data: optData } = await supabase.from(optionsTableName as any).select("*").in("question_id", qIds).order("display_order");
+      const { data: optData } = await supabase.from(optionsTableName).select("*").in("question_id", qIds).order("display_order");
       const optMap = (optData || []).reduce((acc: any, opt: any) => {
         if (!acc[opt.question_id]) acc[opt.question_id] = [];
         acc[opt.question_id].push(opt);
@@ -214,19 +214,19 @@ export default function ParentDashboard() {
             .in("student_id", studentIds)
             .order("created_at", { ascending: false }),
           supabase
-            .from("student_gamification_profile" as any)
+            .from("student_gamification_profile")
             .select("*")
             .in("student_id", studentIds),
           supabase
-            .from("student_topic_mastery" as any)
+            .from("student_topic_mastery")
             .select("student_id, subject, topic, rolling_accuracy, status")
             .in("student_id", studentIds),
         ]);
 
         const allQuizzes = (quizzesRes.data || []) as QuizResult[];
-        const allAssignments = (assignmentsRes.data || []) as Assignment[];
-        const allGameProfiles = (gameProfilesRes.data || []) as any[];
-        const allMasteries = (masteriesRes.data || []) as any[];
+        const allAssignments = (assignmentsRes.data || []) as unknown as Assignment[];
+        const allGameProfiles = gameProfilesRes.data || [];
+        const allMasteries = masteriesRes.data || [];
 
         const analyticsMap = new Map<string, ChildAnalytics>();
         studentIds.forEach((sId) => {
@@ -234,8 +234,9 @@ export default function ParentDashboard() {
           const gameProfile = allGameProfiles.find((p) => p.student_id === sId);
           const childMasteries = allMasteries.filter((m) => m.student_id === sId);
 
-          const strongCount = childMasteries.filter((m) => m.status === "Strong").length;
-          const weakCount = childMasteries.filter((m) => m.status === "Weak").length;
+          // student_topic_mastery.status is stored lowercase ("weak" | "developing" | "strong")
+          const strongCount = childMasteries.filter((m) => m.status === "strong").length;
+          const weakCount = childMasteries.filter((m) => m.status === "weak").length;
           const lifetimeEP = Number(gameProfile?.lifetime_ep || 0);
           const lvl = calculateStudentLevel(lifetimeEP);
           const tier = (gameProfile?.current_league_tier || 1) as LeagueTierNumber;

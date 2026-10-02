@@ -135,11 +135,11 @@ export default function PlatformUsersPage() {
         }
 
         if (parentsRes.data && parentsRes.data.length > 0) {
-            const parentUserIds = (parentsRes.data as any[]).map((p: any) => p.user_id).filter(Boolean);
+            const parentUserIds = parentsRes.data.map((p) => p.user_id).filter(Boolean);
             if (parentUserIds.length > 0) {
                 const parentProfiles = await fetchProfilesBatch(parentUserIds);
                 const profileMap = new Map(parentProfiles.map((p: any) => [p.id, p.full_name]));
-                (parentsRes.data as any[]).forEach((parent: any) => {
+                parentsRes.data.forEach((parent) => {
                     const name = profileMap.get(parent.user_id) || "Parent";
                     parentNameMap.set(parent.id, name);
                 });

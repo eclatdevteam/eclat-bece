@@ -85,7 +85,7 @@ export function SchoolEditTeacherDialog({
     try {
       if (isVirtual) {
         // Promote virtual teacher to genuine school_teachers table
-        const { error } = await supabase.from("school_teachers" as any).insert({
+        const { error } = await supabase.from("school_teachers").insert({
           school_id: schoolId,
           full_name: fullName.trim(),
           email: email.trim() || null,
@@ -99,7 +99,7 @@ export function SchoolEditTeacherDialog({
       } else {
         // Update existing record
         const { error } = await supabase
-          .from("school_teachers" as any)
+          .from("school_teachers")
           .update({
             full_name: fullName.trim(),
             email: email.trim() || null,
@@ -133,7 +133,7 @@ export function SchoolEditTeacherDialog({
     try {
       if (!isVirtual) {
         const { error } = await supabase
-          .from("school_teachers" as any)
+          .from("school_teachers")
           .delete()
           .eq("id", teacher.id);
         if (error) throw error;
@@ -143,7 +143,7 @@ export function SchoolEditTeacherDialog({
       for (const cls of classes) {
         if (cls.lead_teacher && cls.lead_teacher.trim().toLowerCase() === teacher.full_name.trim().toLowerCase()) {
           await supabase
-            .from("school_classes" as any)
+            .from("school_classes")
             .update({ lead_teacher: null })
             .eq("id", cls.id);
         }

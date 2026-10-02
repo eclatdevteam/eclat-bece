@@ -153,12 +153,12 @@ export default function ParentReportsPage() {
             .select("status")
             .eq("student_id", selectedChild.id),
           supabase
-            .from("student_gamification_profile" as any)
+            .from("student_gamification_profile")
             .select("*")
             .eq("student_id", selectedChild.id)
             .maybeSingle(),
           supabase
-            .from("student_topic_mastery" as any)
+            .from("student_topic_mastery")
             .select("subject, topic, rolling_accuracy, status")
             .eq("student_id", selectedChild.id),
         ]);
@@ -167,14 +167,14 @@ export default function ParentReportsPage() {
           setQuizResults(quizRes.data as QuizItem[]);
         }
         if (gameProfRes.data) {
-          setGamificationProfile(gameProfRes.data as any);
-          setStreak(Number((gameProfRes.data as any)?.streak_count ?? (streakRes.data?.current_streak || 0)));
+          setGamificationProfile(gameProfRes.data);
+          setStreak(Number(gameProfRes.data?.streak_count ?? (streakRes.data?.current_streak || 0)));
         } else {
           setStreak(streakRes.data?.current_streak || 0);
         }
 
         if (masteryRes.data) {
-          setTopicMasteries(masteryRes.data as any);
+          setTopicMasteries(masteryRes.data);
         }
 
         if (assignRes.data) {
@@ -759,14 +759,14 @@ export default function ParentReportsPage() {
                       </span>
                       <Badge
                         className={`text-[9px] font-black uppercase ${
-                          m.status === "Strong"
+                          m.status === "strong"
                             ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 print:bg-emerald-50 print:text-emerald-800 print:border-emerald-300"
-                            : m.status === "Developing"
+                            : m.status === "developing"
                             ? "bg-blue-500/15 text-blue-600 dark:text-blue-400 border-blue-500/30 print:bg-blue-50 print:text-blue-800 print:border-blue-300"
                             : "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 print:bg-amber-50 print:text-amber-800 print:border-amber-300"
                         }`}
                       >
-                        {m.status === "Weak" ? "Focus Area" : m.status}
+                        {m.status === "weak" ? "Focus Area" : m.status}
                       </Badge>
                     </div>
                   </div>

@@ -254,7 +254,7 @@ export function EditQuestionDialog({ open, onOpenChange, questionId, classYear, 
 
             // Fetch question
             const { data: questionData, error: questionError } = await supabase
-                .from(tableName as any)
+                .from(tableName)
                 .select('*')
                 .eq('id', questionId)
                 .single();
@@ -269,7 +269,7 @@ export function EditQuestionDialog({ open, onOpenChange, questionId, classYear, 
 
             // Fetch options
             const { data: optionsData, error: optionsError } = await supabase
-                .from(optionsTableName as any)
+                .from(optionsTableName)
                 .select('*')
                 .eq('question_id', questionId)
                 .order('display_order', { ascending: true });
@@ -291,7 +291,7 @@ export function EditQuestionDialog({ open, onOpenChange, questionId, classYear, 
                 topic: questionData.topic || "",
                 questionText: questionData.question_text || "",
                 explanation: questionData.explanation || "",
-                difficulty: questionData.difficulty || "medium",
+                difficulty: (questionData.difficulty as "easy" | "medium" | "hard") || "medium",
                 options: optionsData && optionsData.length > 0 
                     ? optionsData.map(opt => ({
                         text: opt.option_text || "",
@@ -380,7 +380,7 @@ export function EditQuestionDialog({ open, onOpenChange, questionId, classYear, 
 
             // 1. Update Question
             const { error: questionError } = await supabase
-                .from(tableName as any)
+                .from(tableName)
                 .update({
                     subject: values.subject,
                     topic: values.topic,
@@ -396,7 +396,7 @@ export function EditQuestionDialog({ open, onOpenChange, questionId, classYear, 
 
             // 2. Delete old options
             const { error: deleteError } = await supabase
-                .from(optionsTableName as any)
+                .from(optionsTableName)
                 .delete()
                 .eq('question_id', questionId);
 
@@ -411,7 +411,7 @@ export function EditQuestionDialog({ open, onOpenChange, questionId, classYear, 
             }));
 
             const { data: optionsData, error: optionsError } = await supabase
-                .from(optionsTableName as any)
+                .from(optionsTableName)
                 .insert(optionsToInsert)
                 .select();
 
@@ -427,7 +427,7 @@ export function EditQuestionDialog({ open, onOpenChange, questionId, classYear, 
                         await supabase.storage.from('question-images').remove([path]);
                     }
                     await supabase
-                        .from(tableName as any)
+                        .from(tableName)
                         .update({ image_url: null })
                         .eq('id', questionId);
                 } else if (questionImageFile) {
@@ -442,7 +442,7 @@ export function EditQuestionDialog({ open, onOpenChange, questionId, classYear, 
                         `${values.classYear}/questions/${questionId}.webp`
                     );
                     await supabase
-                        .from(tableName as any)
+                        .from(tableName)
                         .update({ image_url: publicUrl })
                         .eq('id', questionId);
                 }
@@ -468,7 +468,7 @@ export function EditQuestionDialog({ open, onOpenChange, questionId, classYear, 
                                 `${values.classYear}/options/${newOptId}.webp`
                             );
                             await supabase
-                                .from(optionsTableName as any)
+                                .from(optionsTableName)
                                 .update({ image_url: publicUrl })
                                 .eq('id', newOptId);
                         } else if (wasRemoved && oldUrl) {
@@ -480,7 +480,7 @@ export function EditQuestionDialog({ open, onOpenChange, questionId, classYear, 
                         } else if (oldUrl && !wasRemoved) {
                             // Keep existing option image (since option record was deleted & re-created)
                             await supabase
-                                .from(optionsTableName as any)
+                                .from(optionsTableName)
                                 .update({ image_url: oldUrl })
                                 .eq('id', newOptId);
                         }

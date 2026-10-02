@@ -153,12 +153,12 @@ export function useSchoolData() {
           .eq("school_id", currentSchool.id)
           .order("created_at", { ascending: false }),
         supabase
-          .from("school_exams" as any)
+          .from("school_exams")
           .select("id, school_id, title, cohort, class_id, subject, exam_date, start_time, duration_minutes, question_count, passing_score, status, instructions, created_at")
           .eq("school_id", currentSchool.id)
           .order("exam_date", { ascending: true }),
         supabase
-          .from("school_teachers" as any)
+          .from("school_teachers")
           .select("id, school_id, full_name, email, phone, department, primary_subject, assigned_class_ids, status, created_at")
           .eq("school_id", currentSchool.id)
           .order("full_name", { ascending: true }),
@@ -184,8 +184,8 @@ export function useSchoolData() {
             ? supabase.from("profiles").select("id, full_name, username, unique_id, avatar_url").in("id", userIds)
             : Promise.resolve({ data: [] }),
           supabase.from("quiz_results").select("student_id, score").in("student_id", studentIds),
-          supabase.from("student_gamification_profile" as any).select("student_id, lifetime_ep, weekly_ep, current_level, current_streak, current_league_tier").in("student_id", studentIds),
-          supabase.from("student_topic_mastery" as any).select("student_id, subject, topic, rolling_accuracy, status, total_attempted").in("student_id", studentIds),
+          supabase.from("student_gamification_profile").select("student_id, lifetime_ep, weekly_ep, current_level, current_streak, current_league_tier").in("student_id", studentIds),
+          supabase.from("student_topic_mastery").select("student_id, subject, topic, rolling_accuracy, status, total_attempted").in("student_id", studentIds),
         ]);
 
         profiles = profRes.data || [];
@@ -299,7 +299,7 @@ export function useSchoolData() {
       setStudents(parsedStudents);
 
       // 5. Assemble enriched class records
-      const parsedClasses: SchoolClassItem[] = (rawClasses as any[]).map((c) => {
+      const parsedClasses: SchoolClassItem[] = rawClasses.map((c) => {
         const cohortStudents = parsedStudents.filter(
           (s) => s.class_id === c.id || (!s.class_id && c.class_year && s.class_year === c.class_year)
         );
@@ -313,7 +313,7 @@ export function useSchoolData() {
           id: c.id,
           name: c.name,
           level: c.level,
-          class_year: c.class_year,
+          class_year: c.class_year as SchoolClassItem["class_year"],
           lead_teacher: c.lead_teacher,
           created_at: c.created_at,
           studentsCount: count,
@@ -324,7 +324,7 @@ export function useSchoolData() {
       setClasses(parsedClasses);
 
       // 6. Assemble topic mastery
-      const parsedTopicMastery: SchoolTopicMasteryRecord[] = (masteries as any[]).map((m) => ({
+      const parsedTopicMastery: SchoolTopicMasteryRecord[] = masteries.map((m) => ({
         student_id: m.student_id,
         subject: m.subject,
         topic: m.topic,
@@ -335,7 +335,7 @@ export function useSchoolData() {
       setTopicMastery(parsedTopicMastery);
 
       // 7. Assemble assignments
-      const parsedAssignments: SchoolAssignmentItem[] = (rawAssignments as any[]).map((a) => ({
+      const parsedAssignments: SchoolAssignmentItem[] = rawAssignments.map((a) => ({
         id: a.id,
         subject: a.subject,
         topics: Array.isArray(a.topics) ? a.topics : [],
@@ -351,7 +351,7 @@ export function useSchoolData() {
       setAssignments(parsedAssignments);
 
       // 8. Assemble exams
-      const rawExams = (rawExamsRes.data || []) as any[];
+      const rawExams = rawExamsRes.data || [];
       const classMap = new Map(rawClasses.map((c: any) => [c.id, c.name]));
       const parsedExams: SchoolExamItem[] = rawExams.map((e) => {
         const matchingStudents = studentList.filter((s) => {
@@ -363,7 +363,7 @@ export function useSchoolData() {
           id: e.id,
           school_id: e.school_id,
           title: e.title,
-          cohort: e.cohort,
+          cohort: e.cohort as SchoolExamItem["cohort"],
           class_id: e.class_id || null,
           class_name: e.class_id ? classMap.get(e.class_id) || "Assigned Class" : "All Cohort Classes",
           subject: e.subject,
@@ -372,7 +372,7 @@ export function useSchoolData() {
           duration_minutes: Number(e.duration_minutes || 60),
           question_count: Number(e.question_count || 40),
           passing_score: Number(e.passing_score || 50),
-          status: e.status || "Scheduled",
+          status: (e.status || "Scheduled") as SchoolExamItem["status"],
           instructions: e.instructions || null,
           created_at: e.created_at,
           eligibleStudentCount: matchingStudents.length,
@@ -381,7 +381,7 @@ export function useSchoolData() {
       setExams(parsedExams);
 
       // 9. Assemble teachers (registered + class leads backward compatibility)
-      const rawTeachers = (rawTeachersRes.data || []) as any[];
+      const rawTeachers = rawTeachersRes.data || [];
       const registeredTeacherNames = new Set(rawTeachers.map((t) => t.full_name.trim().toLowerCase()));
 
       const enrichedTeachers: SchoolTeacherItem[] = rawTeachers.map((t) => {
@@ -399,7 +399,7 @@ export function useSchoolData() {
           primary_subject: t.primary_subject || "Core Subjects",
           assigned_class_ids: t.assigned_class_ids || [],
           assigned_classes: classNames,
-          status: t.status || "Active",
+          status: (t.status || "Active") as SchoolTeacherItem["status"],
           created_at: t.created_at,
         };
       });

@@ -46,7 +46,7 @@ export default function StudentPractice() {
         : 'topic_question_counts_year9';
 
       // 1. Fetch active subjects configured for this student's cohort
-      const { data: dbSubjects } = await (supabase.from("subjects" as any) as any)
+      const { data: dbSubjects } = await supabase.from("subjects")
         .select("name, icon, category")
         .eq(classYear === "year_6" ? "available_year_6" : "available_year_9", true)
         .eq("is_active", true)

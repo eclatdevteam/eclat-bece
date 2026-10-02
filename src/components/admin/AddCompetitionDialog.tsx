@@ -80,7 +80,7 @@ export function AddCompetitionDialog({ onSuccess }: AddCompetitionDialogProps) {
 
         try {
             const { error } = await supabase
-                .from("competitions" as any)
+                .from("competitions")
                 .insert({
                     title: values.title,
                     description: values.description,

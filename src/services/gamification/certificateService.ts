@@ -48,7 +48,7 @@ export async function issueCertificate(params: {
 }): Promise<StudentCertificate | null> {
   try {
     // Check if certificate already issued
-    const { data: existing } = await (supabase.from("student_certificates" as any) as any)
+    const { data: existing } = await supabase.from("student_certificates")
       .select("*")
       .eq("student_id", params.studentId)
       .eq("title", params.title)
@@ -73,7 +73,7 @@ export async function issueCertificate(params: {
       },
     };
 
-    const { data: created, error } = await (supabase.from("student_certificates" as any) as any)
+    const { data: created, error } = await supabase.from("student_certificates")
       .insert(payload)
       .select("*")
       .single();
@@ -105,7 +105,7 @@ export async function verifyCertificateByCode(verificationCode: string): Promise
       return { valid: false, error: "Please enter a verification code." };
     }
 
-    const { data, error } = await (supabase.from("student_certificates" as any) as any)
+    const { data, error } = await supabase.from("student_certificates")
       .select("*")
       .eq("verification_code", cleanCode)
       .maybeSingle();
@@ -126,7 +126,7 @@ export async function verifyCertificateByCode(verificationCode: string): Promise
  */
 export async function fetchStudentCertificates(studentId: string): Promise<StudentCertificate[]> {
   try {
-    const { data, error } = await (supabase.from("student_certificates" as any) as any)
+    const { data, error } = await supabase.from("student_certificates")
       .select("*")
       .eq("student_id", studentId)
       .order("issued_at", { ascending: false });

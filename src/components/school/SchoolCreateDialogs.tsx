@@ -49,7 +49,7 @@ export function CreateClassDialog({ open, onOpenChange, onCreated }: CreateClass
         ? "year_6"
         : "year_9";
 
-      const { error } = await supabase.from("school_classes" as any).insert({
+      const { error } = await supabase.from("school_classes").insert({
         school_id: school.id,
         name: name.trim(),
         level: level.trim(),

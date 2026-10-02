@@ -125,7 +125,7 @@ export default function AdminUsersPage() {
   const fetchAdmins = async () => {
     try {
       const { data: adminsData, error: adminsError } = await supabase
-        .from("admins" as any)
+        .from("admins")
         .select("*")
         .order("created_at", { ascending: false });
 
@@ -160,7 +160,7 @@ export default function AdminUsersPage() {
   const fetchInvitations = async () => {
     try {
       const { data: invitesData, error: invitesError } = await supabase
-        .from("admin_invitations" as any)
+        .from("admin_invitations")
         .select("*")
         .eq("status", "pending")
         .order("created_at", { ascending: false });
@@ -171,7 +171,12 @@ export default function AdminUsersPage() {
         return;
       }
 
-      setInvitations(invitesData || []);
+      setInvitations(
+        (invitesData || []).map((invite) => ({
+          ...invite,
+          permissions: invite.permissions as unknown as AdminInvitation["permissions"],
+        }))
+      );
     } catch (error) {
       console.error("Error fetching invitations:", error);
     }
@@ -184,7 +189,7 @@ export default function AdminUsersPage() {
       const adminToUpdate = admins.find(a => a.id === adminId);
 
       const { error } = await supabase
-        .from("admins" as any)
+        .from("admins")
         .update({ is_active: !currentStatus })
         .eq("id", adminId);
 
@@ -239,7 +244,7 @@ export default function AdminUsersPage() {
       }
 
       const { error } = await supabase
-        .from("admins" as any)
+        .from("admins")
         .delete()
         .eq("id", deleteId);
 
@@ -313,7 +318,7 @@ export default function AdminUsersPage() {
 
     try {
       const { error } = await supabase
-        .from("admin_invitations" as any)
+        .from("admin_invitations")
         .delete()
         .eq("id", revokeInviteId);
 

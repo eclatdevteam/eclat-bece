@@ -111,7 +111,7 @@ export function SchoolScheduleExamDialog({
 
     setIsSubmitting(true);
     try {
-      const { error } = await supabase.from("school_exams" as any).insert({
+      const { error } = await supabase.from("school_exams").insert({
         school_id: schoolId,
         title: title.trim(),
         cohort,

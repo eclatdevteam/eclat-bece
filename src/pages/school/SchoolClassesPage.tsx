@@ -20,7 +20,7 @@ export function SchoolClassesPage() {
     try {
       setDeletingId(classId);
       const { error } = await supabase
-        .from("school_classes" as any)
+        .from("school_classes")
         .delete()
         .eq("id", classId);
 

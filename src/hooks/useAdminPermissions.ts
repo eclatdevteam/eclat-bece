@@ -39,7 +39,7 @@ export function useAdminPermissions() {
         setLoading(true);
       }
       const { data, error } = await supabase
-        .from("admins" as any)
+        .from("admins")
         .select("id, user_id, full_name, is_super_admin, permissions, is_active")
         .eq("user_id", user.id)
         .maybeSingle();
@@ -47,7 +47,7 @@ export function useAdminPermissions() {
       if (error) throw error;
 
       if (data) {
-        const rawPerms = (data.permissions as any) || {};
+        const rawPerms = (data.permissions as unknown as Record<string, unknown>) || {};
         setAdmin({
           id: data.id,
           user_id: data.user_id,

@@ -43,8 +43,8 @@ export async function validateUserRole(
   try {
     const { data, error } = await supabaseClient.rpc('has_role', {
       _user_id: userId,
-      _role: role
-    } as any);
+      _role: role,
+    });
 
     if (error) {
       console.error('Error validating user role:', error);

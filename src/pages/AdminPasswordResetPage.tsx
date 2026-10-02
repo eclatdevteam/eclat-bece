@@ -159,7 +159,7 @@ export default function AdminPasswordResetPage() {
         throw new Error(error.message || "Failed to dispatch password recovery link");
       }
 
-      const result = data as any;
+      const result = data as unknown as { success?: boolean; error?: string } | null;
       if (result && result.success === false) {
         throw new Error(result.error || "Failed to dispatch password recovery link");
       }

@@ -95,10 +95,10 @@ export default function AdminDashboard() {
         if (!user) return;
 
         const { data } = await supabase
-            .from("admins" as any)
+            .from("admins")
             .select("full_name, is_super_admin")
             .eq("user_id", user.id)
-            .single() as any;
+            .single();
 
         if (data) {
             setAdminName(data.full_name || "Admin");
@@ -157,7 +157,7 @@ export default function AdminDashboard() {
         const currentFetchId = ++fetchIdRef.current;
         try {
             let query = supabase
-                .from("admin_audit_log" as any)
+                .from("admin_audit_log")
                 .select(`
           id,
           action,
@@ -187,7 +187,7 @@ export default function AdminDashboard() {
 
             const { data, count } = await query
                 .order("created_at", { ascending: false })
-                .range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1) as any;
+                .range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1);
 
             // Discard stale in-flight responses if another query was launched in the meantime
             if (currentFetchId !== fetchIdRef.current) return;

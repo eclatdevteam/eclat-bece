@@ -78,7 +78,7 @@ export const AdminProtectedRoute = ({
                 .from("user_roles")
                 .select("role")
                 .eq("user_id", session.user.id)
-                .eq("role", "admin" as any) // Cast to any until types are regenerated
+                .eq("role", "admin")
                 .maybeSingle();
 
             if (!roleData) {
@@ -103,10 +103,10 @@ export const AdminProtectedRoute = ({
 
             // Check admin record exists and is active
             const { data: adminData } = await supabase
-                .from("admins" as any) // Cast to any until types are regenerated
+                .from("admins")
                 .select("id, is_super_admin, is_active")
                 .eq("user_id", session.user.id)
-                .maybeSingle() as any;
+                .maybeSingle();
 
             if (!adminData || !adminData.is_active) {
                 navigate("/");

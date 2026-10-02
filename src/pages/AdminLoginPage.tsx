@@ -47,7 +47,7 @@ export default function AdminLoginPage() {
         .from("user_roles")
         .select("role")
         .eq("user_id", authData.user.id)
-        .eq("role", "admin" as any)
+        .eq("role", "admin")
         .maybeSingle();
 
       if (!roleData) {
@@ -59,10 +59,10 @@ export default function AdminLoginPage() {
 
       // Check if admin account is active
       const { data: adminData } = await supabase
-        .from("admins" as any)
+        .from("admins")
         .select("is_active, full_name")
         .eq("user_id", authData.user.id)
-        .maybeSingle() as any;
+        .maybeSingle();
 
       if (!adminData || !adminData.is_active) {
         await supabase.auth.signOut();

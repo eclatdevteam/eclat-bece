@@ -28,3 +28,5 @@ dist-ssr
 # Supabase
 supabase/.branches
 supabase/.temp
+
+# ZCode session artifacts.zcode/

@@ -8,7 +8,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { formatDistanceToNow } from "date-fns";
 import { getBadgeLevel, BadgeLevel } from "@/components/WinnerBadge";
-import { calculateStudentLevel, StudentLevelInfo } from "@/services/gamification/levelEngine";
+import { calculateStudentLevel } from "@/services/gamification/levelEngine";
+import type { StudentLevelInfo } from "@/services/gamification/types";
 import { getLeagueTierConfig } from "@/services/gamification/leagueEngine";
 import { BadgeShowcase } from "@/components/gamification/BadgeShowcase";
 import { toast } from "sonner";
@@ -105,7 +106,7 @@ export default function StudentDashboardOverview() {
         
         // Fetch gamification profile
         const { data: gameProfile } = await supabase
-          .from("student_gamification_profile" as any)
+          .from("student_gamification_profile")
           .select("*")
           .eq("student_id", studentData.id)
           .maybeSingle();
@@ -126,7 +127,7 @@ export default function StudentDashboardOverview() {
           // Fallback 1: check student_points_ledger for daily_challenge entries today
           if (!challengeDone) {
             const { data: todayLedger } = await supabase
-              .from("student_points_ledger" as any)
+              .from("student_points_ledger")
               .select("id")
               .eq("student_id", studentData.id)
               .eq("source_type", "daily_challenge")
@@ -155,7 +156,7 @@ export default function StudentDashboardOverview() {
 
           if (challengeDone && gameProfile.last_daily_challenge_date !== todayUTC) {
             // Backfill so future checks are instant
-            await (supabase.from("student_gamification_profile" as any) as any)
+            await supabase.from("student_gamification_profile")
               .update({ last_daily_challenge_date: todayUTC })
               .eq("student_id", studentData.id);
           }
@@ -175,7 +176,7 @@ export default function StudentDashboardOverview() {
 
         // Fetch earned badges
         const { data: badgesRes } = await supabase
-          .from("student_badges" as any)
+          .from("student_badges")
           .select("badge_id")
           .eq("student_id", studentData.id);
 
@@ -185,7 +186,7 @@ export default function StudentDashboardOverview() {
 
         // Fetch Weak topic for Signature Focus Area Recommendation
         const { data: weakTopics } = await supabase
-          .from("student_topic_mastery" as any)
+          .from("student_topic_mastery")
           .select("subject, topic, rolling_accuracy")
           .eq("student_id", studentData.id)
           .eq("status", "weak")
@@ -193,7 +194,7 @@ export default function StudentDashboardOverview() {
           .limit(1);
 
         if (weakTopics && weakTopics.length > 0) {
-          setFocusTopic(weakTopics[0] as any);
+          setFocusTopic(weakTopics[0]);
         }
         
         // Fetch actual pending assignments count
@@ -407,7 +408,7 @@ export default function StudentDashboardOverview() {
     if (!studentId) return;
     setPinnedBadgeIds(newPinnedIds);
     const { error } = await supabase
-      .from("student_gamification_profile" as any)
+      .from("student_gamification_profile")
       .update({ pinned_badge_ids: newPinnedIds, updated_at: new Date().toISOString() })
       .eq("student_id", studentId);
     if (error) {

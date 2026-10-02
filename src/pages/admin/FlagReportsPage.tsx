@@ -85,7 +85,7 @@ export default function FlagReportsPage() {
 
             const { data, error } = await query.order("created_at", { ascending: false });
             if (error) throw error;
-            setFlags(data as any[] || []);
+            setFlags((data as unknown as FlaggedQuestion[]) || []);
         } catch (error: any) {
             console.error("Error fetching flags:", error);
             toast.error(error.message || "Failed to load flagged questions");

@@ -46,6 +46,19 @@ npm run build
 
 Output is generated in the `dist/` directory.
 
+### Type Checking & Database Types
+
+```bash
+npm run typecheck      # tsc over the app sources
+npm run types:regen    # regenerate src/integrations/supabase/types.ts
+```
+
+`types:regen` requires the Supabase CLI (`npm i -D supabase`) and an authenticated
+session (`npx supabase login`); it reads the linked project in
+`supabase/.temp/linked-project.json`. Run it after every new migration so the
+generated `Database` types stay in sync — new tables/RPCs are unusable without
+casts until it runs.
+
 ## Project Structure
 
 ```

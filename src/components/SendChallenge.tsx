@@ -56,7 +56,7 @@ export function SendChallenge({ onBack, onNext, config }: SendChallengeProps) {
         .eq('user_id', user.id)
         .single();
 
-      if (studentData) {
+      if (studentData?.class_year) {
         setUserGrade(studentData.class_year);
         await fetchSchools(studentData.class_year);
         await fetchStudents(studentData.class_year);
@@ -68,54 +68,84 @@ export function SendChallenge({ onBack, onNext, config }: SendChallengeProps) {
     }
   };
 
-  const fetchSchools = async (grade: string) => {
+  // School names live in `schools.school_name`; students link to a school's
+  // auth user via `students.school_id`, so resolve names through that join.
+  const fetchSchools = async (grade: "year_6" | "year_9") => {
     try {
-      const { data } = await supabase
+      const { data: schoolLinks } = await supabase
         .from('students')
-        .select('school')
+        .select('school_id')
         .eq('class_year', grade)
-        .not('school', 'is', null);
+        .not('school_id', 'is', null);
 
-      if (data) {
-        const uniqueSchools = [...new Set(data.map(s => s.school).filter(Boolean))];
-        setSchools(uniqueSchools);
-        if (uniqueSchools.length > 0) {
-          setSelectedSchool(uniqueSchools[0]);
-        }
+      const schoolIds = [...new Set((schoolLinks || []).map((s) => s.school_id).filter(Boolean))] as string[];
+      if (schoolIds.length === 0) {
+        setSchools([]);
+        return;
+      }
+
+      const { data: schoolsData } = await supabase
+        .from('schools')
+        .select('user_id, school_name')
+        .in('user_id', schoolIds);
+
+      const names = (schoolsData || [])
+        .map((s) => s.school_name)
+        .filter((name): name is string => !!name);
+      const uniqueSchools = [...new Set(names)];
+
+      setSchools(uniqueSchools);
+      if (uniqueSchools.length > 0) {
+        setSelectedSchool(uniqueSchools[0]);
       }
     } catch (error) {
       console.error('Error fetching schools:', error);
     }
   };
 
-  const fetchStudents = async (grade: string) => {
+  const fetchStudents = async (grade: "year_6" | "year_9") => {
     try {
       const { data: studentsData } = await supabase
         .from('students')
-        .select('id, school')
+        .select('id, school_id')
         .eq('class_year', grade)
         .neq('user_id', user?.id);
 
-      if (studentsData) {
-        const studentIds = studentsData.map(s => s.id);
-        const { data: profilesData } = await supabase
-          .from('profiles')
-          .select('id, full_name, username')
-          .in('id', studentIds);
+      if (!studentsData) return;
 
-        if (profilesData) {
-          const studentsList: Student[] = profilesData.map(profile => {
-            const studentInfo = studentsData.find(s => s.id === profile.id);
-            return {
-              id: profile.id,
-              name: profile.full_name || profile.username || 'Unknown',
-              username: profile.username || '',
-              school: studentInfo?.school || 'Unknown',
-              grade: grade
-            };
-          });
-          setStudents(studentsList);
-        }
+      const { data: schoolsData } = await supabase
+        .from('schools')
+        .select('user_id, school_name');
+      const schoolNames = new Map(
+        (schoolsData || []).map((s) => [s.user_id, s.school_name] as const)
+      );
+
+      const studentIds = studentsData.map((s) => s.id);
+      if (studentIds.length === 0) {
+        setStudents([]);
+        return;
+      }
+
+      const { data: profilesData } = await supabase
+        .from('profiles')
+        .select('id, full_name, username')
+        .in('id', studentIds);
+
+      if (profilesData) {
+        const studentsList: Student[] = profilesData.map((profile) => {
+          const studentInfo = studentsData.find((s) => s.id === profile.id);
+          const schoolName = studentInfo?.school_id
+            ? schoolNames.get(studentInfo.school_id)
+            : null;
+          return {
+            id: profile.id,
+            name: profile.full_name || profile.username || 'Unknown',
+            username: profile.username || '',
+            school: schoolName || 'Unknown',
+            grade: grade
+          };
+        });
+        setStudents(studentsList);
       }
     } catch (error) {
       console.error('Error fetching students:', error);

@@ -82,7 +82,7 @@ export function SchoolAddTeacherDialog({
 
     setIsSaving(true);
     try {
-      const { error } = await supabase.from("school_teachers" as any).insert({
+      const { error } = await supabase.from("school_teachers").insert({
         school_id: schoolId,
         full_name: fullName.trim(),
         email: email.trim() || null,
@@ -101,7 +101,7 @@ export function SchoolAddTeacherDialog({
           const targetClass = classes.find((c) => c.id === cid);
           if (targetClass && !targetClass.lead_teacher) {
             await supabase
-              .from("school_classes" as any)
+              .from("school_classes")
               .update({ lead_teacher: fullName.trim() })
               .eq("id", cid);
           }

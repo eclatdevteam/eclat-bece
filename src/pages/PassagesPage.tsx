@@ -54,8 +54,9 @@ interface Passage {
     id: string;
     title: string | null;
     passage_text: string;
-    topic: string | null;
+    subject: string;
     created_at: string;
+    updated_at: string;
     question_count?: number;
 }
 

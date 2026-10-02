@@ -156,7 +156,7 @@ export function EditPassageDialog({
 
             // 2. Fetch linked questions
             const { data: questionsData, error: questionsErr } = await supabase
-                .from(questionsTable as any)
+                .from(questionsTable)
                 .select("*")
                 .eq("passage_id", passageId)
                 .order("created_at", { ascending: true });
@@ -168,7 +168,7 @@ export function EditPassageDialog({
             let allOptions: any[] = [];
             if (questionIds.length > 0) {
                 const { data: optionsData, error: optionsErr } = await supabase
-                    .from(optionsTable as any)
+                    .from(optionsTable)
                     .select("*")
                     .in("question_id", questionIds)
                     .order("display_order", { ascending: true });
@@ -331,7 +331,7 @@ export function EditPassageDialog({
 
             // 1. Update question record
             const { error: questionErr } = await supabase
-                .from(questionsTable as any)
+                .from(questionsTable)
                 .update({
                     question_text: q.question_text,
                     correct_answer: correctAnswer,
@@ -343,7 +343,7 @@ export function EditPassageDialog({
 
             // 2. Delete old options and re-insert
             const { error: deleteErr } = await supabase
-                .from(optionsTable as any)
+                .from(optionsTable)
                 .delete()
                 .eq("question_id", q.id);
 
@@ -357,7 +357,7 @@ export function EditPassageDialog({
             }));
 
             const { error: insertErr } = await supabase
-                .from(optionsTable as any)
+                .from(optionsTable)
                 .insert(newOpts);
 
             if (insertErr) throw insertErr;
@@ -403,12 +403,12 @@ export function EditPassageDialog({
         try {
             // Delete options first (cascade may handle this, but be safe)
             await supabase
-                .from(optionsTable as any)
+                .from(optionsTable)
                 .delete()
                 .eq("question_id", deleteQuestionId);
 
             const { error } = await supabase
-                .from(questionsTable as any)
+                .from(questionsTable)
                 .delete()
                 .eq("id", deleteQuestionId);
 

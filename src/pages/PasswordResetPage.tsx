@@ -178,7 +178,7 @@ export default function PasswordResetPage() {
         throw new Error(error.message || "Failed to send reset email");
       }
 
-      const result = data as any;
+      const result = data as unknown as { success?: boolean; error?: string } | null;
       if (result && result.success === false) {
         throw new Error(result.error || "Failed to send reset email");
       }

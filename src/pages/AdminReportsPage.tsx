@@ -137,7 +137,7 @@ export default function AdminReportsPage() {
         setLoading("competitions");
         try {
             const { data, error } = await supabase
-                .from("competitions" as any)
+                .from("competitions")
                 .select("*");
 
             if (error) throw error;

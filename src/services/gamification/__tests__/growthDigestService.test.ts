@@ -27,7 +27,7 @@ describe("EP-PAR-01: Weekly Parent Growth Digest Engine", () => {
           topic: "Comprehension",
           previousAccuracy: 45,
           currentAccuracy: 76,
-          newStatus: "Developing",
+          newStatus: "developing",
         },
       ],
       newBadgesEarned: [

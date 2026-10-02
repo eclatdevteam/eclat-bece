@@ -56,7 +56,7 @@ import {
 interface Question {
     id: string;
     subject: string;
-    topic: string;
+    topic: string | null;
     question_text: string;
     difficulty: string;
     created_at: string;
@@ -97,7 +97,7 @@ export default function QuestionBankPage() {
 
     const fetchDuplicateCount = useCallback(async () => {
         try {
-            const { data, error } = await supabase.rpc("count_duplicate_question_clusters" as any, {
+            const { data, error } = await supabase.rpc("count_duplicate_question_clusters", {
                 p_class_year: classYear,
             });
             if (!error && typeof data === "number") {
@@ -120,7 +120,7 @@ export default function QuestionBankPage() {
             const to = from + ITEMS_PER_PAGE - 1;
 
             let query = supabase
-                .from(tableName as any)
+                .from(tableName)
                 .select("id, subject, topic, question_text, difficulty, created_at, image_url", { count: 'exact' })
                 .order("created_at", { ascending: false })
                 .range(from, to);
@@ -167,7 +167,7 @@ export default function QuestionBankPage() {
 
             // Get question details before deletion for logging
             const { data: questionData } = await supabase
-                .from(tableName as any)
+                .from(tableName)
                 .select('question_text, subject, topic, difficulty, image_url')
                 .eq('id', deleteId)
                 .single();
@@ -175,7 +175,7 @@ export default function QuestionBankPage() {
             // Find any option images to delete
             const optionsTableName = classYear === 'year_6' ? 'quiz_options_year6' : 'quiz_options_year9';
             const { data: optionsData } = await supabase
-                .from(optionsTableName as any)
+                .from(optionsTableName)
                 .select('image_url')
                 .eq('question_id', deleteId);
 
@@ -210,7 +210,7 @@ export default function QuestionBankPage() {
             }
 
             const { error } = await supabase
-                .from(tableName as any)
+                .from(tableName)
                 .delete()
                 .eq("id", deleteId);
 
@@ -357,7 +357,7 @@ export default function QuestionBankPage() {
                                     <TableCell>
                                         <div className="flex items-center gap-2">
                                             {question.image_url && (
-                                                <ImageIcon className="h-4 w-4 text-primary shrink-0" title="Has image attachment" />
+                                                <ImageIcon className="h-4 w-4 text-primary shrink-0" aria-label="Has image attachment" />
                                             )}
                                             <div className="line-clamp-2" title={question.question_text}>
                                                 {question.question_text}

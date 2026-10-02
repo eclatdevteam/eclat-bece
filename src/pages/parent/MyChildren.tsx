@@ -104,7 +104,7 @@ export default function MyChildren() {
             }
 
             const qIds = qData.map((q: any) => q.id);
-            const { data: optData } = await supabase.from(optionsTableName as any).select("*").in("question_id", qIds).order("display_order");
+            const { data: optData } = await supabase.from(optionsTableName).select("*").in("question_id", qIds).order("display_order");
             const optMap = (optData || []).reduce((acc: any, opt: any) => {
                 if (!acc[opt.question_id]) acc[opt.question_id] = [];
                 acc[opt.question_id].push(opt);
@@ -176,7 +176,7 @@ export default function MyChildren() {
                 ]);
 
                 const allQuizzes = (quizzesRes.data || []) as QuizResult[];
-                const allAssignments = (assignmentsRes.data || []) as Assignment[];
+                const allAssignments = (assignmentsRes.data || []) as unknown as Assignment[];
 
                 const assignMap = new Map<string, Assignment[]>();
                 const analyticsMap = new Map<string, ChildAnalytics>();

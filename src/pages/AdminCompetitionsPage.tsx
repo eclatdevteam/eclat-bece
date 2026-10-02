@@ -67,12 +67,17 @@ export default function AdminCompetitionsPage() {
         setLoading(true);
         try {
             const { data, error } = await supabase
-                .from("competitions" as any)
+                .from("competitions")
                 .select("*")
                 .order("created_at", { ascending: false });
 
             if (error) throw error;
-            setCompetitions(data || []);
+            setCompetitions(
+              (data || []).map((c) => ({
+                ...c,
+                status: c.status as Competition["status"],
+              }))
+            );
         } catch (error) {
             console.error("Error fetching competitions:", error);
             toast.error("Failed to load competitions");
@@ -86,7 +91,7 @@ export default function AdminCompetitionsPage() {
 
         try {
             const { error } = await supabase
-                .from("competitions" as any)
+                .from("competitions")
                 .delete()
                 .eq("id", deleteId);
 
@@ -105,7 +110,7 @@ export default function AdminCompetitionsPage() {
     const updateStatus = async (id: string, newStatus: string) => {
         try {
             const { error } = await supabase
-                .from("competitions" as any)
+                .from("competitions")
                 .update({ status: newStatus })
                 .eq("id", id);
 

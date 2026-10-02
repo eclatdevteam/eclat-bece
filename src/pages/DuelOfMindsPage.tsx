@@ -128,7 +128,7 @@ export default function DuelOfMindsPage() {
           ? "quiz_questions_year6"
           : "quiz_questions_year9";
 
-      let query = supabase.from(tableName as any).select("id").limit(config.numberOfQuestions * 2);
+      let query = supabase.from(tableName).select("id").limit(config.numberOfQuestions * 2);
       if (config.subject) {
         query = query.eq("subject", config.subject);
       }

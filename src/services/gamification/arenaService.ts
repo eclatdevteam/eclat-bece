@@ -27,7 +27,7 @@ export interface CreateChallengeInput {
  */
 export async function createDuelChallenge(input: CreateChallengeInput): Promise<string | null> {
   try {
-    const { data, error } = await supabase.rpc("create_arena_challenge" as any, {
+    const { data, error } = await supabase.rpc("create_arena_challenge", {
       p_challenger_id: input.challengerId,
       p_opponent_id: input.opponentId,
       p_challenge_name: input.challengeName,
@@ -51,7 +51,7 @@ export async function createDuelChallenge(input: CreateChallengeInput): Promise<
 export async function fetchIncomingChallenges(studentId: string): Promise<ArenaChallenge[]> {
   try {
     const { data, error } = await supabase
-      .from("arena_challenges" as any)
+      .from("arena_challenges")
       .select(`
         id,
         challenger_id,
@@ -100,7 +100,7 @@ export async function fetchIncomingChallenges(studentId: string): Promise<ArenaC
 export async function fetchStudentDuelHistory(studentId: string): Promise<ArenaChallenge[]> {
   try {
     const { data, error } = await supabase
-      .from("arena_challenges" as any)
+      .from("arena_challenges")
       .select(`
         id,
         challenger_id,
@@ -165,7 +165,7 @@ export async function updateChallengeStatus(
 ): Promise<boolean> {
   try {
     const { error } = await supabase
-      .from("arena_challenges" as any)
+      .from("arena_challenges")
       .update({ status: newStatus })
       .eq("id", challengeId);
 
@@ -191,7 +191,7 @@ export async function submitDuelTurn(params: {
   try {
     // 1. Fetch challenge details
     const { data: challenge, error: fetchErr } = await supabase
-      .from("arena_challenges" as any)
+      .from("arena_challenges")
       .select("*")
       .eq("id", challengeId)
       .single();
@@ -215,7 +215,7 @@ export async function submitDuelTurn(params: {
     // If opponent hasn't played yet, just save turn and wait
     if (!opponentAlreadySubmitted) {
       await supabase
-        .from("arena_challenges" as any)
+        .from("arena_challenges")
         .update(updatePayload)
         .eq("id", challengeId);
 
@@ -252,7 +252,7 @@ export async function submitDuelTurn(params: {
     // 3. Count matches between this pair in the last 24 hours (anti-collusion check)
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { count: pairMatchesCount } = await supabase
-      .from("arena_challenges" as any)
+      .from("arena_challenges")
       .select("*", { count: "exact", head: true })
       .or(
         `and(challenger_id.eq.${challenge.challenger_id},opponent_id.eq.${challenge.opponent_id}),and(challenger_id.eq.${challenge.opponent_id},opponent_id.eq.${challenge.challenger_id})`
@@ -262,13 +262,13 @@ export async function submitDuelTurn(params: {
 
     // 4. Fetch profiles for tier & win streak info
     const { data: pProfile } = await supabase
-      .from("student_gamification_profile" as any)
+      .from("student_gamification_profile")
       .select("current_league_tier, lifetime_ep, weekly_ep, monthly_ep")
       .eq("student_id", studentId)
       .maybeSingle();
 
     const { data: oProfile } = await supabase
-      .from("student_gamification_profile" as any)
+      .from("student_gamification_profile")
       .select("current_league_tier")
       .eq("student_id", opponentId)
       .maybeSingle();
@@ -296,13 +296,13 @@ export async function submitDuelTurn(params: {
     }
 
     await supabase
-      .from("arena_challenges" as any)
+      .from("arena_challenges")
       .update(updatePayload)
       .eq("id", challengeId);
 
     // 6. Record points in ledger & profile if EP > 0
     if (matchResult.totalEP > 0) {
-      await supabase.from("student_points_ledger" as any).insert({
+      await supabase.from("student_points_ledger").insert({
         student_id: studentId,
         amount: matchResult.totalEP,
         source_type: "session_bonus",
@@ -318,7 +318,7 @@ export async function submitDuelTurn(params: {
       const newLifetime = currentLifetime + matchResult.totalEP;
       const levelCalc = calculateStudentLevel(newLifetime);
 
-      await (supabase.from("student_gamification_profile" as any) as any).upsert(
+      await supabase.from("student_gamification_profile").upsert(
         {
           student_id: studentId,
           lifetime_ep: newLifetime,
@@ -333,7 +333,7 @@ export async function submitDuelTurn(params: {
       // Update weekly cohort points
       try {
         if (typeof supabase.rpc === "function") {
-          await supabase.rpc("update_student_cohort_points" as any, {
+          await supabase.rpc("update_student_cohort_points", {
             p_student_id: studentId,
             p_additional_ep: matchResult.totalEP,
           });

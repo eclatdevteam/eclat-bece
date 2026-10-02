@@ -115,7 +115,7 @@ export function EditAdminRoleDialog({
 
       // 1. Update admins table
       const { error: updateError } = await supabase
-        .from("admins" as any)
+        .from("admins")
         .update({
           is_super_admin: values.isSuperAdmin,
           permissions: updatedPermissions,

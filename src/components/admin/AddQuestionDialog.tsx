@@ -138,7 +138,7 @@ export function AddQuestionDialog({ onSuccess }: AddQuestionDialogProps) {
                 const tableName = classYear === 'year_6' ? 'quiz_questions_year6' : 'quiz_questions_year9';
                 const cleanText = watchedQuestionText.trim();
                 const { data } = await supabase
-                    .from(tableName as any)
+                    .from(tableName)
                     .select('id, question_text')
                     .eq('subject', watchedSubject)
                     .ilike('question_text', `%${cleanText.slice(0, 40)}%`)
@@ -289,7 +289,7 @@ export function AddQuestionDialog({ onSuccess }: AddQuestionDialogProps) {
 
             // 1. Insert Question
             const { data: questionData, error: questionError } = await supabase
-                .from(tableName as any)
+                .from(tableName)
                 .insert({
                     subject: values.subject,
                     topic: values.topic,
@@ -313,7 +313,7 @@ export function AddQuestionDialog({ onSuccess }: AddQuestionDialogProps) {
             }));
 
             const { data: optionsData, error: optionsError } = await supabase
-                .from(optionsTableName as any)
+                .from(optionsTableName)
                 .insert(optionsToInsert)
                 .select();
 
@@ -331,7 +331,7 @@ export function AddQuestionDialog({ onSuccess }: AddQuestionDialogProps) {
                             `${values.classYear}/questions/${questionData.id}.webp`
                         );
                         await supabase
-                            .from(tableName as any)
+                            .from(tableName)
                             .update({ image_url: publicUrl })
                             .eq('id', questionData.id);
                     }
@@ -346,7 +346,7 @@ export function AddQuestionDialog({ onSuccess }: AddQuestionDialogProps) {
                                     `${values.classYear}/options/${optionsData[i].id}.webp`
                                 );
                                 await supabase
-                                    .from(optionsTableName as any)
+                                    .from(optionsTableName)
                                     .update({ image_url: publicUrl })
                                     .eq('id', optionsData[i].id);
                             }

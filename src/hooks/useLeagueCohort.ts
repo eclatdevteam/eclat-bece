@@ -64,13 +64,28 @@ export function useLeagueCohort(): StudentCohortState {
       const studentId = studentRecord.id;
 
       // 2. Fetch or assign weekly cohort
-      const { data, error: rpcError } = await supabase.rpc("get_student_league_cohort" as any, {
+      const { data, error: rpcError } = await supabase.rpc("get_student_league_cohort", {
         p_student_id: studentId,
       });
 
       if (rpcError) throw rpcError;
 
-      const cohortData = data as any;
+      const cohortData = data as unknown as {
+        cohort_id: string;
+        league_tier: number;
+        cohort_number: number;
+        week_start_date: string;
+        members: Array<{
+          student_id: string;
+          name: string | null;
+          username: string | null;
+          avatar_url: string | null;
+          school_name: string | null;
+          weekly_ep: number;
+          rank: number;
+          is_current_user: boolean;
+        }>;
+      } | null;
       if (cohortData) {
         const tier = (cohortData.league_tier || 1) as LeagueTierNumber;
         setCohortId(cohortData.cohort_id);

@@ -36,7 +36,7 @@ export function SchoolExamsPage() {
 
     setIsDeletingId(examId);
     try {
-      const { error } = await supabase.from("school_exams" as any).delete().eq("id", examId);
+      const { error } = await supabase.from("school_exams").delete().eq("id", examId);
       if (error) throw error;
       toast.success("Examination removed from schedule");
       refresh();

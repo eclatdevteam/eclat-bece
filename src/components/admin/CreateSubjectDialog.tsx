@@ -139,7 +139,7 @@ export function CreateSubjectDialog({
             <div className="space-y-1.5">
               <Label htmlFor="subject-code" className="h-5 flex items-center gap-1">
                 Short Code *
-                <Sparkles className="h-3 w-3 text-muted-foreground" title="Auto-generated" />
+                <Sparkles className="h-3 w-3 text-muted-foreground" aria-label="Auto-generated" />
               </Label>
               <Input
                 id="subject-code"

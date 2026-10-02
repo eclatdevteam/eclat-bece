@@ -72,7 +72,7 @@ export const fetchLeaderboardData = async (userId?: string): Promise<Leaderboard
     }
 
     // 1. Try public RPC function
-    const { data: rpcData, error: rpcError } = await supabase.rpc("get_public_leaderboard" as any);
+    const { data: rpcData, error: rpcError } = await supabase.rpc("get_public_leaderboard");
 
     if (!rpcError && rpcData) {
       const parsedData = typeof rpcData === "string" ? JSON.parse(rpcData) : rpcData;
@@ -142,7 +142,7 @@ export const fetchLeaderboardData = async (userId?: string): Promise<Leaderboard
     const { data: studentsData } = await supabase.from("students").select("id, user_id, school_id");
     const { data: profilesData } = await supabase.from("profiles").select("id, full_name, username");
     const { data: schoolsData } = await supabase.from("schools").select("id, school_name");
-    const { data: gameProfiles } = await supabase.from("student_gamification_profile" as any).select("*");
+    const { data: gameProfiles } = await supabase.from("student_gamification_profile").select("*");
 
     const profileMap = new Map(profilesData?.map((p) => [p.id, p]) || []);
     const schoolMap = new Map(schoolsData?.map((s) => [s.id, s.school_name]) || []);

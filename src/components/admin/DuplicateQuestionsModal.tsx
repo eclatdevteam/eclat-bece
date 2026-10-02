@@ -117,7 +117,8 @@ export function DuplicateQuestionsModal({
 
             if (error) throw error;
 
-            const fetchedClusters: DuplicateCluster[] = (data as any) || [];
+            const fetchedClusters: DuplicateCluster[] =
+              (data as unknown as DuplicateCluster[]) || [];
             setClusters(fetchedClusters);
 
             // Initialize default canonical question for each cluster (the first one is sorted by best explanation)
@@ -215,7 +216,7 @@ export function DuplicateQuestionsModal({
 
             if (error) throw error;
 
-            const result = data as any;
+            const result = data as unknown as { clusters_merged?: number; duplicates_removed?: number };
             toast.success(
                 `Auto-merge complete! Merged ${result.clusters_merged || 0} clusters and removed ${result.duplicates_removed || 0} duplicate questions.`
             );
