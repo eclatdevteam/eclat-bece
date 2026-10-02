@@ -29,4 +29,11 @@ export const queryKeys = {
 
   /** Notification list for a user id (kept fresh via realtime invalidation). */
   notifications: (userId?: string | null) => ["notifications", userId ?? "anon"] as const,
+
+  /** Admin flag-reports list: paginated + filtered (status/class year/reason/page). */
+  flagReports: (filters: { status: string; classYear: string; reason: string; page: number }) =>
+    ["flag-reports", "list", filters] as const,
+
+  /** Count of pending flag reports (filter badge). */
+  flagReportsPendingCount: () => ["flag-reports", "pending-count"] as const,
 } as const;
