@@ -1110,6 +1110,56 @@ export type Database = {
           },
         ]
       }
+      school_teachers: {
+        Row: {
+          assigned_class_ids: string[] | null
+          created_at: string
+          department: string | null
+          email: string | null
+          full_name: string
+          id: string
+          phone: string | null
+          primary_subject: string | null
+          school_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_class_ids?: string[] | null
+          created_at?: string
+          department?: string | null
+          email?: string | null
+          full_name: string
+          id?: string
+          phone?: string | null
+          primary_subject?: string | null
+          school_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_class_ids?: string[] | null
+          created_at?: string
+          department?: string | null
+          email?: string | null
+          full_name?: string
+          id?: string
+          phone?: string | null
+          primary_subject?: string | null
+          school_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_teachers_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       schools: {
         Row: {
           address: string | null

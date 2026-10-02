@@ -57,6 +57,8 @@ export interface GamificationTotals {
   totalQuizzesTaken: number;
   activeLearnersCount: number;
   topAchievers: SchoolStudent[];
+}
+
 export interface SchoolExamItem {
   id: string;
   school_id: string;
@@ -76,6 +78,20 @@ export interface SchoolExamItem {
   eligibleStudentCount?: number;
 }
 
+export interface SchoolTeacherItem {
+  id: string;
+  school_id: string;
+  full_name: string;
+  email: string | null;
+  phone: string | null;
+  department: string | null;
+  primary_subject: string | null;
+  assigned_class_ids: string[];
+  assigned_classes: string[];
+  status: "Active" | "On Leave" | "Inactive";
+  created_at: string;
+}
+
 export function useSchoolData() {
   const [isLoading, setIsLoading] = useState(true);
   const [school, setSchool] = useState<SchoolData | null>(null);
@@ -84,6 +100,7 @@ export function useSchoolData() {
   const [topicMastery, setTopicMastery] = useState<SchoolTopicMasteryRecord[]>([]);
   const [assignments, setAssignments] = useState<SchoolAssignmentItem[]>([]);
   const [exams, setExams] = useState<SchoolExamItem[]>([]);
+  const [teachers, setTeachers] = useState<SchoolTeacherItem[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const fetchSchoolData = useCallback(async () => {
@@ -119,8 +136,8 @@ export function useSchoolData() {
 
       setSchool(currentSchool as SchoolData);
 
-      // 2. Fetch Linked Students, Classes, Assignments & Exams in parallel
-      const [rawStudentsRes, rawClassesRes, rawAssignmentsRes, rawExamsRes] = await Promise.all([
+      // 2. Fetch Linked Students, Classes, Assignments, Exams & Teachers in parallel
+      const [rawStudentsRes, rawClassesRes, rawAssignmentsRes, rawExamsRes, rawTeachersRes] = await Promise.all([
         supabase
           .from("students")
           .select("id, user_id, class_year, class_id, is_premium, created_at")
@@ -140,6 +157,11 @@ export function useSchoolData() {
           .select("id, school_id, title, cohort, class_id, subject, exam_date, start_time, duration_minutes, question_count, passing_score, status, instructions, created_at")
           .eq("school_id", currentSchool.id)
           .order("exam_date", { ascending: true }),
+        supabase
+          .from("school_teachers" as any)
+          .select("id, school_id, full_name, email, phone, department, primary_subject, assigned_class_ids, status, created_at")
+          .eq("school_id", currentSchool.id)
+          .order("full_name", { ascending: true }),
       ]);
 
       if (rawStudentsRes.error) throw rawStudentsRes.error;
@@ -358,6 +380,67 @@ export function useSchoolData() {
       });
       setExams(parsedExams);
 
+      // 9. Assemble teachers (registered + class leads backward compatibility)
+      const rawTeachers = (rawTeachersRes.data || []) as any[];
+      const registeredTeacherNames = new Set(rawTeachers.map((t) => t.full_name.trim().toLowerCase()));
+
+      const enrichedTeachers: SchoolTeacherItem[] = rawTeachers.map((t) => {
+        const classNames = (t.assigned_class_ids || [])
+          .map((cid: string) => classMap.get(cid))
+          .filter(Boolean) as string[];
+
+        return {
+          id: t.id,
+          school_id: t.school_id,
+          full_name: t.full_name,
+          email: t.email || null,
+          phone: t.phone || null,
+          department: t.department || "General Faculty",
+          primary_subject: t.primary_subject || "Core Subjects",
+          assigned_class_ids: t.assigned_class_ids || [],
+          assigned_classes: classNames,
+          status: t.status || "Active",
+          created_at: t.created_at,
+        };
+      });
+
+      // Backward compatibility: If any class has a lead_teacher not yet in school_teachers, add them
+      rawClasses.forEach((c: any) => {
+        if (c.lead_teacher && c.lead_teacher.trim()) {
+          const cleanName = c.lead_teacher.trim();
+          if (!registeredTeacherNames.has(cleanName.toLowerCase())) {
+            const existingVirtual = enrichedTeachers.find(
+              (t) => t.full_name.toLowerCase() === cleanName.toLowerCase()
+            );
+            if (existingVirtual) {
+              if (!existingVirtual.assigned_classes.includes(c.name)) {
+                existingVirtual.assigned_classes.push(c.name);
+              }
+              if (!existingVirtual.assigned_class_ids.includes(c.id)) {
+                existingVirtual.assigned_class_ids.push(c.id);
+              }
+            } else {
+              enrichedTeachers.push({
+                id: `virtual-${c.id}`,
+                school_id: currentSchool.id,
+                full_name: cleanName,
+                email: null,
+                phone: null,
+                department: "Class Arm Faculty",
+                primary_subject: "Class Lead",
+                assigned_class_ids: [c.id],
+                assigned_classes: [c.name],
+                status: "Active",
+                created_at: c.created_at,
+              });
+              registeredTeacherNames.add(cleanName.toLowerCase());
+            }
+          }
+        }
+      });
+
+      setTeachers(enrichedTeachers);
+
     } catch (err: unknown) {
       console.error("Failed to load school data:", err);
       setError(err instanceof Error ? err.message : "Error loading school data");
@@ -410,6 +493,7 @@ export function useSchoolData() {
     assignments,
     assignmentStats,
     exams,
+    teachers,
     cohortAverages,
     gamificationTotals,
     isLoading,
