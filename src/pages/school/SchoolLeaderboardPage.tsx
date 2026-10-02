@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { RefreshCw, Building2, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,34 +6,17 @@ import { SchoolLayout } from "@/components/school/SchoolLayout";
 import { CompetitionLeaderboards } from "@/components/CompetitionLeaderboards";
 import { ClassroomLeaderboardView, EnrichedStudentRecord } from "@/components/school/ClassroomLeaderboardView";
 import { StudentReportDialog } from "@/components/StudentReportDialog";
-import { fetchLeaderboardData, LeaderboardData } from "@/utils/leaderboard";
+import { useLeaderboardData } from "@/hooks/useLeaderboardData";
 import { useSchoolData } from "@/hooks/useSchoolData";
 
 export function SchoolLeaderboardPage() {
   const { school, students, gamificationTotals, refresh: refreshSchoolData } = useSchoolData();
   const [activeTab, setActiveTab] = useState<"classroom" | "national">("classroom");
-  const [nationalData, setNationalData] = useState<LeaderboardData | null>(null);
-  const [loading, setLoading] = useState(false);
+  const { data: nationalData, isLoading: loading, refetch: refetchNational } = useLeaderboardData(undefined, school?.id);
 
   // Student Report Modal
   const [selectedStudent, setSelectedStudent] = useState<EnrichedStudentRecord | null>(null);
   const [reportOpen, setReportOpen] = useState(false);
-
-  const loadLeaders = useCallback(async () => {
-    try {
-      setLoading(true);
-      const res = await fetchLeaderboardData(school?.id);
-      setNationalData(res);
-    } catch (err) {
-      console.error("Error fetching leaderboard data:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [school?.id]);
-
-  useEffect(() => {
-    loadLeaders();
-  }, [loadLeaders]);
 
   const topStudent = gamificationTotals.topAchievers[0];
   const maxLeagueTier = useMemo(() => {
@@ -50,7 +33,7 @@ export function SchoolLeaderboardPage() {
           variant="outline"
           size="sm"
           onClick={() => {
-            loadLeaders();
+            refetchNational();
             refreshSchoolData();
           }}
           disabled={loading}

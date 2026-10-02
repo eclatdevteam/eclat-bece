@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Medal, Crown, Trophy, Loader2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { fetchLeaderboardData, LeaderboardStudent } from "@/utils/leaderboard";
+import { LeaderboardStudent } from "@/utils/leaderboard";
+import { useLeaderboardData } from "@/hooks/useLeaderboardData";
 
 interface LeaderboardProps {
   onViewFullLeaderboard: () => void;
@@ -16,23 +17,8 @@ interface LeaderboardProps {
 
 export const Leaderboard = ({ onViewFullLeaderboard }: LeaderboardProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [monthlyLeaders, setMonthlyLeaders] = useState<LeaderboardStudent[]>([]);
-
-  useEffect(() => {
-    const loadLeaderboard = async () => {
-      try {
-        setLoading(true);
-        const data = await fetchLeaderboardData();
-        setMonthlyLeaders(data.monthlyLeaders);
-      } catch (error) {
-        console.error("Failed to load leaderboard:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    loadLeaderboard();
-  }, []);
+  const { data, isLoading: loading } = useLeaderboardData();
+  const monthlyLeaders = data?.monthlyLeaders ?? [];
 
   const topStudents = monthlyLeaders.slice(0, 3).map((student, index) => ({
     ...student,

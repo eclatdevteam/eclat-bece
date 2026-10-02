@@ -1,48 +1,21 @@
-import { useEffect, useState } from "react";
 import { Navigation } from "@/components/Navigation";
 import { Footer } from "@/components/Footer";
 import { CompetitionLeaderboards, LeaderboardStudent } from "@/components/CompetitionLeaderboards";
 import { usePublicAuthAction } from "@/hooks/usePublicAuthAction";
-import { fetchLeaderboardData } from "@/utils/leaderboard";
+import { useLeaderboardData } from "@/hooks/useLeaderboardData";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Trophy, Award, Sparkles, Loader2, Gift, ArrowRight, Flame } from "lucide-react";
 
 export default function PublicLeaderboardPage() {
   const { handleLoginClick, handleGetStartedClick } = usePublicAuthAction();
-  const [isLoading, setIsLoading] = useState(true);
-  const [weeklyLeaders, setWeeklyLeaders] = useState<LeaderboardStudent[]>([]);
-  const [monthlyLeaders, setMonthlyLeaders] = useState<LeaderboardStudent[]>([]);
-  const [annualLeaders, setAnnualLeaders] = useState<LeaderboardStudent[]>([]);
-  const [mathLeaders, setMathLeaders] = useState<LeaderboardStudent[]>([]);
-  const [englishLeaders, setEnglishLeaders] = useState<LeaderboardStudent[]>([]);
-  const [schoolLeaders, setSchoolLeaders] = useState<any[]>([]);
-
-  useEffect(() => {
-    let isMounted = true;
-    const loadLeaderboard = async () => {
-      try {
-        const data = await fetchLeaderboardData();
-        if (isMounted) {
-          setWeeklyLeaders(data.weeklyLeaders || []);
-          setMonthlyLeaders(data.monthlyLeaders || []);
-          setAnnualLeaders(data.annualLeaders || []);
-          setMathLeaders(data.mathLeaders || []);
-          setEnglishLeaders(data.englishLeaders || []);
-          setSchoolLeaders(data.schoolLeaders || []);
-        }
-      } catch (err) {
-        console.error("Error loading public leaderboard:", err);
-      } finally {
-        if (isMounted) setIsLoading(false);
-      }
-    };
-
-    loadLeaderboard();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const { data, isLoading } = useLeaderboardData();
+  const weeklyLeaders: LeaderboardStudent[] = data?.weeklyLeaders ?? [];
+  const monthlyLeaders: LeaderboardStudent[] = data?.monthlyLeaders ?? [];
+  const annualLeaders: LeaderboardStudent[] = data?.annualLeaders ?? [];
+  const mathLeaders: LeaderboardStudent[] = data?.mathLeaders ?? [];
+  const englishLeaders: LeaderboardStudent[] = data?.englishLeaders ?? [];
+  const schoolLeaders = data?.schoolLeaders ?? [];
 
   return (
     <div className="min-h-screen bg-white dark:bg-[#080f22] text-slate-900 dark:text-slate-100 flex flex-col justify-between selection:bg-[#3bc2f3] selection:text-slate-950 font-sans transition-colors duration-200">

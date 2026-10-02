@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, ClipboardList, TrendingUp, Trophy, Target, ArrowRight, Copy, Check, Swords, Sparkles, BarChart3, Shield, Zap, Flame, Award, AlertCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,321 +29,297 @@ interface StudentBadge {
   earned: boolean;
 }
 
+// --- Cached data layer (TanStack Query) -------------------------------------
+// The former single 14-step await waterfall has been split into two cached,
+// dependency-linked queries. Render behavior (progressive fill, same variable
+// names) is preserved.
 export default function StudentDashboardOverview() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const [userName, setUserName] = useState("Student");
-  const [classYear, setClassYear] = useState<string | null>(null);
-  const [recentActivity, setRecentActivity] = useState<QuizResult[]>([]);
-  const [studentId, setStudentId] = useState<string | null>(null);
-  const [totalQuestions, setTotalQuestions] = useState(0);
-  const [averageScore, setAverageScore] = useState(0);
-  const [monthlyRank, setMonthlyRank] = useState<number | null>(null);
-  const [studentCode, setStudentCode] = useState<string>("");
-  const [currentStreak, setCurrentStreak] = useState(0);
-  
-  // Real database counts for badges
-  const [availableQuestionsCount, setAvailableQuestionsCount] = useState(0);
-  const [pendingAssignmentsCount, setPendingAssignmentsCount] = useState(0);
-  const [completedQuizzesCount, setCompletedQuizzesCount] = useState(0);
-  
-  // Gamification state
-  const [levelInfo, setLevelInfo] = useState<StudentLevelInfo>(calculateStudentLevel(0));
-  const [streakShields, setStreakShields] = useState(0);
-  const [currentLeagueTier, setCurrentLeagueTier] = useState<number>(1);
-  const [pinnedBadgeIds, setPinnedBadgeIds] = useState<string[]>([]);
-  const [earnedBadgeIds, setEarnedBadgeIds] = useState<string[]>([]);
-  const [focusTopic, setFocusTopic] = useState<{ subject: string; topic: string; rolling_accuracy: number } | null>(null);
-  const [dailyChallengeCompleted, setDailyChallengeCompleted] = useState(false);
+  const queryClient = useQueryClient();
 
-  // Badge state
-  const [totalWins, setTotalWins] = useState(0);
-  const [badgeLevel, setBadgeLevel] = useState<BadgeLevel>('bronze');
-  const [badges, setBadges] = useState<StudentBadge[]>([]);
+  // Query 1: identity — profile, student record and question bank size
+  const identityQuery = useQuery({
+    queryKey: ["student-dashboard", user?.id ?? "anon", "identity"],
+    enabled: !!user,
+    staleTime: 60 * 1000,
+    queryFn: async () => {
+      const [{ data: profileData }, { data: studentData }] = await Promise.all([
+        supabase.from("profiles").select("full_name, unique_id").eq("id", user!.id).single(),
+        supabase.from("students").select("id, class_year").eq("user_id", user!.id).single(),
+      ]);
 
-  useEffect(() => {
-    const fetchUserData = async () => {
-      if (!user) return;
-      
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("full_name, unique_id")
-        .eq("id", user.id)
-        .single();
-      
-      if (profileData?.full_name) {
-        const firstName = profileData.full_name.split(" ")[0];
-        setUserName(firstName);
+      let availableQuestionsCount = 0;
+      if (studentData?.class_year) {
+        const tableName: "quiz_questions_year6" | "quiz_questions_year9" =
+          studentData.class_year === "year_6" ? "quiz_questions_year6" : "quiz_questions_year9";
+        const { count: questionsCount } = await supabase
+          .from(tableName)
+          .select("*", { count: "exact", head: true });
+        availableQuestionsCount = questionsCount ?? 0;
       }
 
-      if (profileData?.unique_id) {
-        setStudentCode(profileData.unique_id);
-      }
+      return {
+        userName: profileData?.full_name?.split(" ")[0] || "Student",
+        studentCode: profileData?.unique_id || "",
+        studentId: studentData?.id ?? null,
+        classYear: (studentData?.class_year as string | null) ?? null,
+        availableQuestionsCount,
+      };
+    },
+  });
 
-      const { data: studentData } = await supabase
-        .from("students")
-        .select("id, class_year")
-        .eq("user_id", user.id)
-        .single();
-      
-      if (studentData) {
-        if (studentData.class_year) {
-          setClassYear(studentData.class_year);
-          
-          // Fetch total available questions in database for the student's class year
-          const tableName: "quiz_questions_year6" | "quiz_questions_year9" = studentData.class_year === 'year_6'
-            ? 'quiz_questions_year6'
-            : 'quiz_questions_year9';
-            
-          const { count: questionsCount } = await supabase
-            .from(tableName)
-            .select("*", { count: 'exact', head: true });
-            
-          if (questionsCount !== null) {
-            setAvailableQuestionsCount(questionsCount);
-          }
-        }
-        setStudentId(studentData.id);
-        
-        // Fetch gamification profile
-        const { data: gameProfile } = await supabase
-          .from("student_gamification_profile")
-          .select("*")
-          .eq("student_id", studentData.id)
-          .maybeSingle();
+  const studentId = identityQuery.data?.studentId ?? null;
 
-        if (gameProfile) {
-          const ep = Number(gameProfile.lifetime_ep || 0);
-          setLevelInfo(calculateStudentLevel(ep));
-          setStreakShields(Number(gameProfile.streak_shields || 0));
-          setCurrentLeagueTier(Number(gameProfile.current_league_tier || 1));
-          setPinnedBadgeIds((gameProfile.pinned_badge_ids as string[]) || []);
-          if (gameProfile.streak_count !== undefined) {
-            setCurrentStreak(Number(gameProfile.streak_count));
-          }
-          const todayUTC = new Date().toISOString().split("T")[0];
-          const todayStart = `${todayUTC}T00:00:00.000Z`;
-          let challengeDone = gameProfile.last_daily_challenge_date === todayUTC;
+  // Query 2: gamification + academic stats — depends on the resolved student id
+  const statsQuery = useQuery({
+    queryKey: ["student-dashboard", user?.id ?? "anon", studentId ?? "no-student", "stats"],
+    enabled: !!studentId,
+    staleTime: 30 * 1000,
+    queryFn: async () => {
+      const sid = studentId as string;
+      const todayUTC = new Date().toISOString().split("T")[0];
+      const todayStart = `${todayUTC}T00:00:00.000Z`;
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
-          // Fallback 1: check student_points_ledger for daily_challenge entries today
-          if (!challengeDone) {
-            const { data: todayLedger } = await supabase
-              .from("student_points_ledger")
-              .select("id")
-              .eq("student_id", studentData.id)
-              .eq("source_type", "daily_challenge")
-              .gte("created_at", todayStart)
-              .limit(1);
-
-            if (todayLedger && todayLedger.length > 0) {
-              challengeDone = true;
-            }
-          }
-
-          // Fallback 2: check quiz_results for pre-change completions
-          if (!challengeDone) {
-            const { data: todayDailyResults } = await supabase
-              .from("quiz_results")
-              .select("id")
-              .eq("student_id", studentData.id)
-              .eq("subject", "Daily Challenge")
-              .gte("completed_at", todayStart)
-              .limit(1);
-
-            if (todayDailyResults && todayDailyResults.length > 0) {
-              challengeDone = true;
-            }
-          }
-
-          if (challengeDone && gameProfile.last_daily_challenge_date !== todayUTC) {
-            // Backfill so future checks are instant
-            await supabase.from("student_gamification_profile")
-              .update({ last_daily_challenge_date: todayUTC })
-              .eq("student_id", studentData.id);
-          }
-
-          setDailyChallengeCompleted(challengeDone);
-        } else {
-          // Fallback to legacy streak data if gamification profile is pending
-          const { data: streakData } = await supabase
-            .from("student_streaks")
-            .select("current_streak")
-            .eq("student_id", studentData.id)
-            .maybeSingle();
-          if (streakData) {
-            setCurrentStreak(streakData.current_streak);
-          }
-        }
-
-        // Fetch earned badges
-        const { data: badgesRes } = await supabase
-          .from("student_badges")
-          .select("badge_id")
-          .eq("student_id", studentData.id);
-
-        if (badgesRes) {
-          setEarnedBadgeIds(badgesRes.map((b: any) => b.badge_id));
-        }
-
-        // Fetch Weak topic for Signature Focus Area Recommendation
-        const { data: weakTopics } = await supabase
+      const [
+        gameProfileRes,
+        badgesRes,
+        weakTopicsRes,
+        pendingRes,
+        recentRes,
+        allResultsRes,
+        monthlyScoreRes,
+        monthlyCorrectRes,
+      ] = await Promise.all([
+        supabase.from("student_gamification_profile").select("*").eq("student_id", sid).maybeSingle(),
+        supabase.from("student_badges").select("badge_id").eq("student_id", sid),
+        supabase
           .from("student_topic_mastery")
           .select("subject, topic, rolling_accuracy")
-          .eq("student_id", studentData.id)
+          .eq("student_id", sid)
           .eq("status", "weak")
           .order("rolling_accuracy", { ascending: true })
-          .limit(1);
-
-        if (weakTopics && weakTopics.length > 0) {
-          setFocusTopic(weakTopics[0]);
-        }
-        
-        // Fetch actual pending assignments count
-        const { count: pendingCount } = await supabase
+          .limit(1),
+        supabase
           .from("practice_assignments")
-          .select("*", { count: 'exact', head: true })
-          .eq("student_id", studentData.id)
-          .eq("status", "pending");
-          
-        if (pendingCount !== null) {
-          setPendingAssignmentsCount(pendingCount);
-        }
-        
-        // Fetch recent quiz results
-        const { data: quizResults } = await supabase
+          .select("*", { count: "exact", head: true })
+          .eq("student_id", sid)
+          .eq("status", "pending"),
+        supabase
           .from("quiz_results")
           .select("id, subject, score, total_questions, completed_at")
-          .eq("student_id", studentData.id)
+          .eq("student_id", sid)
           .order("completed_at", { ascending: false })
-          .limit(3);
-        
-        if (quizResults) {
-          setRecentActivity(quizResults);
+          .limit(3),
+        supabase.from("quiz_results").select("total_questions, score").eq("student_id", sid),
+        supabase.from("quiz_results").select("student_id, score").gte("completed_at", firstDayOfMonth),
+        supabase.from("quiz_results").select("student_id, correct_answers").gte("completed_at", firstDayOfMonth),
+      ]);
+
+      const gameProfile = gameProfileRes.data;
+      let currentStreak = 0;
+      let dailyChallengeCompleted = false;
+
+      if (gameProfile) {
+        currentStreak = Number(gameProfile.streak_count || 0);
+
+        // Daily-challenge completion with two fallback checks
+        let challengeDone = gameProfile.last_daily_challenge_date === todayUTC;
+
+        if (!challengeDone) {
+          const { data: todayLedger } = await supabase
+            .from("student_points_ledger")
+            .select("id")
+            .eq("student_id", sid)
+            .eq("source_type", "daily_challenge")
+            .gte("created_at", todayStart)
+            .limit(1);
+          if (todayLedger && todayLedger.length > 0) challengeDone = true;
         }
 
-        // Calculate total questions answered and average score
-        const { data: allResults } = await supabase
-          .from("quiz_results")
-          .select("total_questions, score")
-          .eq("student_id", studentData.id);
-        
-        if (allResults) {
-          setCompletedQuizzesCount(allResults.length);
-          if (allResults.length > 0) {
-            const total = allResults.reduce((sum, result) => sum + result.total_questions, 0);
-            setTotalQuestions(total);
-            
-            const avgScore = allResults.reduce((sum, result) => sum + result.score, 0) / allResults.length;
-            setAverageScore(Math.round(avgScore));
-            
-            // Calculate wins (score >= 80%)
-            const wins = allResults.filter(result => result.score >= 80).length;
-            setTotalWins(wins);
-            setBadgeLevel(getBadgeLevel(wins));
-
-            // Calculate badges
-            const firstQuiz = allResults.length >= 1;
-            const tenQuiz = allResults.length >= 10;
-            const streakBadge = currentStreak >= 5;
-            const perfectScore = allResults.some(q => q.score === 100);
-            
-            // To determine Top 10%
-            const now = new Date();
-            const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-            const { data: monthlyResults } = await supabase
-              .from("quiz_results")
-              .select("student_id, score")
-              .gte("completed_at", firstDayOfMonth);
-            
-            let top10Badge = false;
-            if (monthlyResults && monthlyResults.length > 0) {
-              const studentScores = new Map<string, number[]>();
-              monthlyResults.forEach(r => {
-                if (!studentScores.has(r.student_id)) {
-                  studentScores.set(r.student_id, []);
-                }
-                studentScores.get(r.student_id)!.push(r.score);
-              });
-              const studentAverages = Array.from(studentScores.entries()).map(([id, scores]) => ({
-                id,
-                avg: scores.reduce((sum, score) => sum + score, 0) / scores.length
-              }));
-              studentAverages.sort((a, b) => b.avg - a.avg);
-              const rank = studentAverages.findIndex(s => s.id === studentData.id) + 1;
-              const totalStudents = studentAverages.length;
-              top10Badge = rank > 0 && (rank / totalStudents <= 0.1 || rank <= 3);
-            } else {
-              top10Badge = avgScore >= 85;
-            }
-
-            setBadges([
-              { name: "First Quiz", icon: "🎯", earned: firstQuiz },
-              { name: "10 Quiz Master", icon: "⭐", earned: tenQuiz },
-              { name: "5-Day Streak", icon: "🔥", earned: streakBadge },
-              { name: "Top 10%", icon: "👑", earned: top10Badge },
-              { name: "Perfect Score", icon: "💯", earned: perfectScore },
-            ]);
-          }
+        if (!challengeDone) {
+          const { data: todayDailyResults } = await supabase
+            .from("quiz_results")
+            .select("id")
+            .eq("student_id", sid)
+            .eq("subject", "Daily Challenge")
+            .gte("completed_at", todayStart)
+            .limit(1);
+          if (todayDailyResults && todayDailyResults.length > 0) challengeDone = true;
         }
 
-        // Calculate monthly rank (by total points, matching the National Leaderboard)
-        const now = new Date();
-        const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-        
-        const { data: monthlyResults } = await supabase
-          .from("quiz_results")
-          .select("student_id, correct_answers")
-          .gte("completed_at", firstDayOfMonth);
-        
-        if (monthlyResults) {
-          const { data: allStudents } = await supabase
-            .from("students")
-            .select("id, user_id");
-            
-          const { data: allProfiles } = await supabase
-            .from("profiles")
-            .select("id, full_name, username");
-          
-          if (allStudents && allProfiles) {
-            const profileMap = new Map(allProfiles.map(p => [p.id, p]));
-            const studentPointsMap = new Map<string, number>();
-            const studentNamesMap = new Map<string, string>();
-            
-            allStudents.forEach(s => {
-              studentPointsMap.set(s.id, 0);
-              const p = profileMap.get(s.user_id);
-              const name = p?.full_name || p?.username || "Unknown Student";
-              studentNamesMap.set(s.id, name);
-            });
-            
-            monthlyResults.forEach(result => {
-              const currentPoints = studentPointsMap.get(result.student_id) || 0;
-              studentPointsMap.set(result.student_id, currentPoints + (result.correct_answers * 100));
-            });
-            
-            const rankings = Array.from(studentPointsMap.entries()).map(([studentId, points]) => ({
-              studentId,
-              points,
-              name: studentNamesMap.get(studentId) || ""
-            }));
-            
-            // Sort by points descending, then by name for stable sorting matching the leaderboard
-            rankings.sort((a, b) => {
-              if (b.points !== a.points) return b.points - a.points;
-              return a.name.localeCompare(b.name);
-            });
-            
-            const rank = rankings.findIndex(s => s.studentId === studentData.id) + 1;
-            if (rank > 0) {
-              setMonthlyRank(rank);
+        if (challengeDone && gameProfile.last_daily_challenge_date !== todayUTC) {
+          // Backfill so future checks are instant
+          await supabase
+            .from("student_gamification_profile")
+            .update({ last_daily_challenge_date: todayUTC })
+            .eq("student_id", sid);
+        }
+        dailyChallengeCompleted = challengeDone;
+      } else {
+        // Fallback to legacy streak data if gamification profile is pending
+        const { data: streakData } = await supabase
+          .from("student_streaks")
+          .select("current_streak")
+          .eq("student_id", sid)
+          .maybeSingle();
+        if (streakData) currentStreak = streakData.current_streak;
+      }
+
+      const levelInfo = calculateStudentLevel(Number(gameProfile?.lifetime_ep || 0));
+      const streakShields = Number(gameProfile?.streak_shields || 0);
+      const currentLeagueTier = Number(gameProfile?.current_league_tier || 1);
+      const pinnedBadgeIds = (gameProfile?.pinned_badge_ids as string[]) || [];
+      const earnedBadgeIds = (badgesRes.data || []).map((b) => b.badge_id);
+      const focusTopic = weakTopicsRes.data?.[0] ?? null;
+      const pendingAssignmentsCount = pendingRes.count ?? 0;
+      const recentActivity = recentRes.data ?? [];
+
+      const allResults = allResultsRes.data ?? [];
+      const completedQuizzesCount = allResults.length;
+      let totalQuestions = 0;
+      let averageScore = 0;
+      let totalWins = 0;
+      let badgeLevel: BadgeLevel = "bronze";
+      let badges: StudentBadge[] = [];
+
+      if (allResults.length > 0) {
+        totalQuestions = allResults.reduce((sum, result) => sum + result.total_questions, 0);
+        averageScore = Math.round(allResults.reduce((sum, result) => sum + result.score, 0) / allResults.length);
+        totalWins = allResults.filter((result) => result.score >= 80).length;
+        badgeLevel = getBadgeLevel(totalWins);
+
+        const firstQuiz = allResults.length >= 1;
+        const tenQuiz = allResults.length >= 10;
+        const streakBadge = currentStreak >= 5;
+        const perfectScore = allResults.some((q) => q.score === 100);
+
+        // To determine Top 10%
+        const monthlyResults = monthlyScoreRes.data ?? [];
+        let top10Badge = false;
+        if (monthlyResults.length > 0) {
+          const studentScores = new Map<string, number[]>();
+          monthlyResults.forEach((r) => {
+            if (!studentScores.has(r.student_id)) {
+              studentScores.set(r.student_id, []);
             }
-          }
+            studentScores.get(r.student_id)!.push(r.score);
+          });
+          const studentAverages = Array.from(studentScores.entries()).map(([id, scores]) => ({
+            id,
+            avg: scores.reduce((sum, score) => sum + score, 0) / scores.length,
+          }));
+          studentAverages.sort((a, b) => b.avg - a.avg);
+          const rank = studentAverages.findIndex((s) => s.id === sid) + 1;
+          const totalStudents = studentAverages.length;
+          top10Badge = rank > 0 && (rank / totalStudents <= 0.1 || rank <= 3);
+        } else {
+          top10Badge = averageScore >= 85;
+        }
+
+        badges = [
+          { name: "First Quiz", icon: "🎯", earned: firstQuiz },
+          { name: "10 Quiz Master", icon: "⭐", earned: tenQuiz },
+          { name: "5-Day Streak", icon: "🔥", earned: streakBadge },
+          { name: "Top 10%", icon: "👑", earned: top10Badge },
+          { name: "Perfect Score", icon: "💯", earned: perfectScore },
+        ];
+      }
+
+      // Monthly rank (by total points, matching the National Leaderboard)
+      let monthlyRank: number | null = null;
+      const monthlyCorrect = monthlyCorrectRes.data ?? [];
+      if (monthlyCorrect.length > 0) {
+        const { data: allStudents } = await supabase.from("students").select("id, user_id");
+        const { data: allProfiles } = await supabase.from("profiles").select("id, full_name, username");
+
+        if (allStudents && allProfiles) {
+          const profileMap = new Map(allProfiles.map((p) => [p.id, p]));
+          const studentPointsMap = new Map<string, number>();
+          const studentNamesMap = new Map<string, string>();
+
+          allStudents.forEach((s) => {
+            studentPointsMap.set(s.id, 0);
+            const p = profileMap.get(s.user_id);
+            const name = p?.full_name || p?.username || "Unknown Student";
+            studentNamesMap.set(s.id, name);
+          });
+
+          monthlyCorrect.forEach((result) => {
+            const currentPoints = studentPointsMap.get(result.student_id) || 0;
+            studentPointsMap.set(result.student_id, currentPoints + result.correct_answers * 100);
+          });
+
+          const rankings = Array.from(studentPointsMap.entries()).map(([sidKey, points]) => ({
+            studentId: sidKey,
+            points,
+            name: studentNamesMap.get(sidKey) || "",
+          }));
+
+          rankings.sort((a, b) => {
+            if (b.points !== a.points) return b.points - a.points;
+            return a.name.localeCompare(b.name);
+          });
+
+          const rank = rankings.findIndex((s) => s.studentId === sid) + 1;
+          if (rank > 0) monthlyRank = rank;
         }
       }
-    };
 
-    fetchUserData();
-  }, [user, currentStreak]);
+      return {
+        levelInfo,
+        streakShields,
+        currentLeagueTier,
+        pinnedBadgeIds,
+        currentStreak,
+        dailyChallengeCompleted,
+        earnedBadgeIds,
+        focusTopic,
+        pendingAssignmentsCount,
+        recentActivity,
+        totalQuestions,
+        averageScore,
+        completedQuizzesCount,
+        totalWins,
+        badgeLevel,
+        badges,
+        monthlyRank,
+      };
+    },
+  });
+
+  const identity = identityQuery.data;
+  const userName = identity?.userName ?? "Student";
+  const studentCode = identity?.studentCode ?? "";
+  const classYear = identity?.classYear ?? null;
+  const availableQuestionsCount = identity?.availableQuestionsCount ?? 0;
+
+  const stats = statsQuery.data;
+  const recentActivity = stats?.recentActivity ?? [];
+  const totalQuestions = stats?.totalQuestions ?? 0;
+  const averageScore = stats?.averageScore ?? 0;
+  const monthlyRank = stats?.monthlyRank ?? null;
+  const currentStreak = stats?.currentStreak ?? 0;
+  const pendingAssignmentsCount = stats?.pendingAssignmentsCount ?? 0;
+  const completedQuizzesCount = stats?.completedQuizzesCount ?? 0;
+  const levelInfo = stats?.levelInfo ?? calculateStudentLevel(0);
+  const streakShields = stats?.streakShields ?? 0;
+  const currentLeagueTier = stats?.currentLeagueTier ?? 1;
+  const earnedBadgeIds = stats?.earnedBadgeIds ?? [];
+  const focusTopic = stats?.focusTopic ?? null;
+  const dailyChallengeCompleted = stats?.dailyChallengeCompleted ?? false;
+  const totalWins = stats?.totalWins ?? 0;
+  const badgeLevel: BadgeLevel = stats?.badgeLevel ?? "bronze";
+  const badges = stats?.badges ?? [];
+
+  // Pinned badges are editable locally; seeded from the cached stats query.
+  const [pinnedBadgeIds, setPinnedBadgeIds] = useState<string[]>([]);
+  useEffect(() => {
+    if (stats?.pinnedBadgeIds) setPinnedBadgeIds(stats.pinnedBadgeIds);
+  }, [stats?.pinnedBadgeIds]);
+
 
   const featureCards = [
     {
@@ -404,18 +381,28 @@ export default function StudentDashboardOverview() {
     }
   };
 
+  const pinBadgesMutation = useMutation({
+    mutationFn: async (newPinnedIds: string[]) => {
+      const { error } = await supabase
+        .from("student_gamification_profile")
+        .update({ pinned_badge_ids: newPinnedIds, updated_at: new Date().toISOString() })
+        .eq("student_id", studentId!);
+      if (error) throw error;
+      return newPinnedIds;
+    },
+    onMutate: (newPinnedIds) => setPinnedBadgeIds(newPinnedIds),
+    onSuccess: () => {
+      toast.success("Badge showcase updated!");
+      queryClient.invalidateQueries({ queryKey: ["student-dashboard", user?.id ?? "anon"] });
+    },
+    onError: () => {
+      toast.error("Failed to update badge showcase");
+    },
+  });
+
   const handleUpdatePinnedBadges = async (newPinnedIds: string[]) => {
     if (!studentId) return;
-    setPinnedBadgeIds(newPinnedIds);
-    const { error } = await supabase
-      .from("student_gamification_profile")
-      .update({ pinned_badge_ids: newPinnedIds, updated_at: new Date().toISOString() })
-      .eq("student_id", studentId);
-    if (error) {
-      toast.error("Failed to update badge showcase");
-    } else {
-      toast.success("Badge showcase updated!");
-    }
+    pinBadgesMutation.mutate(newPinnedIds);
   };
 
   return (

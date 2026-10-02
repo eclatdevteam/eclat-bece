@@ -2,103 +2,83 @@ import { Trophy, Loader2, Sparkles, Flame, Calendar, Crown, Award, Users } from 
 import { CompetitionLeaderboards, LeaderboardStudent, CurrentUserRankInfo, CurrentUserPointInfo } from "@/components/CompetitionLeaderboards";
 import { WeeklyLeagueCohortCard } from "@/components/gamification/WeeklyLeagueCohortCard";
 import { useState, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useLeaderboardData } from "@/hooks/useLeaderboardData";
 import { toast } from "sonner";
-import { fetchLeaderboardData } from "@/utils/leaderboard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
+const EMPTY_RANKS: CurrentUserRankInfo = { weekly: 0, monthly: 0, annual: 0, math: 0, english: 0 };
+const EMPTY_POINTS: CurrentUserPointInfo = { weekly: 0, monthly: 0, annual: 0, math: 0, english: 0 };
+
 export default function StudentLeaderboardPage() {
   const { user } = useAuth();
-  const [loading, setLoading] = useState(true);
   const [currentUserName, setCurrentUserName] = useState("Scholar");
   const [activeView, setActiveView] = useState<"cohort" | "national">("cohort");
-
-  // Ranks & Points state
-  const [weeklyLeaders, setWeeklyLeaders] = useState<LeaderboardStudent[]>([]);
-  const [monthlyLeaders, setMonthlyLeaders] = useState<LeaderboardStudent[]>([]);
-  const [annualLeaders, setAnnualLeaders] = useState<LeaderboardStudent[]>([]);
-  const [mathLeaders, setMathLeaders] = useState<LeaderboardStudent[]>([]);
-  const [englishLeaders, setEnglishLeaders] = useState<LeaderboardStudent[]>([]);
-  const [schoolLeaders, setSchoolLeaders] = useState<any[]>([]);
-
-  const [currentUserRanks, setCurrentUserRanks] = useState<CurrentUserRankInfo>({
-    weekly: 0,
-    monthly: 0,
-    annual: 0,
-    math: 0,
-    english: 0,
-  });
-
-  const [currentUserPoints, setCurrentUserPoints] = useState<CurrentUserPointInfo>({
-    weekly: 0,
-    monthly: 0,
-    annual: 0,
-    math: 0,
-    english: 0,
-  });
-
   const [currentLevel, setCurrentLevel] = useState(1);
   const [leagueTier, setLeagueTier] = useState(1);
 
-  useEffect(() => {
-    const loadLeaderboardData = async () => {
-      if (!user) return;
+  // Profile + level/tier (small personal reads, cached per user)
+  const profileQuery = useQuery({
+    queryKey: ["leaderboard-context", user?.id],
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000,
+    queryFn: async () => {
+      // 1. Get current student's name
+      const { data: profileData } = await supabase
+        .from("profiles")
+        .select("full_name, username")
+        .eq("id", user!.id)
+        .single();
+      setCurrentUserName(profileData?.full_name || profileData?.username || "You");
 
-      try {
-        setLoading(true);
+      // 2. Get student gamification profile for level/tier
+      const { data: studentRecord } = await supabase
+        .from("students")
+        .select("id")
+        .eq("user_id", user!.id)
+        .maybeSingle();
 
-        // 1. Get current student's name
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("full_name, username")
-          .eq("id", user.id)
-          .single();
+      if (!studentRecord) return null;
 
-        const rawName = profileData?.full_name || profileData?.username || "You";
-        setCurrentUserName(rawName);
+      const { data: gamificationProfile } = await supabase
+        .from("student_gamification_profile")
+        .select("current_level, current_league_tier")
+        .eq("student_id", studentRecord.id)
+        .maybeSingle();
 
-        // 2. Get student gamification profile for level/tier
-        const { data: studentRecord } = await supabase
-          .from("students")
-          .select("id")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (studentRecord) {
-          const { data: gamificationProfile } = await supabase
-            .from("student_gamification_profile")
-            .select("current_level, current_league_tier")
-            .eq("student_id", studentRecord.id)
-            .maybeSingle();
-
-          if (gamificationProfile) {
-            setCurrentLevel(Number(gamificationProfile.current_level || 1));
-            setLeagueTier(Number(gamificationProfile.current_league_tier || 1));
-          }
-        }
-
-        // 3. Fetch comprehensive leaderboards
-        const data = await fetchLeaderboardData(user.id);
-        setWeeklyLeaders(data.weeklyLeaders || []);
-        setMonthlyLeaders(data.monthlyLeaders || []);
-        setAnnualLeaders(data.annualLeaders || []);
-        setMathLeaders(data.mathLeaders || []);
-        setEnglishLeaders(data.englishLeaders || []);
-        setSchoolLeaders(data.schoolLeaders || []);
-        setCurrentUserRanks(data.currentUserRanks || { weekly: 0, monthly: 0, annual: 0, math: 0, english: 0 });
-        setCurrentUserPoints(data.currentUserPoints || { weekly: 0, monthly: 0, annual: 0, math: 0, english: 0 });
-      } catch (error) {
-        console.error("Error loading leaderboards:", error);
-        toast.error("Failed to load competitive standings");
-      } finally {
-        setLoading(false);
+      if (gamificationProfile) {
+        setCurrentLevel(Number(gamificationProfile.current_level || 1));
+        setLeagueTier(Number(gamificationProfile.current_league_tier || 1));
       }
-    };
+      return true;
+    },
+    retry: false,
+  });
 
-    loadLeaderboardData();
-  }, [user]);
+  // 3. Fetch comprehensive leaderboards (shared cached query)
+  const leaderboardQuery = useLeaderboardData(user?.id);
+  const leaderboardError = leaderboardQuery.error;
+
+  useEffect(() => {
+    if (leaderboardError) {
+      console.error("Error loading leaderboards:", leaderboardError);
+      toast.error("Failed to load competitive standings");
+    }
+  }, [leaderboardError]);
+
+  const loading = profileQuery.isLoading || leaderboardQuery.isLoading;
+  const data = leaderboardQuery.data;
+  const weeklyLeaders: LeaderboardStudent[] = data?.weeklyLeaders ?? [];
+  const monthlyLeaders: LeaderboardStudent[] = data?.monthlyLeaders ?? [];
+  const annualLeaders: LeaderboardStudent[] = data?.annualLeaders ?? [];
+  const mathLeaders: LeaderboardStudent[] = data?.mathLeaders ?? [];
+  const englishLeaders: LeaderboardStudent[] = data?.englishLeaders ?? [];
+  const schoolLeaders = data?.schoolLeaders ?? [];
+  const currentUserRanks = data?.currentUserRanks ?? EMPTY_RANKS;
+  const currentUserPoints = data?.currentUserPoints ?? EMPTY_POINTS;
 
   if (loading) {
     return (
