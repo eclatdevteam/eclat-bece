@@ -232,6 +232,7 @@ Question data for each class year.
 - `difficulty` (TEXT) - 'easy', 'medium', 'hard'
 - `image_url` (TEXT)
 - `passage_id` (UUID, FK) - References comprehension_passages
+- `uploaded_by` (UUID, FK) - References auth.users(id); the admin who uploaded the question. Stamped automatically by a BEFORE INSERT trigger via `auth.uid()` (service-role callers can pass it explicitly). Backfilled from admin_audit_log (per-question create events, then batch-level bulk events matched by class year + a 15-minute creation window when unambiguous); a small ambiguous remainder is null.
 - `created_at` (TIMESTAMPTZ)
 - `updated_at` (TIMESTAMPTZ)
 
@@ -271,20 +272,23 @@ Student quiz completion records.
 - Admins can view all results
 
 #### `flagged_questions`
-Student-reported question issues.
+Student-reported question issues. Question content (`subject`, `topic`, `question_text`, `uploaded_by`) is a snapshot taken at report time, so reports survive question edits/deletes (`question_id` has no FK by design — it can point to either question table).
 - `id` (UUID, PK)
 - `student_id` (UUID, FK) - References students.id
-- `class_year` (TEXT)
+- `class_year` (TEXT) - 'year_6' | 'year_9'
 - `question_id` (UUID)
 - `subject` (TEXT)
 - `topic` (TEXT)
 - `question_text` (TEXT)
-- `reason` (TEXT) - 'incorrect_answer', 'typo', 'missing_image', 'incomplete', 'other'
+- `reason` (TEXT, CHECK) - 'incorrect_answer', 'typo', 'missing_image', 'incomplete', 'other'
 - `details` (TEXT)
-- `status` (TEXT) - 'pending', 'resolved', 'dismissed'
+- `status` (TEXT, NOT NULL DEFAULT 'pending', CHECK) - 'pending', 'resolved', 'dismissed'
+- `uploaded_by` (UUID, FK) - References auth.users(id); snapshot of the question's uploader, set by the `set_flag_uploaded_by` trigger from quiz_questions_year6/year9 (null if the question was deleted)
 - `created_at` (TIMESTAMPTZ)
 - `resolved_at` (TIMESTAMPTZ)
-- `resolved_by` (UUID, FK) - References profiles.id
+- `resolved_by` (UUID, FK) - References profiles.id; the admin who resolved/dismissed
+
+**Indexes:** (status, created_at DESC), question_id, class_year, student_id.
 
 **RLS Policies:**
 - Students can insert flags
