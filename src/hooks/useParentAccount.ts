@@ -1,48 +1,46 @@
-import { useState, useEffect, useCallback } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
+import { queryKeys } from "@/lib/queryKeys";
 
+interface ParentAccountData {
+  parentId: string | null;
+  parentCode: string | null;
+  error: string | null;
+}
+
+/**
+ * Resolves the signed-in parent's row id and connection code. If the parent
+ * record is missing (e.g. signup flow skipped provisioning) the provision-user
+ * Edge Function is invoked as a self-healing fallback, then lookup is retried.
+ */
 export function useParentAccount() {
   const { user } = useAuth();
-  const [parentId, setParentId] = useState<string | null>(null);
-  const [parentCode, setParentCode] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
-  const fetchOrProvisionParent = useCallback(async (): Promise<string | null> => {
-    if (!user) {
-      setParentId(null);
-      setParentCode(null);
-      setLoading(false);
-      return null;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-
+  const query = useQuery<ParentAccountData>({
+    queryKey: queryKeys.parentAccount(user?.id),
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // parent records are effectively immutable
+    retry: false,
+    queryFn: async (): Promise<ParentAccountData> => {
       const [parentRes, profileRes] = await Promise.all([
         supabase
           .from("parents")
           .select("id")
-          .eq("user_id", user.id)
+          .eq("user_id", user!.id)
           .maybeSingle(),
         supabase
           .from("profiles")
           .select("unique_id")
-          .eq("id", user.id)
+          .eq("id", user!.id)
           .maybeSingle(),
       ]);
 
       let parentData = parentRes.data;
-      const parentError = parentRes.error;
+      let parentCode = profileRes.data?.unique_id ?? null;
 
-      if (profileRes.data?.unique_id) {
-        setParentCode(profileRes.data.unique_id);
-      }
-
-      if (parentError && parentError.code !== "PGRST116") {
-        console.warn("Parent lookup error, attempting recovery:", parentError);
+      if (parentRes.error && parentRes.error.code !== "PGRST116") {
+        console.warn("Parent lookup error, attempting recovery:", parentRes.error);
       }
 
       // If parent record is missing, invoke provision-user fallback
@@ -57,42 +55,35 @@ export function useParentAccount() {
             supabase
               .from("parents")
               .select("id")
-              .eq("user_id", user.id)
+              .eq("user_id", user!.id)
               .maybeSingle(),
             supabase
               .from("profiles")
               .select("unique_id")
-              .eq("id", user.id)
+              .eq("id", user!.id)
               .maybeSingle(),
           ]);
 
           parentData = retryParentRes.data;
-          if (retryProfileRes.data?.unique_id) {
-            setParentCode(retryProfileRes.data.unique_id);
-          }
+          parentCode = retryProfileRes.data?.unique_id ?? parentCode;
         }
       }
 
-      if (parentData?.id) {
-        setParentId(parentData.id);
-        return parentData.id;
-      } else {
-        setError("Could not locate or provision parent record.");
-        return null;
+      if (!parentData?.id) {
+        return { parentId: null, parentCode, error: "Could not locate or provision parent record." };
       }
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to load parent account";
-      console.error("useParentAccount error:", err);
-      setError(msg);
-      return null;
-    } finally {
-      setLoading(false);
-    }
-  }, [user]);
 
-  useEffect(() => {
-    fetchOrProvisionParent();
-  }, [fetchOrProvisionParent]);
+      return { parentId: parentData.id, parentCode, error: null };
+    },
+  });
 
-  return { parentId, parentCode, loading, error, refetch: fetchOrProvisionParent };
+  return {
+    parentId: query.data?.parentId ?? null,
+    parentCode: query.data?.parentCode ?? null,
+    loading: query.isLoading,
+    error: query.data?.error ?? null,
+    refetch: async () => {
+      await query.refetch();
+    },
+  };
 }

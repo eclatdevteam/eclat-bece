@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { queryKeys } from "@/lib/queryKeys";
 
 export interface AdminPermissions {
   canManageUsers?: boolean;
@@ -19,65 +20,47 @@ export interface AdminProfile {
   is_active: boolean;
 }
 
+function normalizePermissions(raw: unknown): AdminPermissions {
+  const perms = (raw as Record<string, unknown> | null) || {};
+  return {
+    canManageUsers: !!perms.canManageUsers,
+    canManageQuestions: !!perms.canManageQuestions,
+    canManageFlags: !!perms.canManageFlags,
+    canManageCompetitions: !!perms.canManageCompetitions,
+    canViewAnalytics: !!perms.canViewAnalytics,
+  };
+}
+
 export function useAdminPermissions() {
   const { user } = useAuth();
-  const [admin, setAdmin] = useState<AdminProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const adminRef = useRef<AdminProfile | null>(null);
-  adminRef.current = admin;
 
-  const fetchPermissions = useCallback(async (isSilent = false) => {
-    if (!user) {
-      setAdmin(null);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      // Only set loading = true if this is an initial load and data isn't cached yet
-      if (!isSilent && !adminRef.current) {
-        setLoading(true);
-      }
+  const query = useQuery({
+    queryKey: queryKeys.adminPermissions(user?.id),
+    enabled: !!user,
+    staleTime: 5 * 60 * 1000, // permissions change rarely; refetch on demand
+    retry: false,
+    queryFn: async (): Promise<AdminProfile | null> => {
       const { data, error } = await supabase
         .from("admins")
         .select("id, user_id, full_name, is_super_admin, permissions, is_active")
-        .eq("user_id", user.id)
+        .eq("user_id", user!.id)
         .maybeSingle();
 
       if (error) throw error;
+      if (!data) return null;
 
-      if (data) {
-        const rawPerms = (data.permissions as unknown as Record<string, unknown>) || {};
-        setAdmin({
-          id: data.id,
-          user_id: data.user_id,
-          full_name: data.full_name,
-          is_super_admin: !!data.is_super_admin,
-          permissions: {
-            canManageUsers: !!rawPerms.canManageUsers,
-            canManageQuestions: !!rawPerms.canManageQuestions,
-            canManageFlags: !!rawPerms.canManageFlags,
-            canManageCompetitions: !!rawPerms.canManageCompetitions,
-            canViewAnalytics: !!rawPerms.canViewAnalytics,
-          },
-          is_active: !!data.is_active,
-        });
-      } else {
-        setAdmin(null);
-      }
-    } catch (err) {
-      console.error("Error fetching admin permissions:", err);
-      setAdmin(null);
-    } finally {
-      setLoading(false);
-    }
-  }, [user?.id]);
+      return {
+        id: data.id,
+        user_id: data.user_id,
+        full_name: data.full_name,
+        is_super_admin: !!data.is_super_admin,
+        permissions: normalizePermissions(data.permissions),
+        is_active: !!data.is_active,
+      };
+    },
+  });
 
-  useEffect(() => {
-    const isAlreadyLoaded = adminRef.current?.user_id === user?.id && adminRef.current !== null;
-    fetchPermissions(isAlreadyLoaded);
-  }, [user?.id, fetchPermissions]);
-
+  const admin = query.data ?? null;
   const isSuperAdmin = admin?.is_super_admin === true;
   const canManageUsers = isSuperAdmin || admin?.permissions?.canManageUsers === true;
   const canManageQuestions = isSuperAdmin || admin?.permissions?.canManageQuestions === true;
@@ -94,7 +77,7 @@ export function useAdminPermissions() {
 
   return {
     admin,
-    loading,
+    loading: query.isLoading,
     isSuperAdmin,
     canManageUsers,
     canManageQuestions,
@@ -102,6 +85,8 @@ export function useAdminPermissions() {
     canManageCompetitions,
     canViewAnalytics,
     hasPermission,
-    refetch: fetchPermissions,
+    refetch: async () => {
+      await query.refetch();
+    },
   };
 }
