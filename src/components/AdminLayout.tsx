@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Link, useLocation, Outlet } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -22,6 +22,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/hooks/useAuth";
 import { useAdminPermissions } from "@/hooks/useAdminPermissions";
+import { ContentLoader } from "@/components/PageLoader";
 
 export const AdminLayout = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -238,7 +239,11 @@ export const AdminLayout = () => {
       {/* Main Content Area */}
       <main className="lg:pl-64 pt-16 lg:pt-0">
         <div className="p-6 lg:p-8">
-          <Outlet />
+          {/* Local boundary: lazy page chunks suspend here so the sidebar stays
+              mounted instead of the app-level full-screen fallback taking over. */}
+          <Suspense fallback={<ContentLoader />}>
+            <Outlet />
+          </Suspense>
         </div>
       </main>
     </div>

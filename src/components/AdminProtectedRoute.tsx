@@ -34,6 +34,15 @@ export const AdminProtectedRoute = ({
     isAuthorizedRef.current = isAuthorized;
     const navigate = useNavigate();
 
+    // useNavigate returns a new function identity on every location change in
+    // React Router v6, so this component's auth-check effect must not depend on
+    // it — otherwise the effect (and the full-screen "isChecking" gate that
+    // replaces the whole layout, sidebar included) re-runs on every sidebar
+    // navigation. All routes navigated to here are absolute, and the ref keeps
+    // the persistent auth listener current anyway.
+    const navigateRef = useRef(navigate);
+    navigateRef.current = navigate;
+
     useEffect(() => {
         checkAdminStatus(false);
 
@@ -43,7 +52,7 @@ export const AdminProtectedRoute = ({
                 if (event === 'SIGNED_OUT') {
                     setIsAuthorized(false);
                     setIsChecking(false);
-                    navigate('/admin/login');
+                    navigateRef.current('/admin/login');
                 } else if (event === 'SIGNED_IN') {
                     // Perform verification silently if already authorized, avoiding full-screen loader
                     checkAdminStatus(isAuthorizedRef.current);
@@ -52,7 +61,8 @@ export const AdminProtectedRoute = ({
         );
 
         return () => subscription?.unsubscribe();
-    }, [navigate, requiresSuperAdmin]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [requiresSuperAdmin]);
 
     const checkAdminStatus = async (isBackground = false) => {
         try {
@@ -63,13 +73,13 @@ export const AdminProtectedRoute = ({
 
             if (!session?.user) {
                 setIsAuthorized(false);
-                navigate("/admin/login");
+                navigateRef.current("/admin/login");
                 return;
             }
 
             // Check if email is verified
             if (!session.user.email_confirmed_at) {
-                navigate("/verify-email");
+                navigateRef.current("/verify-email");
                 return;
             }
 
@@ -90,13 +100,13 @@ export const AdminProtectedRoute = ({
                     .maybeSingle();
 
                 if (userRole?.role === "student") {
-                    navigate("/dashboard/student");
+                    navigateRef.current("/dashboard/student");
                 } else if (userRole?.role === "parent") {
-                    navigate("/dashboard/parent");
+                    navigateRef.current("/dashboard/parent");
                 } else if (userRole?.role === "school") {
-                    navigate("/dashboard/school");
+                    navigateRef.current("/dashboard/school");
                 } else {
-                    navigate("/");
+                    navigateRef.current("/");
                 }
                 return;
             }
@@ -109,21 +119,21 @@ export const AdminProtectedRoute = ({
                 .maybeSingle();
 
             if (!adminData || !adminData.is_active) {
-                navigate("/");
+                navigateRef.current("/");
                 return;
             }
 
             // If super admin is required, check that
             if (requiresSuperAdmin && !adminData.is_super_admin) {
                 // Regular admin trying to access super admin route
-                navigate("/admin");
+                navigateRef.current("/admin");
                 return;
             }
 
             setIsAuthorized(true);
         } catch (error) {
             console.error("Admin auth check error:", error);
-            navigate("/admin/login");
+            navigateRef.current("/admin/login");
         } finally {
             setIsChecking(false);
         }
