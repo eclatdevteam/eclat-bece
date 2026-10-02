@@ -1,15 +1,17 @@
 import { useState, useMemo } from "react";
-import { Users, Search, Plus, BookOpen, FileText, Sparkles, Trophy } from "lucide-react";
+import { Users, Search, Plus, BookOpen, FileText, Sparkles, Trophy, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SchoolLayout } from "@/components/school/SchoolLayout";
 import { CreateStudentDialog } from "@/components/school/SchoolCreateDialogs";
+import { SchoolBulkStudentDialog } from "@/components/school/SchoolBulkStudentDialog";
 import { StudentReportDialog } from "@/components/StudentReportDialog";
 import { SchoolAssignPracticeDialog } from "@/components/school/SchoolAssignPracticeDialog";
 import { useSchoolData, SchoolStudent } from "@/hooks/useSchoolData";
 
 export function SchoolStudentsPage() {
   const [studentDialogOpen, setStudentDialogOpen] = useState(false);
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [classFilter, setClassFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
@@ -21,7 +23,7 @@ export function SchoolStudentsPage() {
   const [selectedAssignStudent, setSelectedAssignStudent] = useState<SchoolStudent | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
 
-  const { school, students, gamificationTotals, refresh } = useSchoolData();
+  const { school, students, classes, gamificationTotals, refresh } = useSchoolData();
 
   const filteredStudents = useMemo(() => {
     return students.filter((student) => {
@@ -53,13 +55,23 @@ export function SchoolStudentsPage() {
       title="Students"
       subtitle="Review active learners, diagnostic profiles, and performance records."
       actions={
-        <Button
-          onClick={() => setStudentDialogOpen(true)}
-          className="bg-[#3bc2f3] text-[#041c2d] hover:bg-[#6cd8ff] font-semibold text-xs sm:text-sm"
-        >
-          <Plus className="mr-1.5 h-4 w-4" />
-          Add student
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            onClick={() => setBulkDialogOpen(true)}
+            className="border-[#34415b] bg-[#0c1628] text-slate-200 hover:bg-[#162540] hover:text-white font-semibold text-xs sm:text-sm"
+          >
+            <Upload className="mr-1.5 h-4 w-4" />
+            Bulk Import CSV
+          </Button>
+          <Button
+            onClick={() => setStudentDialogOpen(true)}
+            className="bg-[#3bc2f3] text-[#041c2d] hover:bg-[#6cd8ff] font-semibold text-xs sm:text-sm"
+          >
+            <Plus className="mr-1.5 h-4 w-4" />
+            Add student
+          </Button>
+        </div>
       }
     >
       {/* Metric Cards */}
@@ -131,13 +143,23 @@ export function SchoolStudentsPage() {
                 Add learners to your institution directory to create their login accounts and start tracking curriculum progress.
               </p>
             </div>
-            <Button
-              onClick={() => setStudentDialogOpen(true)}
-              className="bg-[#2184a7] text-white hover:bg-[#2c9bc2] text-xs font-semibold"
-            >
-              <Plus className="mr-1.5 h-3.5 w-3.5" />
-              Add First Student
-            </Button>
+            <div className="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+              <Button
+                variant="outline"
+                onClick={() => setBulkDialogOpen(true)}
+                className="border-[#34415b] bg-[#071023] text-slate-200 hover:bg-[#162540] hover:text-white text-xs font-semibold"
+              >
+                <Upload className="mr-1.5 h-3.5 w-3.5" />
+                Bulk Import CSV
+              </Button>
+              <Button
+                onClick={() => setStudentDialogOpen(true)}
+                className="bg-[#2184a7] text-white hover:bg-[#2c9bc2] text-xs font-semibold"
+              >
+                <Plus className="mr-1.5 h-3.5 w-3.5" />
+                Add First Student
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -238,7 +260,16 @@ export function SchoolStudentsPage() {
       <CreateStudentDialog
         open={studentDialogOpen}
         onOpenChange={setStudentDialogOpen}
+        classes={classes}
         onCreated={() => refresh()}
+      />
+
+      {/* Bulk Import CSV Modal */}
+      <SchoolBulkStudentDialog
+        open={bulkDialogOpen}
+        onOpenChange={setBulkDialogOpen}
+        classes={classes}
+        onSuccess={() => refresh()}
       />
 
       {/* Student Diagnostic Report Modal */}

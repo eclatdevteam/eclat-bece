@@ -56,11 +56,12 @@ serve(async (req) => {
 
     if (!parentRecord && !schoolRecord) return json({ error: "Only parents or schools can create student accounts" }, 403);
 
-    const { fullName, classYear, username, password } = await req.json();
+    const { fullName, classYear, username, password, classId } = await req.json();
     const cleanFullName = typeof fullName === "string" ? fullName.trim() : "";
     const cleanClassYear = typeof classYear === "string" ? classYear.trim() : "";
     const normalizedUsername = typeof username === "string" ? username.trim().toLowerCase() : "";
     const cleanPassword = typeof password === "string" ? password : "";
+    const cleanClassId = typeof classId === "string" && classId.trim().length > 0 ? classId.trim() : null;
 
     if (!cleanFullName || !cleanClassYear || !normalizedUsername || !cleanPassword) {
       return json({ error: "Missing required fields" }, 400);
@@ -159,6 +160,7 @@ serve(async (req) => {
         parent_id: parentRecord?.id || null,
         school_id: schoolRecord?.id || null,
         class_year: cleanClassYear,
+        class_id: cleanClassId,
         onboarding_completed: true,
         is_premium: false,
       })
@@ -168,7 +170,7 @@ serve(async (req) => {
     if (studentError) {
       await rollbackUser();
       console.error("create-student-account student insert error:", studentError);
-      return json({ error: "Failed to link student to parent" }, 500);
+      return json({ error: "Failed to link student to parent or school" }, 500);
     }
 
     return json({
@@ -179,6 +181,7 @@ serve(async (req) => {
         full_name: cleanFullName,
         class_year: cleanClassYear,
         username: normalizedUsername,
+        class_id: cleanClassId,
       },
     });
   } catch (error) {
