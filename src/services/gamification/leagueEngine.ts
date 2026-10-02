@@ -13,6 +13,8 @@ import {
   WeeklyCohortWindow,
 } from "./types";
 
+export type { LeagueTierNumber };
+
 export const LEAGUE_TIERS: Record<LeagueTierNumber, LeagueTierConfig> = {
   1: {
     tier: 1,

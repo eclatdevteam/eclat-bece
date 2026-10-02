@@ -1,5 +1,5 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
-import { Building2, Plus, Search, Users, BookOpen, Trash2, GraduationCap, Loader2 } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Building2, Plus, Search, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SchoolLayout } from "@/components/school/SchoolLayout";
@@ -8,47 +8,12 @@ import { useSchoolData } from "@/hooks/useSchoolData";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
-interface ClassRecord {
-  id: string;
-  name: string;
-  level: string;
-  class_year: "year_6" | "year_9" | null;
-  lead_teacher: string | null;
-  created_at: string;
-}
-
 export function SchoolClassesPage() {
-  const { school, students, refresh: refreshSchoolData } = useSchoolData();
+  const { school, students, classes, isLoading, refresh: refreshSchoolData } = useSchoolData();
   const [classDialogOpen, setClassDialogOpen] = useState(false);
-  const [classes, setClasses] = useState<ClassRecord[]>([]);
-  const [loadingClasses, setLoadingClasses] = useState(false);
   const [search, setSearch] = useState("");
   const [levelFilter, setLevelFilter] = useState("all");
   const [deletingId, setDeletingId] = useState<string | null>(null);
-
-  const loadClasses = useCallback(async () => {
-    if (!school?.id) return;
-    try {
-      setLoadingClasses(true);
-      const { data, error } = await supabase
-        .from("school_classes" as any)
-        .select("id, name, level, class_year, lead_teacher, created_at")
-        .eq("school_id", school.id)
-        .order("created_at", { ascending: false });
-
-      if (error) throw error;
-      setClasses((data as ClassRecord[]) || []);
-    } catch (err: any) {
-      console.error("Error loading school classes:", err);
-      toast.error(err?.message || "Failed to load classes");
-    } finally {
-      setLoadingClasses(false);
-    }
-  }, [school?.id]);
-
-  useEffect(() => {
-    loadClasses();
-  }, [loadClasses]);
 
   const handleDeleteClass = async (classId: string, className: string) => {
     if (!window.confirm(`Are you sure you want to delete class "${className}"?`)) return;
@@ -61,7 +26,6 @@ export function SchoolClassesPage() {
 
       if (error) throw error;
       toast.success(`Class "${className}" deleted`);
-      loadClasses();
       refreshSchoolData();
     } catch (err: any) {
       console.error("Error deleting class:", err);
@@ -71,31 +35,11 @@ export function SchoolClassesPage() {
     }
   };
 
-  // Student metrics per class/cohort
-  const enrichedClasses = useMemo(() => {
-    return classes.map((c) => {
-      // Filter students assigned either directly by class_id or by matching cohort year
-      const cohortStudents = students.filter(
-        (s) => s.class_id === c.id || (!s.class_id && c.class_year && s.class_year === c.class_year)
-      );
-
-      const count = cohortStudents.length;
-      const testedStudents = cohortStudents.filter((s) => s.quizCount > 0);
-      const avg = testedStudents.length > 0
-        ? Math.round(testedStudents.reduce((acc, s) => acc + s.avgScore, 0) / testedStudents.length)
-        : 0;
-
-      return {
-        ...c,
-        studentsCount: count,
-        avgScore: avg > 0 ? `${avg}%` : "—",
-        badge: c.class_year === "year_9" ? "BECE Cohort" : "Common Entrance",
-      };
-    });
-  }, [classes, students]);
-
   const filteredClasses = useMemo(() => {
-    return enrichedClasses.filter((c) => {
+    return classes.map((c) => ({
+      ...c,
+      avgScoreFormatted: c.avgScore > 0 ? `${c.avgScore}%` : "—",
+    })).filter((c) => {
       const matchesSearch =
         c.name.toLowerCase().includes(search.toLowerCase()) ||
         c.level.toLowerCase().includes(search.toLowerCase()) ||
@@ -108,7 +52,7 @@ export function SchoolClassesPage() {
 
       return matchesSearch && matchesLevel;
     });
-  }, [enrichedClasses, search, levelFilter]);
+  }, [classes, search, levelFilter]);
 
   const totalClassesCount = classes.length;
   const beceCandidates = students.filter((s) => s.class_year === "year_9").length;
@@ -174,7 +118,7 @@ export function SchoolClassesPage() {
       </div>
 
       {/* Loading state */}
-      {loadingClasses && classes.length === 0 ? (
+      {isLoading && classes.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-16 rounded-xl border border-[#2a3852] bg-[#0c1628] text-slate-400">
           <Loader2 className="h-8 w-8 animate-spin text-[#3bc2f3] mb-3" />
           <p className="text-sm font-semibold">Loading class cohorts...</p>
@@ -230,7 +174,7 @@ export function SchoolClassesPage() {
                   </div>
                   <div className="rounded-lg border border-slate-700/60 bg-[#0c1424] p-2.5">
                     <p className="text-slate-400 text-[11px]">Cohort Avg</p>
-                    <p className="mt-1 text-xl font-black text-[#7dd3fc]">{klass.avgScore}</p>
+                    <p className="mt-1 text-xl font-black text-[#7dd3fc]">{klass.avgScoreFormatted}</p>
                   </div>
                 </div>
 
@@ -257,10 +201,7 @@ export function SchoolClassesPage() {
       <CreateClassDialog
         open={classDialogOpen}
         onOpenChange={setClassDialogOpen}
-        onCreated={() => {
-          loadClasses();
-          refreshSchoolData();
-        }}
+        onCreated={refreshSchoolData}
       />
     </SchoolLayout>
   );
