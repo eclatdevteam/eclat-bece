@@ -45,12 +45,17 @@ export function CreateClassDialog({ open, onOpenChange, onCreated }: CreateClass
         .single();
       if (schoolError || !school) throw schoolError || new Error("School profile not found");
 
-      const { error } = await supabase.from("school_classes" as never).insert({
+      const classYear = level.toLowerCase().includes("primary") || level.toLowerCase().includes("year 6")
+        ? "year_6"
+        : "year_9";
+
+      const { error } = await supabase.from("school_classes" as any).insert({
         school_id: school.id,
         name: name.trim(),
         level: level.trim(),
+        class_year: classYear,
         lead_teacher: teacher.trim() || null,
-      } as never);
+      });
       if (error) throw error;
 
       toast.success("Class created successfully");

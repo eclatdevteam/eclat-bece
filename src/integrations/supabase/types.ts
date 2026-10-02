@@ -762,6 +762,47 @@ export type Database = {
           },
         ]
       }
+      school_classes: {
+        Row: {
+          class_year: string | null
+          created_at: string
+          id: string
+          lead_teacher: string | null
+          level: string
+          name: string
+          school_id: string
+          updated_at: string
+        }
+        Insert: {
+          class_year?: string | null
+          created_at?: string
+          id?: string
+          lead_teacher?: string | null
+          level: string
+          name: string
+          school_id: string
+          updated_at?: string
+        }
+        Update: {
+          class_year?: string | null
+          created_at?: string
+          id?: string
+          lead_teacher?: string | null
+          level?: string
+          name?: string
+          school_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "school_classes_school_id_fkey"
+            columns: ["school_id"]
+            isOneToOne: false
+            referencedRelation: "schools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       schools: {
         Row: {
           address: string | null
@@ -835,6 +876,7 @@ export type Database = {
       }
       students: {
         Row: {
+          class_id: string | null
           class_year: Database["public"]["Enums"]["class_year"] | null
           created_at: string
           date_of_birth: string | null
@@ -847,6 +889,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          class_id?: string | null
           class_year?: Database["public"]["Enums"]["class_year"] | null
           created_at?: string
           date_of_birth?: string | null
@@ -859,6 +902,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          class_id?: string | null
           class_year?: Database["public"]["Enums"]["class_year"] | null
           created_at?: string
           date_of_birth?: string | null
@@ -871,6 +915,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "students_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "school_classes"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "students_parent_id_fkey"
             columns: ["parent_id"]

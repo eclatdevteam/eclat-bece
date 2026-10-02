@@ -5,6 +5,7 @@ import { SchoolData } from "@/components/school/SchoolSettingsDialog";
 export interface SchoolStudent {
   id: string;
   user_id: string;
+  class_id?: string | null;
   class_year: "year_6" | "year_9" | null;
   is_premium: boolean | null;
   created_at: string;
@@ -59,7 +60,7 @@ export function useSchoolData() {
       // 2. Fetch Linked Students
       const { data: rawStudents, error: studentsErr } = await supabase
         .from("students")
-        .select("id, user_id, class_year, is_premium, created_at")
+        .select("id, user_id, class_year, class_id, is_premium, created_at")
         .eq("school_id", currentSchool.id);
 
       if (studentsErr) throw studentsErr;
@@ -109,6 +110,7 @@ export function useSchoolData() {
         return {
           id: s.id,
           user_id: s.user_id,
+          class_id: s.class_id,
           class_year: s.class_year,
           is_premium: s.is_premium,
           created_at: s.created_at,
