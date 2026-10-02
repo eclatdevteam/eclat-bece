@@ -1,10 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { Users, Plus, LayoutDashboard, Search, Filter } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
 import { StudentReportDialog } from "@/components/StudentReportDialog";
 import { AssignPracticeDialog } from "@/components/AssignPracticeDialog";
 import { ChildOverviewCard } from "@/components/parent/ChildOverviewCard";
@@ -17,7 +16,8 @@ import { ChangeChildPasswordDialog } from "@/components/parent/ChangeChildPasswo
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useParentAccount } from "@/hooks/useParentAccount";
-import { LinkedChild, ChildAnalytics, Assignment, QuizResult } from "@/types/parent";
+import { useChildrenData } from "@/hooks/useChildrenData";
+import { LinkedChild, Assignment } from "@/types/parent";
 import { getEdgeFunctionError } from "@/lib/errorUtils";
 import { QuestionSnapshotDialog } from "@/components/quiz/QuestionSnapshotDialog";
 
@@ -26,14 +26,15 @@ const getErrorMessage = (error: unknown, fallback: string) =>
 
 export default function MyChildren() {
     const navigate = useNavigate();
-    const { user } = useAuth();
     const { parentId, loading: parentAccountLoading } = useParentAccount();
 
-    const [children, setChildren] = useState<LinkedChild[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
-    const [parentUserId, setParentUserId] = useState<string | null>(null);
-    const [childrenAnalytics, setChildrenAnalytics] = useState<Map<string, ChildAnalytics>>(new Map());
-    const [childrenAssignments, setChildrenAssignments] = useState<Map<string, Assignment[]>>(new Map());
+    const {
+        children,
+        childrenAnalytics,
+        childrenAssignments,
+        isLoading,
+        refresh: refreshChildren,
+    } = useChildrenData(parentId);
 
     const [reportOpen, setReportOpen] = useState(false);
     const [assignOpen, setAssignOpen] = useState(false);
@@ -143,114 +144,6 @@ export default function MyChildren() {
     const [selectedChild, setSelectedChild] = useState<LinkedChild | null>(null);
     const [searchQuery, setSearchQuery] = useState("");
 
-    const fetchChildren = useCallback(async (pId: string) => {
-        try {
-            const { data, error } = await supabase
-                .from("students")
-                .select(`
-                    id,
-                    user_id,
-                    class_year,
-                    is_premium,
-                    profile:profiles(full_name, unique_id, username)
-                `)
-                .eq("parent_id", pId);
-
-            if (error) throw error;
-
-            if (data && data.length > 0) {
-                const studentIds = data.map((c) => c.id);
-
-                // Batched parallel queries for all children
-                const [quizzesRes, assignmentsRes] = await Promise.all([
-                    supabase
-                        .from("quiz_results")
-                        .select("*")
-                        .in("student_id", studentIds)
-                        .order("completed_at", { ascending: false }),
-                    supabase
-                        .from("practice_assignments")
-                        .select("*")
-                        .in("student_id", studentIds)
-                        .order("created_at", { ascending: false }),
-                ]);
-
-                const allQuizzes = (quizzesRes.data || []) as QuizResult[];
-                const allAssignments = (assignmentsRes.data || []) as unknown as Assignment[];
-
-                const assignMap = new Map<string, Assignment[]>();
-                const analyticsMap = new Map<string, ChildAnalytics>();
-
-                studentIds.forEach((sId) => {
-                    const childAssignments = allAssignments.filter((a) => a.student_id === sId);
-                    assignMap.set(sId, childAssignments);
-
-                    const childQuizzes = allQuizzes.filter((q) => q.student_id === sId);
-                    const pending = childAssignments.filter((a) => a.status === "pending").length;
-                    const completed = childAssignments.filter((a) => a.status === "completed").length;
-
-                    if (childQuizzes.length > 0) {
-                        const averageScore = childQuizzes.reduce((acc, result) => acc + result.score, 0) / childQuizzes.length;
-                        const subjectMap = new Map<string, { totalScore: number; count: number }>();
-                        childQuizzes.forEach((result) => {
-                            const existing = subjectMap.get(result.subject) || { totalScore: 0, count: 0 };
-                            subjectMap.set(result.subject, {
-                                totalScore: existing.totalScore + result.score,
-                                count: existing.count + 1,
-                            });
-                        });
-
-                        const subjectPerformance = Array.from(subjectMap.entries()).map(([subject, subData]) => ({
-                            subject: subject.charAt(0).toUpperCase() + subject.slice(1),
-                            avgScore: Math.round(subData.totalScore / subData.count),
-                            count: subData.count,
-                        }));
-
-                        analyticsMap.set(sId, {
-                            studentId: sId,
-                            averageScore: Math.round(averageScore),
-                            totalQuizzes: childQuizzes.length,
-                            subjectPerformance,
-                            recentQuizzes: childQuizzes.slice(0, 5) as QuizResult[],
-                            pendingAssignments: pending,
-                            completedAssignments: completed,
-                        });
-                    } else {
-                        analyticsMap.set(sId, {
-                            studentId: sId,
-                            averageScore: 0,
-                            totalQuizzes: 0,
-                            subjectPerformance: [],
-                            recentQuizzes: [],
-                            pendingAssignments: pending,
-                            completedAssignments: completed,
-                        });
-                    }
-                });
-
-                setChildren(data as unknown as LinkedChild[]);
-                setChildrenAssignments(assignMap);
-                setChildrenAnalytics(analyticsMap);
-            } else {
-                setChildren([]);
-            }
-        } catch (error) {
-            console.error("Error fetching children:", error);
-            toast.error("Failed to load students");
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    useEffect(() => {
-        if (parentId) {
-            setParentUserId(parentId);
-            fetchChildren(parentId);
-        } else if (!parentAccountLoading) {
-            setIsLoading(false);
-        }
-    }, [parentId, parentAccountLoading, fetchChildren]);
-
     const handleDeleteChild = async () => {
         if (!selectedChild) return;
         try {
@@ -264,7 +157,7 @@ export default function MyChildren() {
             if (data?.error) throw new Error(data.error);
             toast.success(`${selectedChild.profile.full_name}'s account deleted`);
             setDeleteDialogOpen(false);
-            if (parentUserId) fetchChildren(parentUserId);
+            refreshChildren();
         } catch (error: unknown) {
             toast.error(error instanceof Error ? error.message : "Failed to delete account");
         }
@@ -424,8 +317,8 @@ export default function MyChildren() {
             <AddChildDialog
                 open={addChildOpen}
                 onOpenChange={setAddChildOpen}
-                parentId={parentUserId}
-                onSuccess={() => parentUserId && fetchChildren(parentUserId)}
+                parentId={parentId}
+                onSuccess={() => refreshChildren()}
             />
 
             <DummyPaymentModal
@@ -433,7 +326,7 @@ export default function MyChildren() {
                 onOpenChange={setPaymentModalOpen}
                 studentId={selectedChild?.id || ""}
                 studentName={selectedChild?.profile.full_name || ""}
-                onSuccess={() => parentUserId && fetchChildren(parentUserId)}
+                onSuccess={() => refreshChildren()}
             />
 
             <DeleteChildDialog
@@ -448,14 +341,14 @@ export default function MyChildren() {
                 open={editNameOpen}
                 onOpenChange={setEditNameOpen}
                 child={selectedChild}
-                onSuccess={() => parentUserId && fetchChildren(parentUserId)}
+                onSuccess={() => refreshChildren()}
             />
 
             <EditChildUsernameDialog
                 open={editUsernameOpen}
                 onOpenChange={setEditUsernameOpen}
                 child={selectedChild ? { id: selectedChild.id, profile: { username: selectedChild.profile.username } } : null}
-                onSuccess={() => parentUserId && fetchChildren(parentUserId)}
+                onSuccess={() => refreshChildren()}
             />
 
             <ChangeChildPasswordDialog

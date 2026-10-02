@@ -1,8 +1,10 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, BookOpen, Trophy, TrendingUp, Activity, Shield, ChevronLeft, ChevronRight, UserPlus, UserMinus, Edit, Trash2, Mail, Upload, Search, Download, Filter, Flag } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useAdminPermissions } from "@/hooks/useAdminPermissions";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,85 +35,25 @@ interface RecentActivity {
 
 export default function AdminDashboard() {
     const { user } = useAuth();
+    const { admin, isSuperAdmin } = useAdminPermissions();
+    const adminName = admin?.full_name || "Admin";
     const navigate = useNavigate();
-    const [adminName, setAdminName] = useState("Admin");
-    const [isSuperAdmin, setIsSuperAdmin] = useState(false);
-    const [pendingFlagsCount, setPendingFlagsCount] = useState(0);
-    const [stats, setStats] = useState<PlatformStats>({
-        totalStudents: 0,
-        totalParents: 0,
-        totalSchools: 0,
-        totalQuestions: 0,
-        totalQuizzesTaken: 0,
-        activeStudentsToday: 0,
-    });
-    const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
-    const [loading, setLoading] = useState(true);
     const [currentPage, setCurrentPage] = useState(1);
-    const [totalPages, setTotalPages] = useState(1);
     const [searchQuery, setSearchQuery] = useState("");
     const [debouncedSearch, setDebouncedSearch] = useState("");
     const [actionFilter, setActionFilter] = useState<string>("all");
     const [resourceFilter, setResourceFilter] = useState<string>("all");
     const ITEMS_PER_PAGE = 10;
-    const fetchIdRef = useRef(0);
-    const prevFilterRef = useRef({ debouncedSearch, actionFilter, resourceFilter });
 
-    useEffect(() => {
-        fetchAdminData();
-        fetchPlatformStats();
-    }, [user]);
-
-    // Debounce search query input (350ms)
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedSearch(searchQuery);
-        }, 350);
-        return () => clearTimeout(timer);
-    }, [searchQuery]);
-
-    // Single unified effect to fetch activity when page, debounced search, or filters change
-    useEffect(() => {
-        if (!isSuperAdmin) return;
-
-        const filterChanged =
-            prevFilterRef.current.debouncedSearch !== debouncedSearch ||
-            prevFilterRef.current.actionFilter !== actionFilter ||
-            prevFilterRef.current.resourceFilter !== resourceFilter;
-
-        prevFilterRef.current = { debouncedSearch, actionFilter, resourceFilter };
-
-        // If a filter or search term changed while on a page > 1, reset to page 1
-        // (the subsequent re-render with currentPage=1 will trigger the fetch)
-        if (filterChanged && currentPage !== 1) {
-            setCurrentPage(1);
-            return;
-        }
-
-        fetchRecentActivity();
-    }, [currentPage, debouncedSearch, actionFilter, resourceFilter, isSuperAdmin]);
-
-    const fetchAdminData = async () => {
-        if (!user) return;
-
-        const { data } = await supabase
-            .from("admins")
-            .select("full_name, is_super_admin")
-            .eq("user_id", user.id)
-            .single();
-
-        if (data) {
-            setAdminName(data.full_name || "Admin");
-            setIsSuperAdmin(data.is_super_admin || false);
-        }
-    };
-
-    const fetchPlatformStats = async () => {
-        try {
+    // Platform statistics — all head-count queries run in one cached queryFn
+    const statsQuery = useQuery({
+        queryKey: ["admin", "platform-stats"],
+        enabled: !!user,
+        staleTime: 60 * 1000,
+        queryFn: async () => {
             const today = new Date();
             today.setHours(0, 0, 0, 0);
 
-            // Fetch all platform statistics concurrently with Promise.all
             const [
                 { count: studentCount },
                 { count: parentCount },
@@ -136,26 +78,38 @@ export default function AdminDashboard() {
                 ? new Set(activeTodayData.map(r => r.student_id)).size
                 : 0;
 
-            setStats({
-                totalStudents: studentCount || 0,
-                totalParents: parentCount || 0,
-                totalSchools: schoolCount || 0,
-                totalQuestions: (year6Questions || 0) + (year9Questions || 0),
-                totalQuizzesTaken: quizzesTaken || 0,
-                activeStudentsToday: activeTodayCount,
-            });
-
-            setPendingFlagsCount(flagsCount || 0);
-        } catch (error) {
-            console.error("Error fetching stats:", error);
-        } finally {
-            setLoading(false);
-        }
+            return {
+                stats: {
+                    totalStudents: studentCount || 0,
+                    totalParents: parentCount || 0,
+                    totalSchools: schoolCount || 0,
+                    totalQuestions: (year6Questions || 0) + (year9Questions || 0),
+                    totalQuizzesTaken: quizzesTaken || 0,
+                    activeStudentsToday: activeTodayCount,
+                } as PlatformStats,
+                pendingFlagsCount: flagsCount || 0,
+            };
+        },
+    });
+    const stats = statsQuery.data?.stats ?? {
+        totalStudents: 0,
+        totalParents: 0,
+        totalSchools: 0,
+        totalQuestions: 0,
+        totalQuizzesTaken: 0,
+        activeStudentsToday: 0,
     };
+    const pendingFlagsCount = statsQuery.data?.pendingFlagsCount ?? 0;
+    const loading = statsQuery.isLoading;
 
-    const fetchRecentActivity = async () => {
-        const currentFetchId = ++fetchIdRef.current;
-        try {
+    // Audit log page — React Query keys per page+filter combo replace the
+    // manual stale-response ref guard; cached pages render instantly on back-nav.
+    const activityQuery = useQuery({
+        queryKey: ["admin", "audit-log", currentPage, debouncedSearch, actionFilter, resourceFilter],
+        enabled: !!user && isSuperAdmin,
+        staleTime: 30 * 1000,
+        placeholderData: (prev) => prev,
+        queryFn: async () => {
             let query = supabase
                 .from("admin_audit_log")
                 .select(`
@@ -185,22 +139,34 @@ export default function AdminDashboard() {
                 query = query.or(`details->>admin_name.ilike.%${debouncedSearch}%,details->>admin_email.ilike.%${debouncedSearch}%,details->>target_user_email.ilike.%${debouncedSearch}%,details->>email.ilike.%${debouncedSearch}%`);
             }
 
-            const { data, count } = await query
+            const { data, count, error } = await query
                 .order("created_at", { ascending: false })
                 .range((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE - 1);
+            if (error) throw error;
 
-            // Discard stale in-flight responses if another query was launched in the meantime
-            if (currentFetchId !== fetchIdRef.current) return;
+            return {
+                rows: (data ?? []) as unknown as RecentActivity[],
+                totalPages: Math.ceil((count || 0) / ITEMS_PER_PAGE),
+            };
+        },
+    });
+    const recentActivity = activityQuery.data?.rows ?? [];
+    const totalPages = activityQuery.data?.totalPages ?? 1;
 
-            if (data) {
-                setRecentActivity(data as RecentActivity[]);
-                setTotalPages(Math.ceil((count || 0) / ITEMS_PER_PAGE));
-            }
-        } catch (error) {
-            if (currentFetchId !== fetchIdRef.current) return;
-            console.error("Error fetching recent activity:", error);
+    // Debounce search query input (350ms)
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+        }, 350);
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    // If a filter or search term changed while on a page > 1, reset to page 1
+    useEffect(() => {
+        if (currentPage !== 1 && (debouncedSearch || actionFilter !== "all" || resourceFilter !== "all")) {
+            setCurrentPage(1);
         }
-    };
+    }, [debouncedSearch, actionFilter, resourceFilter, currentPage]);
 
     const statCards = [
         {

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useParentAccount } from "@/hooks/useParentAccount";
+import { useChildrenData } from "@/hooks/useChildrenData";
 import { StudentReportDialog } from "@/components/StudentReportDialog";
 import { AssignPracticeDialog } from "@/components/AssignPracticeDialog";
 import { ChildOverviewCard } from "@/components/parent/ChildOverviewCard";
@@ -38,11 +39,6 @@ export default function ParentDashboard() {
   const [selectedChild, setSelectedChild] = useState<LinkedChild | null>(null);
   const [assignOpen, setAssignOpen] = useState(false);
   const [addChildOpen, setAddChildOpen] = useState(false);
-  const [linkedChildren, setLinkedChildren] = useState<LinkedChild[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [parentUserId, setParentUserId] = useState<string | null>(null);
-  const [childrenAnalytics, setChildrenAnalytics] = useState<Map<string, ChildAnalytics>>(new Map());
-  const [globalActivities, setGlobalActivities] = useState<QuizResult[]>([]);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
   const [selectedPaymentChild, setSelectedPaymentChild] = useState<{ id: string; name: string } | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -155,6 +151,25 @@ export default function ParentDashboard() {
     }
   };
 
+  // Shared cached children dataset (children + analytics + assignments +
+  // gamification enrichment + recent activity feed)
+  const { parentId, parentCode, loading: parentAccountLoading } = useParentAccount();
+  const {
+    children,
+    childrenAnalytics,
+    childrenAssignments,
+    globalActivities,
+    isLoading,
+    refresh: refreshChildren,
+  } = useChildrenData(parentId, { withGamification: true });
+
+  const linkedChildren: LinkedChild[] = children.map((child) => ({
+    ...child,
+    assignments: (childrenAssignments.get(child.id) || []).slice(0, 5),
+  }));
+
+  const [copiedCode, setCopiedCode] = useState(false);
+
   // Derived Top-Level Metrics
   const totalChildren = linkedChildren.length;
   const premiumChildrenCount = linkedChildren.filter(c => c.is_premium).length;
@@ -169,9 +184,6 @@ export default function ParentDashboard() {
 
   const overallAverage = totalQuizzesGlobal > 0 ? Math.round(totalScoreGlobal / totalQuizzesGlobal) : 0;
 
-  const { parentId, parentCode, loading: parentAccountLoading } = useParentAccount();
-  const [copiedCode, setCopiedCode] = useState(false);
-
   const handleCopyCode = async () => {
     if (parentCode) {
       await navigator.clipboard.writeText(parentCode);
@@ -181,136 +193,12 @@ export default function ParentDashboard() {
     }
   };
 
-  const fetchLinkedChildren = useCallback(async (pId: string) => {
-    try {
-      setGlobalActivities([]); // Reset global activities before fetching
-      const { data, error } = await supabase
-        .from("students")
-        .select(`
-          id,
-          user_id,
-          class_year,
-          is_premium,
-          profile:profiles(full_name, unique_id, username)
-        `)
-        .eq("parent_id", pId);
-
-      if (error) throw error;
-
-      if (data && data.length > 0) {
-        const studentIds = data.map((c) => c.id);
-        const nameMap = new Map(data.map((c) => [c.id, c.profile?.full_name || "Unknown"]));
-
-        // Batched parallel queries for all linked children
-        const [quizzesRes, assignmentsRes, gameProfilesRes, masteriesRes] = await Promise.all([
-          supabase
-            .from("quiz_results")
-            .select("*")
-            .in("student_id", studentIds)
-            .order("completed_at", { ascending: false }),
-          supabase
-            .from("practice_assignments")
-            .select("*")
-            .in("student_id", studentIds)
-            .order("created_at", { ascending: false }),
-          supabase
-            .from("student_gamification_profile")
-            .select("*")
-            .in("student_id", studentIds),
-          supabase
-            .from("student_topic_mastery")
-            .select("student_id, subject, topic, rolling_accuracy, status")
-            .in("student_id", studentIds),
-        ]);
-
-        const allQuizzes = (quizzesRes.data || []) as QuizResult[];
-        const allAssignments = (assignmentsRes.data || []) as unknown as Assignment[];
-        const allGameProfiles = gameProfilesRes.data || [];
-        const allMasteries = masteriesRes.data || [];
-
-        const analyticsMap = new Map<string, ChildAnalytics>();
-        studentIds.forEach((sId) => {
-          const childQuizzes = allQuizzes.filter((q) => q.student_id === sId);
-          const gameProfile = allGameProfiles.find((p) => p.student_id === sId);
-          const childMasteries = allMasteries.filter((m) => m.student_id === sId);
-
-          // student_topic_mastery.status is stored lowercase ("weak" | "developing" | "strong")
-          const strongCount = childMasteries.filter((m) => m.status === "strong").length;
-          const weakCount = childMasteries.filter((m) => m.status === "weak").length;
-          const lifetimeEP = Number(gameProfile?.lifetime_ep || 0);
-          const lvl = calculateStudentLevel(lifetimeEP);
-          const tier = (gameProfile?.current_league_tier || 1) as LeagueTierNumber;
-          const leagueName = LEAGUE_TIERS[tier]?.name || "Starter League";
-
-          if (childQuizzes.length > 0 || gameProfile) {
-            const averageScore = childQuizzes.length > 0
-              ? childQuizzes.reduce((acc, result) => acc + result.score, 0) / childQuizzes.length
-              : 0;
-            const subjectMap = new Map<string, { totalScore: number; count: number }>();
-            childQuizzes.forEach((result) => {
-              const existing = subjectMap.get(result.subject) || { totalScore: 0, count: 0 };
-              subjectMap.set(result.subject, {
-                totalScore: existing.totalScore + result.score,
-                count: existing.count + 1,
-              });
-            });
-
-            const subjectPerformance = Array.from(subjectMap.entries()).map(([subject, subData]) => ({
-              subject: subject.charAt(0).toUpperCase() + subject.slice(1),
-              avgScore: Math.round(subData.totalScore / subData.count),
-              count: subData.count,
-            }));
-
-            analyticsMap.set(sId, {
-              studentId: sId,
-              averageScore: Math.round(averageScore),
-              totalQuizzes: childQuizzes.length,
-              subjectPerformance,
-              recentQuizzes: childQuizzes.slice(0, 5),
-              lifetimeEP,
-              currentLevel: lvl.level,
-              levelTitle: lvl.title,
-              leagueTier: tier,
-              leagueName,
-              streakCount: Number(gameProfile?.streak_count || 0),
-              streakShields: Number(gameProfile?.streak_shields || 0),
-              strongTopicsCount: strongCount,
-              weakTopicsCount: weakCount,
-            });
-          }
-        });
-        setChildrenAnalytics(analyticsMap);
-
-        const childrenWithAssignments = (data as unknown as LinkedChild[]).map((child) => ({
-          ...child,
-          assignments: allAssignments.filter((a) => a.student_id === child.id).slice(0, 5),
-        }));
-        setLinkedChildren(childrenWithAssignments);
-
-        const activitiesWithName = allQuizzes.map((q) => ({
-          ...q,
-          student_name: nameMap.get(q.student_id) || "Student",
-        }));
-        setGlobalActivities(activitiesWithName.slice(0, 3));
-      } else {
-        setLinkedChildren([]);
-      }
-    } catch (error) {
-      console.error("Error fetching linked children:", error);
-      toast.error("Failed to load linked children");
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
 
   useEffect(() => {
-    if (parentId) {
-      setParentUserId(parentId);
-      fetchLinkedChildren(parentId);
-    } else if (!parentAccountLoading) {
-      setIsLoading(false);
+    if (!parentId && !parentAccountLoading) {
+      // Parent account could not be resolved; nothing further to load.
     }
-  }, [parentId, parentAccountLoading, fetchLinkedChildren]);
+  }, [parentId, parentAccountLoading]);
 
   const handleDeleteChild = async () => {
     if (!managedChild) return;
@@ -331,8 +219,8 @@ export default function ParentDashboard() {
       setDeleteDialogOpen(false);
       setManagedChild(null);
 
-      if (parentUserId) {
-        await fetchLinkedChildren(parentUserId);
+      if (parentId) {
+        await refreshChildren();
       }
     } catch (error: unknown) {
       console.error("Error deleting child:", error);
@@ -679,8 +567,8 @@ export default function ParentDashboard() {
       <AddChildDialog
         open={addChildOpen}
         onOpenChange={setAddChildOpen}
-        parentId={parentUserId}
-        onSuccess={() => parentUserId && fetchLinkedChildren(parentUserId)}
+        parentId={parentId}
+        onSuccess={() => refreshChildren()}
       />
 
       <DummyPaymentModal
@@ -689,7 +577,7 @@ export default function ParentDashboard() {
         studentId={selectedPaymentChild?.id || ""}
         studentName={selectedPaymentChild?.name || ""}
         onSuccess={() => {
-          if (parentUserId) fetchLinkedChildren(parentUserId);
+          refreshChildren();
         }}
       />
 
@@ -705,14 +593,14 @@ export default function ParentDashboard() {
         open={editNameOpen}
         onOpenChange={setEditNameOpen}
         child={managedChild}
-        onSuccess={() => parentUserId && fetchLinkedChildren(parentUserId)}
+        onSuccess={() => refreshChildren()}
       />
       
       <EditChildUsernameDialog
         open={editUsernameOpen}
         onOpenChange={setEditUsernameOpen}
         child={managedChild}
-        onSuccess={() => parentUserId && fetchLinkedChildren(parentUserId)}
+        onSuccess={() => refreshChildren()}
       />
 
       <ChangeChildPasswordDialog
