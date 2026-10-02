@@ -147,7 +147,7 @@ export function SchoolReportsPage() {
           <Button
             variant="outline"
             onClick={handleExportCSV}
-            className="border-slate-700 bg-slate-900/60 text-slate-200 hover:bg-slate-800 text-xs sm:text-sm"
+            className="text-xs sm:text-sm"
           >
             <Download className="mr-1.5 h-3.5 w-3.5" />
             Export CSV
@@ -157,7 +157,7 @@ export function SchoolReportsPage() {
               setAnalyticsCohort("Year 9 (BECE)");
               setAnalyticsOpen(true);
             }}
-            className="bg-[#3bc2f3] text-[#041c2d] hover:bg-[#6cd8ff] font-semibold text-xs sm:text-sm"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs sm:text-sm shadow-sm"
           >
             <ChartColumnBig className="mr-1.5 h-4 w-4" />
             Detailed analytics
@@ -166,7 +166,7 @@ export function SchoolReportsPage() {
       }
     >
       {/* Tab Navigation */}
-      <div className="mb-6 flex flex-wrap items-center gap-2 border-b border-[#26344d] pb-3 text-xs">
+      <div className="mb-6 flex flex-wrap items-center gap-2 border-b border-border pb-3 text-xs">
         {[
           { key: "overview", label: "Executive Overview" },
           { key: "subjects", label: "Curriculum Topic Heatmap" },
@@ -178,8 +178,8 @@ export function SchoolReportsPage() {
             onClick={() => setActiveTab(tab.key as any)}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
               activeTab === tab.key
-                ? "bg-[#2184a7] text-white"
-                : "text-slate-400 hover:text-white hover:bg-[#15233c]"
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
           >
             {tab.label}
@@ -194,36 +194,36 @@ export function SchoolReportsPage() {
             label: "Institutional Average",
             value: cohortAverages.overall > 0 ? `${cohortAverages.overall}%` : "—",
             hint: "Across all tested students",
-            tone: "text-[#66d7ff]",
+            tone: "text-sky-600 dark:text-[#66d7ff]",
           },
           {
             label: "Year 9 BECE Benchmark",
             value: cohortAverages.year_9 > 0 ? `${cohortAverages.year_9}%` : "—",
             hint: `${year9Students.length} candidates enrolled`,
-            tone: "text-[#48d7b7]",
+            tone: "text-emerald-600 dark:text-[#48d7b7]",
           },
           {
             label: "Year 6 CE Benchmark",
             value: cohortAverages.year_6 > 0 ? `${cohortAverages.year_6}%` : "—",
             hint: `${year6Students.length} candidates enrolled`,
-            tone: "text-[#c4a9ff]",
+            tone: "text-purple-600 dark:text-[#c4a9ff]",
           },
           {
             label: "Task Completion Rate",
             value: `${assignmentStats.completionRate}%`,
             hint: `${assignmentStats.completed} of ${assignmentStats.total} completed`,
-            tone: "text-[#ffca6a]",
+            tone: "text-amber-600 dark:text-[#ffca6a]",
           },
         ].map((item) => (
-          <Card key={item.label} className="border border-[#2a3852] bg-[#151e33] text-slate-100 min-w-0">
+          <Card key={item.label} className="border-border bg-card text-card-foreground min-w-0 shadow-sm">
             <CardContent className="p-4 sm:p-5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 truncate">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground truncate">
                 {item.label}
               </p>
               <p className={`mt-2 text-2xl sm:text-3xl font-black ${item.tone} truncate`}>
                 {item.value}
               </p>
-              <p className="mt-1 text-[11px] text-slate-400 truncate">{item.hint}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground truncate">{item.hint}</p>
             </CardContent>
           </Card>
         ))}
@@ -232,21 +232,21 @@ export function SchoolReportsPage() {
       {/* Tab: Executive Overview */}
       {activeTab === "overview" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-          <Card className="border border-[#2a3852] bg-[#151e33] text-slate-100 min-w-0">
-            <CardHeader className="border-b border-[#202b43] pb-3">
-              <CardTitle className="text-base font-semibold text-[#71c9ed]">Subject Proficiencies</CardTitle>
+          <Card className="border-border bg-card text-card-foreground min-w-0 shadow-sm">
+            <CardHeader className="border-b border-border pb-3">
+              <CardTitle className="text-base font-semibold text-foreground dark:text-[#71c9ed]">Subject Proficiencies</CardTitle>
             </CardHeader>
             <CardContent className="p-5 space-y-4">
               {subjectProficiencies.map((sub) => (
                 <div key={sub.subject} className="space-y-1.5">
                   <div className="flex justify-between text-xs sm:text-sm">
-                    <span className="text-slate-200">{sub.subject}</span>
-                    <span className="font-bold text-white">
+                    <span className="text-foreground">{sub.subject}</span>
+                    <span className="font-bold text-foreground">
                       {sub.score > 0 ? `${sub.score}%` : "—"}{" "}
-                      <span className="text-slate-400 text-xs font-normal">(Target: {sub.target}%)</span>
+                      <span className="text-muted-foreground text-xs font-normal">(Target: {sub.target}%)</span>
                     </span>
                   </div>
-                  <div className="h-2 rounded-full bg-[#0a1426] overflow-hidden">
+                  <div className="h-2 rounded-full bg-muted overflow-hidden">
                     <div
                       className="h-full bg-gradient-to-r from-sky-500 to-cyan-400 rounded-full transition-all duration-500"
                       style={{ width: `${Math.min(sub.score, 100)}%` }}
@@ -257,30 +257,30 @@ export function SchoolReportsPage() {
             </CardContent>
           </Card>
 
-          <Card className="border border-[#2a3852] bg-[#151e33] text-slate-100 min-w-0">
-            <CardHeader className="border-b border-[#202b43] pb-3">
-              <CardTitle className="text-base font-semibold text-[#71c9ed]">BECE Readiness Index</CardTitle>
+          <Card className="border-border bg-card text-card-foreground min-w-0 shadow-sm">
+            <CardHeader className="border-b border-border pb-3">
+              <CardTitle className="text-base font-semibold text-foreground dark:text-[#71c9ed]">BECE Readiness Index</CardTitle>
             </CardHeader>
             <CardContent className="p-5 space-y-4">
               <div className="rounded-xl border border-sky-500/20 bg-sky-500/5 p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs text-sky-300 font-semibold uppercase tracking-wider">Projected Distinction Rate</span>
-                  <span className="text-xl font-black text-sky-400">
+                  <span className="text-xs text-sky-700 dark:text-sky-300 font-semibold uppercase tracking-wider">Projected Distinction Rate</span>
+                  <span className="text-xl font-black text-sky-600 dark:text-sky-400">
                     {beceReadiness.distinctionRate > 0 ? `${beceReadiness.distinctionRate}%` : "—"}
                   </span>
                 </div>
-                <p className="text-xs text-slate-300 leading-relaxed">
+                <p className="text-xs text-muted-foreground leading-relaxed">
                   Based on mock exams, drills, and curriculum mastery,{" "}
-                  <strong className="text-white">
+                  <strong className="text-foreground">
                     {beceReadiness.distinctionRate > 0 ? `${beceReadiness.distinctionRate}%` : "learners"}
                   </strong>{" "}
                   of candidates in Year 9 are trending toward distinction and credit grades in core subjects.
                 </p>
               </div>
 
-              <div className="flex items-center justify-between p-3 rounded-lg border border-[#2a3852] bg-[#0c1424] text-xs">
-                <span className="text-slate-300">Target interventions recommended:</span>
-                <span className="font-bold text-amber-400">
+              <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-muted/40 text-xs">
+                <span className="text-foreground">Target interventions recommended:</span>
+                <span className="font-bold text-amber-600 dark:text-amber-400">
                   {beceReadiness.interventionsNeeded} {beceReadiness.interventionsNeeded === 1 ? "learner" : "learners"}
                 </span>
               </div>
@@ -306,56 +306,56 @@ export function SchoolReportsPage() {
       {/* Tab: Cohort Comparisons */}
       {activeTab === "cohorts" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Card className="border border-[#2a3852] bg-[#151e33] text-slate-100 min-w-0">
+          <Card className="border-border bg-card text-card-foreground min-w-0 shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold text-[#71c9ed]">Year 9 (BECE Cohort)</CardTitle>
+              <CardTitle className="text-base font-semibold text-foreground dark:text-[#71c9ed]">Year 9 (BECE Cohort)</CardTitle>
             </CardHeader>
-            <CardContent className="p-5 space-y-3 text-xs text-slate-300">
-              <div className="flex justify-between border-b border-[#233148] pb-2">
+            <CardContent className="p-5 space-y-3 text-xs text-muted-foreground">
+              <div className="flex justify-between border-b border-border pb-2">
                 <span>Enrolled Candidates:</span>
-                <span className="font-bold text-white">{year9Students.length}</span>
+                <span className="font-bold text-foreground">{year9Students.length}</span>
               </div>
-              <div className="flex justify-between border-b border-[#233148] pb-2">
+              <div className="flex justify-between border-b border-border pb-2">
                 <span>Completed Quizzes & Drills:</span>
-                <span className="font-bold text-[#58c4e8]">{year9Quizzes} sessions</span>
+                <span className="font-bold text-sky-600 dark:text-[#58c4e8]">{year9Quizzes} sessions</span>
               </div>
-              <div className="flex justify-between border-b border-[#233148] pb-2">
+              <div className="flex justify-between border-b border-border pb-2">
                 <span>Active Learners:</span>
-                <span className="font-bold text-emerald-400">
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">
                   {year9Students.filter((s) => s.quizCount > 0 || s.lifetime_ep > 0).length}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span>Benchmark Score:</span>
-                <span className="font-bold text-emerald-400">
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">
                   {cohortAverages.year_9 > 0 ? `${cohortAverages.year_9}%` : "—"}
                 </span>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border border-[#2a3852] bg-[#151e33] text-slate-100 min-w-0">
+          <Card className="border-border bg-card text-card-foreground min-w-0 shadow-sm">
             <CardHeader className="pb-2">
-              <CardTitle className="text-base font-semibold text-[#71c9ed]">Year 6 (Common Entrance)</CardTitle>
+              <CardTitle className="text-base font-semibold text-foreground dark:text-[#71c9ed]">Year 6 (Common Entrance)</CardTitle>
             </CardHeader>
-            <CardContent className="p-5 space-y-3 text-xs text-slate-300">
-              <div className="flex justify-between border-b border-[#233148] pb-2">
+            <CardContent className="p-5 space-y-3 text-xs text-muted-foreground">
+              <div className="flex justify-between border-b border-border pb-2">
                 <span>Enrolled Candidates:</span>
-                <span className="font-bold text-white">{year6Students.length}</span>
+                <span className="font-bold text-foreground">{year6Students.length}</span>
               </div>
-              <div className="flex justify-between border-b border-[#233148] pb-2">
+              <div className="flex justify-between border-b border-border pb-2">
                 <span>Completed Quizzes & Drills:</span>
-                <span className="font-bold text-[#58c4e8]">{year6Quizzes} sessions</span>
+                <span className="font-bold text-sky-600 dark:text-[#58c4e8]">{year6Quizzes} sessions</span>
               </div>
-              <div className="flex justify-between border-b border-[#233148] pb-2">
+              <div className="flex justify-between border-b border-border pb-2">
                 <span>Active Learners:</span>
-                <span className="font-bold text-emerald-400">
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">
                   {year6Students.filter((s) => s.quizCount > 0 || s.lifetime_ep > 0).length}
                 </span>
               </div>
               <div className="flex justify-between">
                 <span>Benchmark Score:</span>
-                <span className="font-bold text-emerald-400">
+                <span className="font-bold text-emerald-600 dark:text-emerald-400">
                   {cohortAverages.year_6 > 0 ? `${cohortAverages.year_6}%` : "—"}
                 </span>
               </div>

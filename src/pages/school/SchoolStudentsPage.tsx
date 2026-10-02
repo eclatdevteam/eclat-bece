@@ -59,14 +59,14 @@ export function SchoolStudentsPage() {
           <Button
             variant="outline"
             onClick={() => setBulkDialogOpen(true)}
-            className="border-[#34415b] bg-[#0c1628] text-slate-200 hover:bg-[#162540] hover:text-white font-semibold text-xs sm:text-sm"
+            className="border-border bg-card text-foreground hover:bg-accent font-semibold text-xs sm:text-sm"
           >
             <Upload className="mr-1.5 h-4 w-4" />
             Bulk Import CSV
           </Button>
           <Button
             onClick={() => setStudentDialogOpen(true)}
-            className="bg-[#3bc2f3] text-[#041c2d] hover:bg-[#6cd8ff] font-semibold text-xs sm:text-sm"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs sm:text-sm"
           >
             <Plus className="mr-1.5 h-4 w-4" />
             Add student
@@ -82,29 +82,29 @@ export function SchoolStudentsPage() {
           ["Year 9 (JSS 3)", year9Count.toString(), "BECE candidates"],
           ["Year 6 (Primary 6)", year6Count.toString(), "Common entrance"],
         ].map(([label, value, hint]) => (
-          <Card key={label} className="border border-[#2a3852] bg-[#151e33] text-slate-100 min-w-0">
+          <Card key={label} className="border border-border bg-card text-card-foreground shadow-sm min-w-0">
             <CardContent className="p-4 sm:p-5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-300 truncate">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground truncate">
                 {label}
               </p>
-              <p className="mt-2 text-2xl sm:text-3xl font-black text-white truncate">{value}</p>
-              <p className="mt-1 text-[11px] text-[#51c6eb] truncate">{hint}</p>
+              <p className="mt-2 text-2xl sm:text-3xl font-black text-foreground truncate">{value}</p>
+              <p className="mt-1 text-[11px] text-sky-600 dark:text-[#51c6eb] font-medium truncate">{hint}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
       {/* Main Table / Container */}
-      <div className="rounded-xl border border-[#2a3852] bg-[#0f182b] overflow-hidden">
+      <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
         {/* Filter Controls Bar */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-[#2a3852] p-4 text-xs">
-          <div className="flex items-center gap-2 flex-1 rounded-lg border border-[#34415b] bg-[#071023] px-3 py-2 text-slate-200">
-            <Search className="h-4 w-4 text-slate-400 flex-shrink-0" />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-border p-4 text-xs">
+          <div className="flex items-center gap-2 flex-1 rounded-lg border border-border bg-muted/60 px-3 py-2 text-foreground focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20">
+            <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by student name, username, or unique ID..."
-              className="w-full bg-transparent text-xs text-white placeholder:text-slate-400 focus:outline-none"
+              className="w-full bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
             />
           </div>
 
@@ -112,7 +112,7 @@ export function SchoolStudentsPage() {
             <select
               value={classFilter}
               onChange={(e) => setClassFilter(e.target.value)}
-              className="rounded-lg border border-[#34415b] bg-[#071023] px-3 py-2 text-xs text-slate-200 focus:outline-none"
+              className="rounded-lg border border-border bg-card text-foreground px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
             >
               <option value="all">All Cohorts</option>
               <option value="year_9">Year 9 (BECE)</option>
@@ -122,7 +122,7 @@ export function SchoolStudentsPage() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="rounded-lg border border-[#34415b] bg-[#071023] px-3 py-2 text-xs text-slate-200 focus:outline-none"
+              className="rounded-lg border border-border bg-card text-foreground px-3 py-2 text-xs focus:outline-none focus:ring-1 focus:ring-primary/30"
             >
               <option value="all">All Status</option>
               <option value="active">Active</option>
@@ -134,12 +134,12 @@ export function SchoolStudentsPage() {
         {/* Empty State vs Student Table */}
         {students.length === 0 ? (
           <div className="p-12 text-center space-y-4">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#162945] text-[#71c9ed]">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-muted text-primary">
               <Users className="h-7 w-7" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">No Students Enrolled Yet</h3>
-              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
+              <h3 className="text-lg font-bold text-foreground">No Students Enrolled Yet</h3>
+              <p className="text-xs text-muted-foreground mt-1 max-w-sm mx-auto leading-relaxed">
                 Add learners to your institution directory to create their login accounts and start tracking curriculum progress.
               </p>
             </div>
@@ -147,14 +147,14 @@ export function SchoolStudentsPage() {
               <Button
                 variant="outline"
                 onClick={() => setBulkDialogOpen(true)}
-                className="border-[#34415b] bg-[#071023] text-slate-200 hover:bg-[#162540] hover:text-white text-xs font-semibold"
+                className="border-border bg-card text-foreground hover:bg-accent text-xs font-semibold"
               >
                 <Upload className="mr-1.5 h-3.5 w-3.5" />
                 Bulk Import CSV
               </Button>
               <Button
                 onClick={() => setStudentDialogOpen(true)}
-                className="bg-[#2184a7] text-white hover:bg-[#2c9bc2] text-xs font-semibold"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold"
               >
                 <Plus className="mr-1.5 h-3.5 w-3.5" />
                 Add First Student
@@ -164,7 +164,7 @@ export function SchoolStudentsPage() {
         ) : (
           <div className="overflow-x-auto">
             <div className="min-w-[760px]">
-              <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr_0.8fr_1.4fr] border-b border-[#2a3852] px-4 py-3 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 bg-[#0c1424]">
+              <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr_0.8fr_1.4fr] border-b border-border px-4 py-3 text-[10px] font-bold uppercase tracking-[0.12em] text-muted-foreground bg-muted/50">
                 <span>Student</span>
                 <span>Student ID</span>
                 <span>Cohort</span>
@@ -174,40 +174,40 @@ export function SchoolStudentsPage() {
               </div>
 
               {filteredStudents.length === 0 ? (
-                <div className="p-8 text-center text-xs text-slate-400">
+                <div className="p-8 text-center text-xs text-muted-foreground">
                   No students match your filter criteria.
                 </div>
               ) : (
                 filteredStudents.map((student) => (
                   <div
                     key={student.id}
-                    className="grid grid-cols-[1.5fr_1fr_1fr_1fr_0.8fr_1.4fr] items-center border-b border-[#202b43] px-4 py-3 text-xs text-slate-200 hover:bg-[#15233c]/60 transition-colors"
+                    className="grid grid-cols-[1.5fr_1fr_1fr_1fr_0.8fr_1.4fr] items-center border-b border-border/60 px-4 py-3 text-xs text-foreground hover:bg-muted/40 transition-colors"
                   >
                     {/* Student Name */}
                     <div className="min-w-0 pr-2">
-                      <p className="font-semibold text-white truncate">{student.name}</p>
-                      <p className="text-[11px] text-slate-400 font-mono truncate">@{student.username}</p>
+                      <p className="font-semibold text-foreground truncate">{student.name}</p>
+                      <p className="text-[11px] text-muted-foreground font-mono truncate">@{student.username}</p>
                     </div>
 
                     {/* ID */}
-                    <span className="font-mono text-slate-400 text-[11px] truncate">
+                    <span className="font-mono text-muted-foreground text-[11px] truncate">
                       {student.unique_id || student.id.slice(0, 8)}
                     </span>
 
                     {/* Cohort */}
-                    <span className="text-slate-300 text-xs truncate">
+                    <span className="text-foreground text-xs truncate">
                       {student.class_year === "year_6" ? "Year 6 (Primary 6)" : "Year 9 (JSS 3)"}
                     </span>
 
                     {/* Gamification stats */}
-                    <div className="flex items-center gap-1.5 text-xs text-amber-400 font-medium">
+                    <div className="flex items-center gap-1.5 text-xs text-amber-500 font-medium">
                       <Trophy className="h-3.5 w-3.5 flex-shrink-0" />
                       <span>{(student.lifetime_ep || 0).toLocaleString()} EP</span>
-                      <span className="text-[10px] text-slate-400 font-normal">Lvl {student.current_level}</span>
+                      <span className="text-[10px] text-muted-foreground font-normal">Lvl {student.current_level}</span>
                     </div>
 
                     {/* Score */}
-                    <span className="text-right font-bold text-white">
+                    <span className="text-right font-bold text-foreground">
                       {student.quizCount > 0 ? `${student.avgScore}%` : "—"}
                     </span>
 
@@ -220,7 +220,7 @@ export function SchoolStudentsPage() {
                           setSelectedReportStudent(student);
                           setReportOpen(true);
                         }}
-                        className="h-7 px-2 text-xs text-[#55c8ed] hover:text-white hover:bg-sky-500/10"
+                        className="h-7 px-2 text-xs text-sky-600 hover:text-sky-700 hover:bg-sky-50 dark:text-[#55c8ed] dark:hover:text-white dark:hover:bg-sky-500/10"
                         title="View Diagnostic Report"
                       >
                         <FileText className="mr-1 h-3.5 w-3.5" />
@@ -233,7 +233,7 @@ export function SchoolStudentsPage() {
                           setSelectedAssignStudent(student);
                           setAssignOpen(true);
                         }}
-                        className="h-7 px-2 text-xs text-amber-300 hover:text-white hover:bg-amber-500/10"
+                        className="h-7 px-2 text-xs text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-300 dark:hover:text-white dark:hover:bg-amber-500/10"
                         title="Assign Targeted Practice"
                       >
                         <BookOpen className="mr-1 h-3.5 w-3.5" />

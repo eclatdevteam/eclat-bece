@@ -55,7 +55,7 @@ export function SchoolExamsPage() {
       actions={
         <Button
           onClick={() => setScheduleDialogOpen(true)}
-          className="bg-[#3bc2f3] text-[#041c2d] hover:bg-[#6cd8ff] font-semibold text-xs sm:text-sm"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs sm:text-sm"
         >
           <GraduationCap className="mr-1.5 h-4 w-4" />
           Schedule exam
@@ -63,7 +63,7 @@ export function SchoolExamsPage() {
       }
     >
       {/* Filter Tabs */}
-      <div className="mb-6 flex flex-wrap items-center gap-2 border-b border-[#26344d] pb-3 text-xs">
+      <div className="mb-6 flex flex-wrap items-center gap-2 border-b border-border pb-3 text-xs">
         {[
           { key: "all", label: `All Evaluations (${exams.length})` },
           { key: "scheduled", label: `Upcoming (${scheduledCount})` },
@@ -75,8 +75,8 @@ export function SchoolExamsPage() {
             onClick={() => setFilter(tab.key)}
             className={`rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
               filter === tab.key
-                ? "bg-[#2184a7] text-white"
-                : "text-slate-400 hover:text-white hover:bg-[#15233c]"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted"
             }`}
           >
             {tab.label}
@@ -86,20 +86,20 @@ export function SchoolExamsPage() {
 
       {/* Exams Grid / Empty State */}
       {exams.length === 0 ? (
-        <Card className="border border-dashed border-[#2a3852] bg-[#0c1628]/60 p-12 text-center">
+        <Card className="border border-dashed border-border bg-card/60 p-12 text-center shadow-sm">
           <CardContent className="space-y-4 max-w-md mx-auto">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#162945] text-[#71c9ed]">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-muted text-primary">
               <GraduationCap className="h-7 w-7" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">No Mock Examinations Scheduled</h3>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+              <h3 className="text-lg font-bold text-foreground">No Mock Examinations Scheduled</h3>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                 Schedule formal BECE simulations, choose subject blueprints, and allocate candidate hall seating for your learners.
               </p>
             </div>
             <Button
               onClick={() => setScheduleDialogOpen(true)}
-              className="bg-[#2184a7] text-white hover:bg-[#2c9bc2] text-xs font-semibold"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold"
             >
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               Schedule First Exam
@@ -107,7 +107,7 @@ export function SchoolExamsPage() {
           </CardContent>
         </Card>
       ) : filteredExams.length === 0 ? (
-        <div className="rounded-xl border border-[#233148] bg-[#0c1628] p-8 text-center text-xs text-slate-400">
+        <div className="rounded-xl border border-border bg-card p-8 text-center text-xs text-muted-foreground shadow-sm">
           No evaluations match this status filter.
         </div>
       ) : (
@@ -115,67 +115,67 @@ export function SchoolExamsPage() {
           {filteredExams.map((exam) => (
             <Card
               key={exam.id}
-              className="border border-[#233148] bg-[#0c1628] text-slate-100 min-w-0 hover:border-[#384c6e] transition-colors flex flex-col justify-between"
+              className="border border-border bg-card text-card-foreground min-w-0 hover:border-primary/40 transition-colors flex flex-col justify-between shadow-sm"
             >
               <CardContent className="p-5 space-y-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                      <span className="text-[11px] font-semibold text-[#58c4e8]">
+                      <span className="text-[11px] font-semibold text-primary">
                         {exam.cohort === "year_6" ? "Year 6 (Primary 6)" : "Year 9 (JSS 3)"}
                       </span>
-                      <span className="text-slate-600">•</span>
-                      <span className="text-[11px] text-slate-300 font-medium">{exam.subject}</span>
+                      <span className="text-muted-foreground">•</span>
+                      <span className="text-[11px] text-muted-foreground font-medium">{exam.subject}</span>
                     </div>
-                    <h3 className="text-base sm:text-lg font-bold text-[#71c9ed] mt-1 leading-snug">
+                    <h3 className="text-base sm:text-lg font-bold text-foreground mt-1 leading-snug">
                       {exam.title}
                     </h3>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
-                      Target: <span className="text-slate-200">{exam.class_name || "School-wide Cohort"}</span>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      Target: <span className="text-foreground font-medium">{exam.class_name || "School-wide Cohort"}</span>
                     </p>
                   </div>
                   <span
                     className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold flex-shrink-0 border ${
                       exam.status === "Scheduled"
-                        ? "bg-sky-500/10 text-sky-300 border-sky-500/30"
+                        ? "bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/30"
                         : exam.status === "Completed"
-                        ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
-                        : "bg-slate-700/40 text-slate-400 border-slate-700"
+                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+                        : "bg-muted text-muted-foreground border-border"
                     }`}
                   >
                     {exam.status}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-[#1c2940] text-xs text-slate-300">
-                  <div className="rounded-lg bg-[#071023] p-2">
-                    <p className="text-[10px] text-slate-400">Date</p>
-                    <p className="font-semibold text-white mt-0.5 truncate">{exam.exam_date}</p>
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/60 text-xs text-muted-foreground">
+                  <div className="rounded-lg bg-muted/40 p-2">
+                    <p className="text-[10px] text-muted-foreground">Date</p>
+                    <p className="font-semibold text-foreground mt-0.5 truncate">{exam.exam_date}</p>
                     {exam.start_time && (
-                      <p className="text-[10px] text-slate-400 mt-0.5">{exam.start_time}</p>
+                      <p className="text-[10px] text-muted-foreground mt-0.5">{exam.start_time}</p>
                     )}
                   </div>
-                  <div className="rounded-lg bg-[#071023] p-2">
-                    <p className="text-[10px] text-slate-400">Duration</p>
-                    <p className="font-semibold text-white mt-0.5 truncate">{exam.duration_minutes} Mins</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">{exam.question_count} Questions</p>
+                  <div className="rounded-lg bg-muted/40 p-2">
+                    <p className="text-[10px] text-muted-foreground">Duration</p>
+                    <p className="font-semibold text-foreground mt-0.5 truncate">{exam.duration_minutes} Mins</p>
+                    <p className="text-[10px] text-muted-foreground mt-0.5">{exam.question_count} Questions</p>
                   </div>
-                  <div className="rounded-lg bg-[#071023] p-2">
-                    <p className="text-[10px] text-slate-400">Hall Seating</p>
-                    <p className="font-semibold text-[#7dd3fc] mt-0.5 truncate">
+                  <div className="rounded-lg bg-muted/40 p-2">
+                    <p className="text-[10px] text-muted-foreground">Hall Seating</p>
+                    <p className="font-semibold text-primary mt-0.5 truncate">
                       {exam.eligibleStudentCount || 0} Candidates
                     </p>
-                    <p className="text-[10px] text-emerald-400 mt-0.5">Pass: {exam.passing_score}%</p>
+                    <p className="text-[10px] text-emerald-600 dark:text-emerald-400 mt-0.5">Pass: {exam.passing_score}%</p>
                   </div>
                 </div>
 
-                <div className="pt-2 flex items-center justify-between border-t border-[#1c2940]">
+                <div className="pt-2 flex items-center justify-between border-t border-border/60">
                   <Button
                     variant="ghost"
                     size="sm"
                     disabled={isDeletingId === exam.id}
                     onClick={() => handleDeleteExam(exam.id, exam.title)}
-                    className="h-8 px-2 text-xs text-red-400 hover:text-red-300 hover:bg-red-500/10"
+                    className="h-8 px-2 text-xs text-destructive hover:bg-destructive/10"
                   >
                     <Trash2 className="mr-1 h-3.5 w-3.5" />
                     Cancel
@@ -187,7 +187,7 @@ export function SchoolExamsPage() {
                       setSelectedRosterExam(exam);
                       setRosterDialogOpen(true);
                     }}
-                    className="bg-[#2184a7] text-white hover:bg-[#2c9bc2] text-xs font-semibold"
+                    className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold"
                   >
                     <Users className="mr-1.5 h-3.5 w-3.5" />
                     Review Seating Roster

@@ -95,20 +95,20 @@ export function SchoolOverviewPage() {
           <Button
             variant="outline"
             onClick={() => navigate("/dashboard/school/reports")}
-            className="border-[#2d9dc6] bg-transparent text-[#55c8ed] hover:bg-[#123047] h-9 text-xs sm:text-sm"
+            className="border-border bg-card text-foreground hover:bg-accent h-9 text-xs sm:text-sm font-medium"
           >
             View reports
           </Button>
           <Button
             onClick={() => setStudentDialogOpen(true)}
-            className="bg-[#2184a7] text-white hover:bg-[#2c9bc2] h-9 text-xs sm:text-sm"
+            className="bg-primary text-primary-foreground hover:bg-primary/90 h-9 text-xs sm:text-sm font-semibold"
           >
             <Plus className="mr-1.5 h-3.5 w-3.5" />
             Add student
           </Button>
           <Button
             onClick={() => navigate("/dashboard/school/assignments")}
-            className="bg-[#3bc2f3] text-[#041c2d] hover:bg-[#6cd8ff] h-9 text-xs sm:text-sm font-semibold"
+            className="bg-sky-500 text-white hover:bg-sky-600 dark:bg-[#3bc2f3] dark:text-[#041c2d] dark:hover:bg-[#6cd8ff] h-9 text-xs sm:text-sm font-semibold"
           >
             <BookOpen className="mr-1.5 h-3.5 w-3.5" />
             Assign practice
@@ -125,11 +125,11 @@ export function SchoolOverviewPage() {
 
       {/* Main Grid: Overview & Activity */}
       <div className="mt-6 sm:mt-8 grid grid-cols-1 xl:grid-cols-[1.5fr_1fr] gap-4 sm:gap-6">
-        <Card className="border border-[#2a3852] bg-[#151e33] text-slate-100 min-w-0">
-          <CardHeader className="border-b border-[#202b43] pb-4">
+        <Card className="border border-border bg-card text-card-foreground shadow-sm min-w-0">
+          <CardHeader className="border-b border-border pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold text-[#71c9ed]">Performance Overview</CardTitle>
-              <span className="rounded-xl bg-[#25334b] px-2.5 py-1 text-[11px] text-[#7bd7f2]">Real-Time Metrics</span>
+              <CardTitle className="text-base font-bold text-foreground dark:text-[#71c9ed]">Performance Overview</CardTitle>
+              <span className="rounded-xl bg-muted px-2.5 py-1 text-[11px] font-semibold text-primary">Real-Time Metrics</span>
             </div>
           </CardHeader>
           <CardContent className="p-5 sm:p-6 space-y-6">
@@ -152,12 +152,12 @@ export function SchoolOverviewPage() {
             ].map((item) => (
               <div key={item.label} className="space-y-2">
                 <div className="flex items-center justify-between text-xs sm:text-sm">
-                  <span className="text-slate-200">{item.label}</span>
-                  <span className="font-bold text-white">
+                  <span className="text-muted-foreground font-medium">{item.label}</span>
+                  <span className="font-bold text-foreground">
                     {item.value > 0 ? `${item.value}%` : "—"}
                   </span>
                 </div>
-                <div className="h-2.5 overflow-hidden rounded-full bg-[#0e1729]">
+                <div className="h-2.5 overflow-hidden rounded-full bg-muted">
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${item.color}`}
                     style={{ width: `${Math.min(item.value, 100)}%` }}
@@ -166,27 +166,27 @@ export function SchoolOverviewPage() {
               </div>
             ))}
 
-            <div className="pt-2 flex flex-wrap gap-2 text-xs text-slate-300">
-              <span className="rounded-md border border-[#2a3852] bg-[#0c1527] px-3 py-1.5 flex items-center gap-1.5">
-                <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
+            <div className="pt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
+              <span className="rounded-md border border-border bg-muted/50 px-3 py-1.5 flex items-center gap-1.5 text-foreground font-medium">
+                <Sparkles className="h-3.5 w-3.5 text-primary" />
                 Top subject: {topSubjectInfo.subject} ({topSubjectInfo.score > 0 ? `${topSubjectInfo.score}%` : "—"})
               </span>
-              <span className="rounded-md border border-[#2a3852] bg-[#0c1527] px-3 py-1.5">
+              <span className="rounded-md border border-border bg-muted/50 px-3 py-1.5">
                 Target: 75% curriculum standard
               </span>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="border border-[#2a3852] bg-[#151e33] text-slate-100 min-w-0">
-          <CardHeader className="border-b border-[#202b43] pb-4">
+        <Card className="border border-border bg-card text-card-foreground shadow-sm min-w-0">
+          <CardHeader className="border-b border-border pb-4">
             <div className="flex items-center justify-between">
-              <CardTitle className="text-base font-semibold text-[#71c9ed]">Top Student Achievers</CardTitle>
+              <CardTitle className="text-base font-bold text-foreground dark:text-[#71c9ed]">Top Student Achievers</CardTitle>
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => navigate("/dashboard/school/leaderboard")}
-                className="text-xs text-[#7bd7f2] hover:text-white p-0 h-auto"
+                className="text-xs text-primary hover:underline p-0 h-auto font-semibold"
               >
                 View all →
               </Button>
@@ -194,12 +194,12 @@ export function SchoolOverviewPage() {
           </CardHeader>
           <CardContent className="space-y-3 p-4 sm:p-5">
             {topStudents.length === 0 ? (
-              <div className="p-6 text-center text-xs text-slate-400 space-y-2">
-                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-[#162742] text-slate-500">
+              <div className="p-6 text-center text-xs text-muted-foreground space-y-2">
+                <div className="mx-auto flex h-10 w-10 items-center justify-center rounded-xl bg-muted text-muted-foreground">
                   <Award className="h-5 w-5" />
                 </div>
-                <p className="font-semibold text-slate-300">No student activity recorded yet</p>
-                <p className="text-[11px] text-slate-500 max-w-xs mx-auto">
+                <p className="font-semibold text-foreground">No student activity recorded yet</p>
+                <p className="text-[11px] text-muted-foreground max-w-xs mx-auto">
                   Learners and points will automatically populate as students complete practice quizzes and exams.
                 </p>
               </div>
@@ -207,20 +207,20 @@ export function SchoolOverviewPage() {
               topStudents.map((st, idx) => (
                 <div
                   key={st.id}
-                  className="flex items-center justify-between rounded-lg border border-[#233148] bg-[#0d1628] p-3 transition-colors hover:border-[#384c6e]"
+                  className="flex items-center justify-between rounded-lg border border-border bg-card hover:bg-accent/40 p-3 transition-colors"
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[#152943] text-base flex-shrink-0">
+                    <div className="flex h-9 w-9 items-center justify-center rounded-full bg-muted text-base flex-shrink-0">
                       {medals[idx] || "⭐"}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-semibold text-white text-sm truncate">{st.name}</p>
-                      <p className="text-xs text-slate-400 truncate">
+                      <p className="font-semibold text-foreground text-sm truncate">{st.name}</p>
+                      <p className="text-xs text-muted-foreground truncate">
                         {st.class_year === "year_6" ? "Year 6 • Common Entrance" : "Year 9 • BECE"} • {(st.lifetime_ep || 0).toLocaleString()} EP
                       </p>
                     </div>
                   </div>
-                  <span className="text-sm font-bold text-[#7dd3fc] flex-shrink-0">
+                  <span className="text-sm font-bold text-primary flex-shrink-0">
                     {st.avgScore > 0 ? `${st.avgScore}%` : "—"}
                   </span>
                 </div>

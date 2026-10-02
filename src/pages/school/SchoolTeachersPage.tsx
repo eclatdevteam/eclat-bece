@@ -49,7 +49,7 @@ export function SchoolTeachersPage() {
       actions={
         <Button
           onClick={() => setAddDialogOpen(true)}
-          className="bg-[#3bc2f3] text-[#041c2d] hover:bg-[#6cd8ff] font-semibold text-xs sm:text-sm"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs sm:text-sm"
         >
           <Plus className="mr-1.5 h-4 w-4" />
           Add teacher
@@ -57,24 +57,24 @@ export function SchoolTeachersPage() {
       }
     >
       {/* Search Bar & Department Filter */}
-      <div className="mb-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 rounded-xl border border-[#2a3852] bg-[#0f182b] p-3 text-xs">
-        <div className="flex items-center gap-2 flex-1 rounded-lg border border-[#34415b] bg-[#071023] px-3 py-2 text-slate-200">
-          <Search className="h-4 w-4 text-slate-400 flex-shrink-0" />
+      <div className="mb-6 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3 rounded-xl border border-border bg-card p-3 text-xs shadow-sm">
+        <div className="flex items-center gap-2 flex-1 rounded-lg border border-border bg-muted/60 px-3 py-2 text-foreground focus-within:border-primary/50 focus-within:ring-1 focus-within:ring-primary/20">
+          <Search className="h-4 w-4 text-muted-foreground flex-shrink-0" />
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search teachers by name, subject, department, or class arm..."
-            className="w-full bg-transparent text-xs text-white placeholder:text-slate-400 focus:outline-none"
+            className="w-full bg-transparent text-xs text-foreground placeholder:text-muted-foreground focus:outline-none"
           />
         </div>
 
         {departments.length > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-[11px] text-slate-400 flex-shrink-0">Department:</span>
+            <span className="text-[11px] text-muted-foreground flex-shrink-0">Department:</span>
             <select
               value={deptFilter}
               onChange={(e) => setDeptFilter(e.target.value)}
-              className="h-9 rounded-lg border border-[#34415b] bg-[#071023] px-3 text-xs text-white"
+              className="h-9 rounded-lg border border-border bg-card px-3 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary/30"
             >
               <option value="all">All Departments ({teachers.length})</option>
               {departments.map((d) => (
@@ -89,20 +89,20 @@ export function SchoolTeachersPage() {
 
       {/* Faculty List / Empty State */}
       {teachers.length === 0 ? (
-        <Card className="border border-dashed border-[#2a3852] bg-[#0c1628]/60 p-12 text-center">
+        <Card className="border border-dashed border-border bg-card/60 p-12 text-center shadow-sm">
           <CardContent className="space-y-4 max-w-md mx-auto">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#162945] text-[#71c9ed]">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-muted text-primary">
               <Users className="h-7 w-7" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">No Faculty Members Registered</h3>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+              <h3 className="text-lg font-bold text-foreground">No Faculty Members Registered</h3>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                 Add faculty members to assign departments, allocate subject duties, and appoint lead teachers across class arms.
               </p>
             </div>
             <Button
               onClick={() => setAddDialogOpen(true)}
-              className="bg-[#2184a7] text-white hover:bg-[#2c9bc2] text-xs font-semibold"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold"
             >
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               Add First Teacher
@@ -110,7 +110,7 @@ export function SchoolTeachersPage() {
           </CardContent>
         </Card>
       ) : filteredTeachers.length === 0 ? (
-        <div className="rounded-xl border border-[#233148] bg-[#0c1628] p-8 text-center text-xs text-slate-400">
+        <div className="rounded-xl border border-border bg-card p-8 text-center text-xs text-muted-foreground shadow-sm">
           No faculty members match your search criteria.
         </div>
       ) : (
@@ -118,19 +118,19 @@ export function SchoolTeachersPage() {
           {filteredTeachers.map((teacher) => (
             <Card
               key={teacher.id}
-              className="border border-[#233148] bg-[#151e33] text-slate-100 hover:border-[#384c6e] transition-colors flex flex-col justify-between"
+              className="border border-border bg-card text-card-foreground hover:border-primary/40 transition-colors flex flex-col justify-between shadow-sm"
             >
               <CardContent className="p-5 space-y-4">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0 flex-1">
-                    <h3 className="font-bold text-white text-base truncate">{teacher.full_name}</h3>
-                    <p className="text-xs text-[#71c9ed] truncate">{teacher.department || "Faculty Member"}</p>
+                    <h3 className="font-bold text-foreground text-base truncate">{teacher.full_name}</h3>
+                    <p className="text-xs text-primary font-semibold truncate">{teacher.department || "Faculty Member"}</p>
                   </div>
                   <span
                     className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold border flex-shrink-0 ${
                       teacher.status === "Active"
-                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
-                        : "border-slate-600 bg-slate-700/30 text-slate-400"
+                        ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                        : "border-border bg-muted text-muted-foreground"
                     }`}
                   >
                     {teacher.status}
@@ -139,46 +139,46 @@ export function SchoolTeachersPage() {
 
                 {/* Primary Subject */}
                 {teacher.primary_subject && (
-                  <div className="flex items-center gap-1.5 text-xs text-slate-300">
-                    <BookOpen className="h-3.5 w-3.5 text-[#58c4e8] flex-shrink-0" />
-                    <span>Specialization: <strong className="text-white">{teacher.primary_subject}</strong></span>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <BookOpen className="h-3.5 w-3.5 text-primary flex-shrink-0" />
+                    <span>Specialization: <strong className="text-foreground">{teacher.primary_subject}</strong></span>
                   </div>
                 )}
 
                 {/* Contact info if provided */}
-                <div className="space-y-1 text-xs text-slate-400 border-t border-[#202b43] pt-2">
+                <div className="space-y-1 text-xs text-muted-foreground border-t border-border/60 pt-2">
                   {teacher.email && (
                     <div className="flex items-center gap-1.5 truncate">
-                      <Mail className="h-3.5 w-3.5 text-slate-500 flex-shrink-0" />
+                      <Mail className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                       <span className="truncate">{teacher.email}</span>
                     </div>
                   )}
                   {teacher.phone && (
                     <div className="flex items-center gap-1.5 truncate">
-                      <Phone className="h-3.5 w-3.5 text-slate-500 flex-shrink-0" />
+                      <Phone className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
                       <span className="truncate">{teacher.phone}</span>
                     </div>
                   )}
                 </div>
 
                 {/* Assigned Class Arms */}
-                <div className="space-y-1.5 pt-2 border-t border-[#233148] text-xs">
-                  <div className="flex items-center justify-between text-[11px] text-slate-400 font-medium">
+                <div className="space-y-1.5 pt-2 border-t border-border/60 text-xs">
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground font-medium">
                     <span>Allocated Class Arms:</span>
-                    <span className="text-sky-300 font-semibold">
+                    <span className="text-primary font-semibold">
                       {teacher.assigned_classes.length} {teacher.assigned_classes.length === 1 ? "Class" : "Classes"}
                     </span>
                   </div>
                   {teacher.assigned_classes.length === 0 ? (
-                    <p className="text-[11px] text-slate-500 italic">No class arms currently assigned.</p>
+                    <p className="text-[11px] text-muted-foreground italic">No class arms currently assigned.</p>
                   ) : (
                     <div className="flex flex-wrap gap-1.5 pt-1">
                       {teacher.assigned_classes.map((clsName) => (
                         <span
                           key={clsName}
-                          className="inline-flex items-center gap-1 rounded-md border border-[#34415b] bg-[#0c1628] px-2 py-0.5 text-[10px] text-slate-200"
+                          className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/60 px-2 py-0.5 text-[10px] text-foreground"
                         >
-                          <Building2 className="h-2.5 w-2.5 text-[#58c4e8]" />
+                          <Building2 className="h-2.5 w-2.5 text-primary" />
                           {clsName}
                         </span>
                       ))}
@@ -187,7 +187,7 @@ export function SchoolTeachersPage() {
                 </div>
 
                 {/* Action Trigger */}
-                <div className="pt-2 border-t border-[#202b43] flex justify-end">
+                <div className="pt-2 border-t border-border/60 flex justify-end">
                   <Button
                     variant="outline"
                     size="sm"
@@ -195,7 +195,7 @@ export function SchoolTeachersPage() {
                       setSelectedEditTeacher(teacher);
                       setEditDialogOpen(true);
                     }}
-                    className="h-7 px-2.5 border-[#34415b] bg-[#0c1628] text-xs text-slate-200 hover:text-white hover:border-[#3bc2f3]"
+                    className="h-7 px-2.5 border-border bg-card text-xs text-foreground hover:bg-accent hover:border-primary/50"
                   >
                     <Edit2 className="mr-1 h-3 w-3" />
                     Edit & Allocate

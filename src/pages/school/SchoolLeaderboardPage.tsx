@@ -54,7 +54,7 @@ export function SchoolLeaderboardPage() {
             refreshSchoolData();
           }}
           disabled={loading}
-          className="border-slate-700 bg-slate-900/60 text-slate-200 hover:bg-slate-800 text-xs sm:text-sm"
+          className="text-xs sm:text-sm"
         >
           <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${loading ? "animate-spin" : ""}`} />
           Refresh rankings
@@ -68,50 +68,50 @@ export function SchoolLeaderboardPage() {
             label: "Total Institution EP",
             value: gamificationTotals.totalEP.toLocaleString(),
             hint: "Cumulative Éclat Points",
-            tone: "text-[#66d7ff]",
+            tone: "text-sky-600 dark:text-[#66d7ff]",
           },
           {
             label: "School Top Achiever",
             value: topStudent ? topStudent.name.split(" ")[0] : "—",
             hint: topStudent ? `${(topStudent.lifetime_ep || 0).toLocaleString()} EP (Level ${topStudent.current_level})` : "No activity yet",
-            tone: "text-amber-400",
+            tone: "text-amber-600 dark:text-amber-400",
           },
           {
             label: "Active Competitors",
             value: `${gamificationTotals.activeLearnersCount} / ${students.length}`,
             hint: "Learners earning points",
-            tone: "text-emerald-400",
+            tone: "text-emerald-600 dark:text-emerald-400",
           },
           {
             label: "Highest League Tier",
             value: `Tier ${maxLeagueTier}`,
             hint: "Tier 1: Starter to Tier 8: Legend",
-            tone: "text-purple-400",
+            tone: "text-purple-600 dark:text-purple-400",
           },
         ].map((item) => (
-          <Card key={item.label} className="border border-[#2a3852] bg-[#151e33] text-slate-100 min-w-0">
+          <Card key={item.label} className="border-border bg-card text-card-foreground min-w-0 shadow-sm">
             <CardContent className="p-4 sm:p-5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-400 truncate">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground truncate">
                 {item.label}
               </p>
               <p className={`mt-2 text-2xl sm:text-3xl font-black ${item.tone} truncate`}>
                 {item.value}
               </p>
-              <p className="mt-1 text-[11px] text-slate-400 truncate">{item.hint}</p>
+              <p className="mt-1 text-[11px] text-muted-foreground truncate">{item.hint}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
       {/* Main Tab Navigation */}
-      <div className="mb-6 flex flex-wrap items-center gap-2 border-b border-[#26344d] pb-3 text-xs">
+      <div className="mb-6 flex flex-wrap items-center gap-2 border-b border-border pb-3 text-xs">
         <button
           type="button"
           onClick={() => setActiveTab("classroom")}
           className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold transition-colors ${
             activeTab === "classroom"
-              ? "bg-[#2184a7] text-white shadow-sm"
-              : "text-slate-400 hover:text-white hover:bg-[#15233c]"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted"
           }`}
         >
           <Building2 className="h-4 w-4" />
@@ -122,8 +122,8 @@ export function SchoolLeaderboardPage() {
           onClick={() => setActiveTab("national")}
           className={`flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-xs font-semibold transition-colors ${
             activeTab === "national"
-              ? "bg-[#2184a7] text-white shadow-sm"
-              : "text-slate-400 hover:text-white hover:bg-[#15233c]"
+              ? "bg-primary text-primary-foreground shadow-xs"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted"
           }`}
         >
           <Globe className="h-4 w-4" />

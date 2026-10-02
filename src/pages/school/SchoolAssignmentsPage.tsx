@@ -33,7 +33,7 @@ export function SchoolAssignmentsPage() {
       actions={
         <Button
           onClick={() => setAssignOpen(true)}
-          className="bg-[#3bc2f3] text-[#041c2d] hover:bg-[#6cd8ff] font-semibold text-xs sm:text-sm"
+          className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs sm:text-sm shadow-sm"
         >
           <BookOpen className="mr-1.5 h-4 w-4" />
           Assign practice
@@ -48,13 +48,13 @@ export function SchoolAssignmentsPage() {
           ["In Progress", assignmentStats.inProgress.toString(), "Pending student submissions"],
           ["Enrolled Learners", students.length.toString(), "Active school roster"],
         ].map(([label, value, hint]) => (
-          <Card key={label} className="border border-[#2a3852] bg-[#151e33] text-slate-100 min-w-0">
+          <Card key={label} className="border-border bg-card text-card-foreground min-w-0 shadow-sm">
             <CardContent className="p-4 sm:p-5">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-300 truncate">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-muted-foreground truncate">
                 {label}
               </p>
-              <p className="mt-2 text-2xl sm:text-3xl font-black text-white truncate">{value}</p>
-              <p className="mt-1 text-[11px] text-[#51c6eb] truncate">{hint}</p>
+              <p className="mt-2 text-2xl sm:text-3xl font-black text-foreground truncate">{value}</p>
+              <p className="mt-1 text-[11px] text-sky-600 dark:text-[#51c6eb] font-medium truncate">{hint}</p>
             </CardContent>
           </Card>
         ))}
@@ -67,20 +67,20 @@ export function SchoolAssignmentsPage() {
 
       {/* Empty State vs Assignments List */}
       {assignments.length === 0 ? (
-        <Card className="border border-dashed border-[#2a3852] bg-[#0c1628]/60 p-12 text-center">
+        <Card className="border border-dashed border-border bg-card/60 p-12 text-center shadow-sm">
           <CardContent className="space-y-4 max-w-md mx-auto">
-            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#162945] text-[#71c9ed]">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-sky-50 text-sky-600 dark:bg-[#162945] dark:text-[#71c9ed]">
               <BookOpen className="h-7 w-7" />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">No Assignments Created Yet</h3>
-              <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+              <h3 className="text-lg font-bold text-foreground">No Assignments Created Yet</h3>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                 Assign customized practice quizzes to your learners to reinforce weak curriculum topics and track individual submissions.
               </p>
             </div>
             <Button
               onClick={() => setAssignOpen(true)}
-              className="bg-[#2184a7] text-white hover:bg-[#2c9bc2] text-xs font-semibold"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold"
             >
               <Plus className="mr-1.5 h-3.5 w-3.5" />
               Assign First Practice
@@ -96,29 +96,29 @@ export function SchoolAssignmentsPage() {
             return (
               <Card
                 key={assignment.id}
-                className="border border-[#233148] bg-[#0c1628] text-slate-100 min-w-0 hover:border-[#384c6e] transition-colors"
+                className="border-border bg-card text-card-foreground min-w-0 hover:border-primary/40 transition-colors shadow-sm"
               >
                 <CardContent className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-4 sm:p-5">
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-base sm:text-lg font-bold text-white truncate">
+                      <p className="text-base sm:text-lg font-bold text-foreground truncate">
                         {assignment.subject}: {topicsLabel}
                       </p>
                       <span
                         className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold border ${
                           isCompleted
-                            ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
+                            ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
                             : assignment.status === "in_progress"
-                            ? "bg-sky-500/10 text-sky-300 border-sky-500/30"
-                            : "bg-amber-500/10 text-amber-300 border-amber-500/30"
+                            ? "bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/30"
+                            : "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30"
                         }`}
                       >
                         {isCompleted ? "Completed" : assignment.status === "in_progress" ? "In Progress" : "Pending"}
                       </span>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-400">
-                      <span className="text-[#58c4e8] font-medium">Assigned to: {assignment.student_name}</span>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                      <span className="text-sky-600 dark:text-[#58c4e8] font-semibold">Assigned to: {assignment.student_name}</span>
                       <span>•</span>
                       <span>{assignment.num_questions} Questions</span>
                       <span>•</span>
@@ -133,7 +133,7 @@ export function SchoolAssignmentsPage() {
                       variant="outline"
                       size="sm"
                       onClick={() => handleOpenSubmissions(assignment)}
-                      className="border-slate-700 bg-slate-900/60 text-xs text-slate-200 hover:bg-slate-800"
+                      className="text-xs"
                     >
                       View submissions
                       <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
@@ -162,48 +162,48 @@ export function SchoolAssignmentsPage() {
       {/* View Submissions Dialog */}
       {selectedSubmissionAssignment && (
         <Dialog open={submissionsOpen} onOpenChange={setSubmissionsOpen}>
-          <DialogContent className="border-[#2a3852] bg-[#151e33] text-slate-100 w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+          <DialogContent className="border-border bg-card text-card-foreground w-[95vw] sm:max-w-lg max-h-[90vh] overflow-y-auto p-4 sm:p-6">
             <DialogHeader>
-              <DialogTitle className="text-xl text-white">Assignment Submissions</DialogTitle>
-              <DialogDescription className="text-slate-400">
+              <DialogTitle className="text-xl text-foreground">Assignment Submissions</DialogTitle>
+              <DialogDescription className="text-muted-foreground">
                 {selectedSubmissionAssignment.subject} • {selectedSubmissionAssignment.topics.join(", ") || "General"}
               </DialogDescription>
             </DialogHeader>
 
             <div className="space-y-4 py-3 text-xs">
               {/* Task Details Summary Card */}
-              <div className="rounded-xl border border-[#233148] bg-[#0c1628] p-4 space-y-2 text-slate-300">
+              <div className="rounded-xl border border-border bg-muted/40 p-4 space-y-2 text-foreground">
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Questions:</span>
-                  <span className="font-semibold text-white">{selectedSubmissionAssignment.num_questions}</span>
+                  <span className="text-muted-foreground">Questions:</span>
+                  <span className="font-semibold text-foreground">{selectedSubmissionAssignment.num_questions}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Time Limit:</span>
-                  <span className="font-semibold text-white">{selectedSubmissionAssignment.duration} minutes</span>
+                  <span className="text-muted-foreground">Time Limit:</span>
+                  <span className="font-semibold text-foreground">{selectedSubmissionAssignment.duration} minutes</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Assigned On:</span>
-                  <span className="font-semibold text-white">
+                  <span className="text-muted-foreground">Assigned On:</span>
+                  <span className="font-semibold text-foreground">
                     {new Date(selectedSubmissionAssignment.created_at).toLocaleString()}
                   </span>
                 </div>
               </div>
 
               {/* Student Submission Card */}
-              <div className="rounded-xl border border-[#2a3852] bg-[#0d172a] p-4 space-y-3">
-                <p className="text-[11px] uppercase tracking-wider font-semibold text-slate-400">
+              <div className="rounded-xl border border-border bg-card p-4 space-y-3 shadow-xs">
+                <p className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground">
                   Learner Submission Status
                 </p>
-                <div className="flex items-center justify-between border-b border-[#202c46] pb-3">
+                <div className="flex items-center justify-between border-b border-border pb-3">
                   <div>
-                    <p className="font-bold text-white text-sm">{selectedSubmissionAssignment.student_name}</p>
-                    <p className="text-[11px] text-slate-400">Student ID: {selectedSubmissionAssignment.student_id.slice(0, 8)}</p>
+                    <p className="font-bold text-foreground text-sm">{selectedSubmissionAssignment.student_name}</p>
+                    <p className="text-[11px] text-muted-foreground">Student ID: {selectedSubmissionAssignment.student_id.slice(0, 8)}</p>
                   </div>
                   <span
                     className={`rounded-full px-2.5 py-0.5 text-[10px] font-semibold border ${
                       selectedSubmissionAssignment.status === "completed" || selectedSubmissionAssignment.completed_at != null
-                        ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
-                        : "bg-sky-500/10 text-sky-300 border-sky-500/30"
+                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+                        : "bg-sky-500/10 text-sky-700 dark:text-sky-300 border-sky-500/30"
                     }`}
                   >
                     {selectedSubmissionAssignment.status === "completed" || selectedSubmissionAssignment.completed_at != null
@@ -214,24 +214,24 @@ export function SchoolAssignmentsPage() {
 
                 {selectedSubmissionAssignment.completed_at ? (
                   <div className="grid grid-cols-2 gap-2 pt-1 text-center">
-                    <div className="rounded-lg bg-[#091222] p-2.5 border border-[#1e2d48]">
-                      <p className="text-[10px] text-slate-400 uppercase">Score</p>
-                      <p className="text-xl font-black text-emerald-400 mt-0.5">
+                    <div className="rounded-lg bg-muted/50 p-2.5 border border-border">
+                      <p className="text-[10px] text-muted-foreground uppercase">Score</p>
+                      <p className="text-xl font-black text-emerald-600 dark:text-emerald-400 mt-0.5">
                         {selectedSubmissionAssignment.score !== null ? `${selectedSubmissionAssignment.score}%` : "100%"}
                       </p>
                     </div>
-                    <div className="rounded-lg bg-[#091222] p-2.5 border border-[#1e2d48]">
-                      <p className="text-[10px] text-slate-400 uppercase">Completed At</p>
-                      <p className="text-xs font-semibold text-slate-200 mt-1">
+                    <div className="rounded-lg bg-muted/50 p-2.5 border border-border">
+                      <p className="text-[10px] text-muted-foreground uppercase">Completed At</p>
+                      <p className="text-xs font-semibold text-foreground mt-1">
                         {new Date(selectedSubmissionAssignment.completed_at).toLocaleDateString()}
                       </p>
                     </div>
                   </div>
                 ) : (
-                  <div className="rounded-lg bg-[#091222] p-3 text-center text-slate-400 border border-[#1e2d48]">
-                    <Clock className="h-5 w-5 mx-auto text-amber-400 mb-1" />
-                    <p className="font-medium text-slate-200 text-xs">Awaiting Student Submission</p>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
+                  <div className="rounded-lg bg-muted/50 p-3 text-center text-muted-foreground border border-border">
+                    <Clock className="h-5 w-5 mx-auto text-amber-500 mb-1" />
+                    <p className="font-medium text-foreground text-xs">Awaiting Student Submission</p>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
                       This assignment has been dispatched to the learner's dashboard and is waiting to be launched.
                     </p>
                   </div>
@@ -242,7 +242,7 @@ export function SchoolAssignmentsPage() {
             <DialogFooter>
               <Button
                 onClick={() => setSubmissionsOpen(false)}
-                className="bg-[#2184a7] text-white hover:bg-[#2c9bc2] w-full"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 w-full"
               >
                 Close
               </Button>
