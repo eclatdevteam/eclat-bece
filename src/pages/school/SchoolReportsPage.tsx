@@ -1,9 +1,11 @@
-import { useState } from "react";
-import { ChartColumnBig, BarChart3, TrendingUp, Award, Download, FileSpreadsheet } from "lucide-react";
+import { useState, useMemo } from "react";
+import { ChartColumnBig, BarChart3, TrendingUp, Award, Download, AlertTriangle, CheckCircle2, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SchoolLayout } from "@/components/school/SchoolLayout";
-import { ClassAnalyticsDialog, AnalyticsQuizResult } from "@/components/ClassAnalyticsDialog";
+import { ClassAnalyticsDialog } from "@/components/ClassAnalyticsDialog";
+import { CurriculumWeaknessHeatmap } from "@/components/school/CurriculumWeaknessHeatmap";
+import { SchoolAssignPracticeDialog } from "@/components/school/SchoolAssignPracticeDialog";
 import { useSchoolData } from "@/hooks/useSchoolData";
 import { toast } from "sonner";
 
@@ -12,17 +14,129 @@ export function SchoolReportsPage() {
   const [analyticsOpen, setAnalyticsOpen] = useState(false);
   const [analyticsCohort, setAnalyticsCohort] = useState<"Year 9 (BECE)" | "Year 6 (Common Entrance)">("Year 9 (BECE)");
 
-  const { students } = useSchoolData();
+  // Focus drill assignment from heatmap
+  const [assignFocusDialogOpen, setAssignFocusDialogOpen] = useState(false);
+  const [focusConfig, setFocusConfig] = useState<{
+    subject: string;
+    topic: string;
+    cohort: "year_6" | "year_9";
+  }>({
+    subject: "Mathematics",
+    topic: "Algebra",
+    cohort: "year_9",
+  });
 
+  const { school, students, topicMastery, cohortAverages, assignmentStats, refresh } = useSchoolData();
+
+  // Real CSV Export
   const handleExportCSV = () => {
-    toast.success("School performance report prepared for download!");
+    if (students.length === 0) {
+      toast.error("No student records available to export");
+      return;
+    }
+
+    const headers = [
+      "Student Name",
+      "Username",
+      "Unique ID",
+      "Cohort",
+      "Status",
+      "Lifetime EP",
+      "Current Level",
+      "Weekly EP",
+      "Current Streak",
+      "Quizzes Taken",
+      "Average Score (%)",
+      "Mastered Topics",
+      "Weak Topics",
+      "Mastery (%)",
+    ];
+
+    const rows = students.map((s) => [
+      `"${s.name.replace(/"/g, '""')}"`,
+      `"${s.username.replace(/"/g, '""')}"`,
+      `"${s.unique_id || ""}"`,
+      `"${s.class_year === "year_9" ? "Year 9 (BECE)" : s.class_year === "year_6" ? "Year 6 (Common Entrance)" : "Unassigned"}"`,
+      `"${s.status}"`,
+      s.lifetime_ep || 0,
+      s.current_level || 1,
+      s.weekly_ep || 0,
+      s.current_streak || 0,
+      s.quizCount || 0,
+      s.avgScore || 0,
+      s.mastered_topics_count || 0,
+      s.weak_topics_count || 0,
+      `${s.mastery_percentage || 0}%`,
+    ]);
+
+    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const schoolNameSlug = (school?.school_name || "school").toLowerCase().replace(/[^a-z0-9]/g, "_");
+    const dateStr = new Date().toISOString().split("T")[0];
+    link.setAttribute("href", url);
+    link.setAttribute("download", `${schoolNameSlug}_performance_report_${dateStr}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+
+    toast.success("School performance report downloaded successfully!");
   };
 
-  const analyticsStudents = students.map((s) => ({
-    id: s.id,
-    name: s.name,
-    avatar: "🎓",
-  }));
+  // Dynamic Subject Proficiencies from topicMastery
+  const subjectProficiencies = useMemo(() => {
+    const subjects = ["Mathematics", "English Language", "Basic Science", "Social Studies"];
+    return subjects.map((sub) => {
+      const records = topicMastery.filter((m) => m.subject.toLowerCase() === sub.toLowerCase());
+      const score = records.length > 0
+        ? Math.round(records.reduce((acc, m) => acc + m.rolling_accuracy, 0) / records.length)
+        : cohortAverages.overall > 0 ? cohortAverages.overall : 0;
+
+      return {
+        subject: sub,
+        score,
+        target: 75,
+        testedCount: records.length,
+      };
+    });
+  }, [topicMastery, cohortAverages.overall]);
+
+  // Dynamic BECE Readiness Index
+  const beceReadiness = useMemo(() => {
+    const y9 = students.filter((s) => s.class_year === "year_9");
+    const tested = y9.filter((s) => s.quizCount > 0);
+    const distinctionCandidates = tested.filter((s) => s.avgScore >= 70);
+    const distinctionRate = tested.length > 0
+      ? Math.round((distinctionCandidates.length / tested.length) * 100)
+      : (cohortAverages.year_9 >= 70 ? cohortAverages.year_9 : 0);
+
+    const interventionsNeeded = y9.filter((s) => (s.quizCount > 0 && s.avgScore < 50) || s.weak_topics_count > 2).length;
+
+    return {
+      totalCandidates: y9.length,
+      testedCandidates: tested.length,
+      distinctionRate,
+      interventionsNeeded,
+    };
+  }, [students, cohortAverages.year_9]);
+
+  // Cohort breakdown
+  const year9Students = useMemo(() => students.filter((s) => s.class_year === "year_9"), [students]);
+  const year6Students = useMemo(() => students.filter((s) => s.class_year === "year_6"), [students]);
+  const year9Quizzes = useMemo(() => year9Students.reduce((acc, s) => acc + s.quizCount, 0), [year9Students]);
+  const year6Quizzes = useMemo(() => year6Students.reduce((acc, s) => acc + s.quizCount, 0), [year6Students]);
+
+  const analyticsStudents = useMemo(() => {
+    return students
+      .filter((s) => analyticsCohort === "Year 9 (BECE)" ? s.class_year === "year_9" : s.class_year === "year_6")
+      .map((s) => ({
+        id: s.id,
+        name: s.name,
+        avatar: s.avatar || "🎓",
+      }));
+  }, [students, analyticsCohort]);
 
   return (
     <SchoolLayout
@@ -55,7 +169,7 @@ export function SchoolReportsPage() {
       <div className="mb-6 flex flex-wrap items-center gap-2 border-b border-[#26344d] pb-3 text-xs">
         {[
           { key: "overview", label: "Executive Overview" },
-          { key: "subjects", label: "Subject Breakdown" },
+          { key: "subjects", label: "Curriculum Topic Heatmap" },
           { key: "cohorts", label: "Cohort Comparisons" },
         ].map((tab) => (
           <button
@@ -76,10 +190,30 @@ export function SchoolReportsPage() {
       {/* Metrics Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
         {[
-          { label: "Cohort Average", value: "78%", hint: "↑ 4.2% from last term", tone: "text-[#66d7ff]" },
-          { label: "Math Mastery", value: "81%", hint: "Highest performing subject", tone: "text-[#48d7b7]" },
-          { label: "English Fluency", value: "75%", hint: "8% comprehension gain", tone: "text-[#c4a9ff]" },
-          { label: "Assignment Completion", value: "92%", hint: "228 of 248 learners", tone: "text-[#ffca6a]" },
+          {
+            label: "Institutional Average",
+            value: cohortAverages.overall > 0 ? `${cohortAverages.overall}%` : "—",
+            hint: "Across all tested students",
+            tone: "text-[#66d7ff]",
+          },
+          {
+            label: "Year 9 BECE Benchmark",
+            value: cohortAverages.year_9 > 0 ? `${cohortAverages.year_9}%` : "—",
+            hint: `${year9Students.length} candidates enrolled`,
+            tone: "text-[#48d7b7]",
+          },
+          {
+            label: "Year 6 CE Benchmark",
+            value: cohortAverages.year_6 > 0 ? `${cohortAverages.year_6}%` : "—",
+            hint: `${year6Students.length} candidates enrolled`,
+            tone: "text-[#c4a9ff]",
+          },
+          {
+            label: "Task Completion Rate",
+            value: `${assignmentStats.completionRate}%`,
+            hint: `${assignmentStats.completed} of ${assignmentStats.total} completed`,
+            tone: "text-[#ffca6a]",
+          },
         ].map((item) => (
           <Card key={item.label} className="border border-[#2a3852] bg-[#151e33] text-slate-100 min-w-0">
             <CardContent className="p-4 sm:p-5">
@@ -95,7 +229,7 @@ export function SchoolReportsPage() {
         ))}
       </div>
 
-      {/* Report Content Panels */}
+      {/* Tab: Executive Overview */}
       {activeTab === "overview" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           <Card className="border border-[#2a3852] bg-[#151e33] text-slate-100 min-w-0">
@@ -103,21 +237,19 @@ export function SchoolReportsPage() {
               <CardTitle className="text-base font-semibold text-[#71c9ed]">Subject Proficiencies</CardTitle>
             </CardHeader>
             <CardContent className="p-5 space-y-4">
-              {[
-                { subject: "Mathematics", score: 81, target: 80 },
-                { subject: "English Language", score: 75, target: 75 },
-                { subject: "Basic Science", score: 79, target: 75 },
-                { subject: "Social Studies", score: 73, target: 70 },
-              ].map((sub) => (
+              {subjectProficiencies.map((sub) => (
                 <div key={sub.subject} className="space-y-1.5">
                   <div className="flex justify-between text-xs sm:text-sm">
                     <span className="text-slate-200">{sub.subject}</span>
-                    <span className="font-bold text-white">{sub.score}% (Target: {sub.target}%)</span>
+                    <span className="font-bold text-white">
+                      {sub.score > 0 ? `${sub.score}%` : "—"}{" "}
+                      <span className="text-slate-400 text-xs font-normal">(Target: {sub.target}%)</span>
+                    </span>
                   </div>
                   <div className="h-2 rounded-full bg-[#0a1426] overflow-hidden">
                     <div
-                      className="h-full bg-gradient-to-r from-sky-500 to-cyan-400 rounded-full"
-                      style={{ width: `${sub.score}%` }}
+                      className="h-full bg-gradient-to-r from-sky-500 to-cyan-400 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(sub.score, 100)}%` }}
                     />
                   </div>
                 </div>
@@ -133,55 +265,45 @@ export function SchoolReportsPage() {
               <div className="rounded-xl border border-sky-500/20 bg-sky-500/5 p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-sky-300 font-semibold uppercase tracking-wider">Projected Distinction Rate</span>
-                  <span className="text-xl font-black text-sky-400">84%</span>
+                  <span className="text-xl font-black text-sky-400">
+                    {beceReadiness.distinctionRate > 0 ? `${beceReadiness.distinctionRate}%` : "—"}
+                  </span>
                 </div>
                 <p className="text-xs text-slate-300 leading-relaxed">
-                  Based on mock exams and past question drills, 84% of candidates in Year 9 are trending toward A & B grades in core subjects.
+                  Based on mock exams, drills, and curriculum mastery,{" "}
+                  <strong className="text-white">
+                    {beceReadiness.distinctionRate > 0 ? `${beceReadiness.distinctionRate}%` : "learners"}
+                  </strong>{" "}
+                  of candidates in Year 9 are trending toward distinction and credit grades in core subjects.
                 </p>
               </div>
 
               <div className="flex items-center justify-between p-3 rounded-lg border border-[#2a3852] bg-[#0c1424] text-xs">
                 <span className="text-slate-300">Target interventions recommended:</span>
-                <span className="font-bold text-amber-400">14 learners</span>
+                <span className="font-bold text-amber-400">
+                  {beceReadiness.interventionsNeeded} {beceReadiness.interventionsNeeded === 1 ? "learner" : "learners"}
+                </span>
               </div>
             </CardContent>
           </Card>
         </div>
       )}
 
+      {/* Tab: Curriculum Topic Heatmap */}
       {activeTab === "subjects" && (
-        <Card className="border border-[#2a3852] bg-[#151e33] text-slate-100 min-w-0">
-          <CardHeader className="border-b border-[#202b43] pb-3">
-            <CardTitle className="text-base font-semibold text-[#71c9ed]">Curriculum Topic Breakdown</CardTitle>
-          </CardHeader>
-          <CardContent className="p-5">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[
-                { title: "Algebra & Equations", cohort: "JSS 3", mastery: "88%", badge: "Strong" },
-                { title: "Geometry & Shapes", cohort: "JSS 3", mastery: "68%", badge: "Needs Drill" },
-                { title: "Grammar & Clauses", cohort: "JSS 3", mastery: "79%", badge: "Good" },
-                { title: "Comprehension Passages", cohort: "JSS 3", mastery: "72%", badge: "Moderate" },
-                { title: "Energy & Matter", cohort: "JSS 3", mastery: "82%", badge: "Strong" },
-                { title: "Fractions & Percentages", cohort: "Primary 6", mastery: "76%", badge: "Good" },
-              ].map((topic) => (
-                <div key={topic.title} className="p-3.5 rounded-lg border border-[#233148] bg-[#0c1424] space-y-2">
-                  <div className="flex justify-between items-start">
-                    <p className="font-semibold text-white text-xs">{topic.title}</p>
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/30">
-                      {topic.badge}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-[11px] text-slate-400">
-                    <span>{topic.cohort}</span>
-                    <span className="font-bold text-white">{topic.mastery}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          <CurriculumWeaknessHeatmap
+            topicMastery={topicMastery}
+            students={students.map((s) => ({ id: s.id, name: s.name, class_year: s.class_year }))}
+            onAssignFocusPractice={(subject, topic, cohort) => {
+              setFocusConfig({ subject, topic, cohort });
+              setAssignFocusDialogOpen(true);
+            }}
+          />
+        </div>
       )}
 
+      {/* Tab: Cohort Comparisons */}
       {activeTab === "cohorts" && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card className="border border-[#2a3852] bg-[#151e33] text-slate-100 min-w-0">
@@ -191,15 +313,23 @@ export function SchoolReportsPage() {
             <CardContent className="p-5 space-y-3 text-xs text-slate-300">
               <div className="flex justify-between border-b border-[#233148] pb-2">
                 <span>Enrolled Candidates:</span>
-                <span className="font-bold text-white">142</span>
+                <span className="font-bold text-white">{year9Students.length}</span>
               </div>
               <div className="flex justify-between border-b border-[#233148] pb-2">
-                <span>Completed Mock Quizzes:</span>
-                <span className="font-bold text-[#58c4e8]">1,280 sessions</span>
+                <span>Completed Quizzes & Drills:</span>
+                <span className="font-bold text-[#58c4e8]">{year9Quizzes} sessions</span>
+              </div>
+              <div className="flex justify-between border-b border-[#233148] pb-2">
+                <span>Active Learners:</span>
+                <span className="font-bold text-emerald-400">
+                  {year9Students.filter((s) => s.quizCount > 0 || s.lifetime_ep > 0).length}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Benchmark Score:</span>
-                <span className="font-bold text-emerald-400">82%</span>
+                <span className="font-bold text-emerald-400">
+                  {cohortAverages.year_9 > 0 ? `${cohortAverages.year_9}%` : "—"}
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -211,27 +341,53 @@ export function SchoolReportsPage() {
             <CardContent className="p-5 space-y-3 text-xs text-slate-300">
               <div className="flex justify-between border-b border-[#233148] pb-2">
                 <span>Enrolled Candidates:</span>
-                <span className="font-bold text-white">106</span>
+                <span className="font-bold text-white">{year6Students.length}</span>
               </div>
               <div className="flex justify-between border-b border-[#233148] pb-2">
-                <span>Completed Mock Quizzes:</span>
-                <span className="font-bold text-[#58c4e8]">840 sessions</span>
+                <span>Completed Quizzes & Drills:</span>
+                <span className="font-bold text-[#58c4e8]">{year6Quizzes} sessions</span>
+              </div>
+              <div className="flex justify-between border-b border-[#233148] pb-2">
+                <span>Active Learners:</span>
+                <span className="font-bold text-emerald-400">
+                  {year6Students.filter((s) => s.quizCount > 0 || s.lifetime_ep > 0).length}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Benchmark Score:</span>
-                <span className="font-bold text-emerald-400">74%</span>
+                <span className="font-bold text-emerald-400">
+                  {cohortAverages.year_6 > 0 ? `${cohortAverages.year_6}%` : "—"}
+                </span>
               </div>
             </CardContent>
           </Card>
         </div>
       )}
 
+      {/* Class Analytics Modal */}
       <ClassAnalyticsDialog
         open={analyticsOpen}
         onOpenChange={setAnalyticsOpen}
         className={analyticsCohort}
         students={analyticsStudents}
       />
+
+      {/* Assign Focus Practice Modal */}
+      {school?.id && (
+        <SchoolAssignPracticeDialog
+          open={assignFocusDialogOpen}
+          onOpenChange={setAssignFocusDialogOpen}
+          schoolId={school.id}
+          defaultCohort={focusConfig.cohort}
+          initialSubject={focusConfig.subject}
+          initialTopic={focusConfig.topic}
+          students={students.map((s) => ({ id: s.id, name: s.name, class_year: s.class_year }))}
+          onSuccess={() => {
+            refresh();
+            toast.success(`Targeted drill assigned for ${focusConfig.topic}!`);
+          }}
+        />
+      )}
     </SchoolLayout>
   );
 }
