@@ -1,5 +1,10 @@
 project_id = "mihobsoagioiknerlgae"
 
+[functions.complete-quiz-session]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/complete-quiz-session/index.ts"
+
 [functions.send-verification-email]
 verify_jwt = false
 

@@ -47,7 +47,7 @@ export interface CompleteSessionResult {
 export async function startQuizSession(
   params: StartSessionParams
 ): Promise<string> {
-  const result = await callRpc<{ session_id?: string }>("start_quiz_session", {
+  const { data, error } = await supabase.rpc("start_quiz_session", {
     p_mode: params.mode,
     p_question_ids: params.questionIds,
     p_subject: params.subject ?? null,
@@ -55,6 +55,10 @@ export async function startQuizSession(
     p_assignment_id: params.assignmentId ?? null,
     p_arena_challenge_id: params.arenaChallengeId ?? null,
   });
+  if (error) {
+    throw error;
+  }
+  const result = data as unknown as { session_id?: string } | null;
   if (!result?.session_id) {
     throw new Error("Failed to start quiz session");
   }
@@ -67,12 +71,16 @@ export async function submitQuizAnswer(
   selectedIndex: number,
   timeSpentMs: number
 ): Promise<SubmitAnswerResult> {
-  return callRpc<SubmitAnswerResult>("submit_quiz_answer", {
+  const { data, error } = await supabase.rpc("submit_quiz_answer", {
     p_session_id: sessionId,
     p_question_id: questionId,
     p_selected_index: selectedIndex,
     p_time_spent_ms: Math.max(0, Math.round(timeSpentMs)),
   });
+  if (error) {
+    throw error;
+  }
+  return data as unknown as SubmitAnswerResult;
 }
 
 export async function completeQuizSession(
@@ -99,31 +107,23 @@ export async function submitDuelTurnServer(
   score: number,
   timeTakenSeconds: number
 ): Promise<{ status: string; resolved: boolean; outcome?: string; winner_id?: string | null; ep_awarded?: number }> {
-  return callRpc("submit_duel_turn", {
+  const { data, error } = await supabase.rpc("submit_duel_turn", {
     p_challenge_id: challengeId,
     p_score: score,
     p_time_taken_seconds: timeTakenSeconds,
   });
+  if (error) {
+    throw error;
+  }
+  return data as unknown as {
+    status: string;
+    resolved: boolean;
+    outcome?: string;
+    winner_id?: string | null;
+    ep_awarded?: number;
+  };
 }
 
 export function isDailyChallengeError(err: unknown): boolean {
   return String((err as Error)?.message ?? "").includes("DAILY_CHALLENGE_ALREADY_COMPLETED");
-}
-
-/**
- * Typed bridge for RPCs that are not yet part of the generated Database
- * types (start_quiz_session, submit_quiz_answer, submit_duel_turn were
- * introduced by migration 20261002220000). Re-run `npm run types:regen`
- * after applying the migration and inline these calls.
- */
-async function callRpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
-  const rpc = supabase.rpc as unknown as (
-    fn: string,
-    args: Record<string, unknown>
-  ) => Promise<{ data: T | null; error: { message: string } | null }>;
-  const { data, error } = await rpc(fn, args);
-  if (error) {
-    throw new Error(error.message);
-  }
-  return data as T;
 }

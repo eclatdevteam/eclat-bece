@@ -3,23 +3,23 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
 // Shared domain engines — the same TypeScript sources the client UI imports,
 // so the scoring rules can no longer drift between client and server.
-import { calculateSessionPoints } from "../../src/services/gamification/pointsEngine.ts";
-import { updateTopicMastery } from "../../src/services/gamification/masteryEngine.ts";
-import { evaluateDailyStreak } from "../../src/services/gamification/streakEngine.ts";
-import { evaluateDailyChallenge } from "../../src/services/gamification/dailyChallengeEngine.ts";
-import { calculateStudentLevel } from "../../src/services/gamification/levelEngine.ts";
-import { evaluateBadgesToUnlock } from "../../src/services/gamification/badgeEngine.ts";
+import { calculateSessionPoints } from "../_shared/gamification/pointsEngine.ts";
+import { updateTopicMastery } from "../_shared/gamification/masteryEngine.ts";
+import { evaluateDailyStreak } from "../_shared/gamification/streakEngine.ts";
+import { evaluateDailyChallenge } from "../_shared/gamification/dailyChallengeEngine.ts";
+import { calculateStudentLevel } from "../_shared/gamification/levelEngine.ts";
+import { evaluateBadgesToUnlock } from "../_shared/gamification/badgeEngine.ts";
 import {
   evaluateQuestionAttemptAntiGaming,
   applyDailySpeedBonusCap,
-} from "../../src/services/gamification/antiGamingEngine.ts";
+} from "../_shared/gamification/antiGamingEngine.ts";
 import type {
   SessionQuestionInput,
   TopicMasteryState,
   StreakState,
   StudentLevelInfo,
   DailyChallengeResult,
-} from "../../src/services/gamification/types.ts";
+} from "../_shared/gamification/types.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",

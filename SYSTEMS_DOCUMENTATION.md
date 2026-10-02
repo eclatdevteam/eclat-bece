@@ -1230,10 +1230,11 @@ browser; per-question grading and the EP pipeline run on the server.
    `quiz_session_answers` with real per-question timing.
 3. `complete-quiz-session` (Edge Function) — re-grades from stored answers,
    runs the EP pipeline (points, anti-gaming with real timings, mastery,
-   streak, daily challenge, badges) using the shared TypeScript engines from
-   `src/services/gamification/`, writes `quiz_results`, the points ledger,
-   mastery, badges, gamification profile and league cohort points, updates
-   assignment status and notifies the parent.
+   streak, daily challenge, badges) using the shared TypeScript engines in
+   `supabase/functions/_shared/gamification/` (re-exported to the client via
+   `src/services/gamification/*` shims), writes `quiz_results`, the points
+   ledger, mastery, badges, gamification profile and league cohort points,
+   updates assignment status and notifies the parent.
 4. `submit_duel_turn` (RPC) — records arena turns and resolves winner/EP
    server-side.
 

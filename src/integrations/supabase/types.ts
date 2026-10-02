@@ -12,6 +12,31 @@ export type Database = {
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
       admin_audit_log: {
@@ -1000,6 +1025,111 @@ export type Database = {
           },
         ]
       }
+      quiz_session_answers: {
+        Row: {
+          created_at: string
+          graded: boolean
+          id: string
+          is_correct: boolean
+          question_id: string
+          selected_index: number | null
+          session_id: string
+          time_spent_ms: number
+        }
+        Insert: {
+          created_at?: string
+          graded?: boolean
+          id?: string
+          is_correct?: boolean
+          question_id: string
+          selected_index?: number | null
+          session_id: string
+          time_spent_ms?: number
+        }
+        Update: {
+          created_at?: string
+          graded?: boolean
+          id?: string
+          is_correct?: boolean
+          question_id?: string
+          selected_index?: number | null
+          session_id?: string
+          time_spent_ms?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_session_answers_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "quiz_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_sessions: {
+        Row: {
+          arena_challenge_id: string | null
+          assignment_id: string | null
+          completed_at: string | null
+          id: string
+          mode: string
+          question_ids: string[]
+          started_at: string
+          status: string
+          student_id: string
+          subject: string | null
+          topic: string | null
+        }
+        Insert: {
+          arena_challenge_id?: string | null
+          assignment_id?: string | null
+          completed_at?: string | null
+          id?: string
+          mode?: string
+          question_ids?: string[]
+          started_at?: string
+          status?: string
+          student_id: string
+          subject?: string | null
+          topic?: string | null
+        }
+        Update: {
+          arena_challenge_id?: string | null
+          assignment_id?: string | null
+          completed_at?: string | null
+          id?: string
+          mode?: string
+          question_ids?: string[]
+          started_at?: string
+          status?: string
+          student_id?: string
+          subject?: string | null
+          topic?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_sessions_arena_challenge_id_fkey"
+            columns: ["arena_challenge_id"]
+            isOneToOne: false
+            referencedRelation: "arena_challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_sessions_assignment_id_fkey"
+            columns: ["assignment_id"]
+            isOneToOne: false
+            referencedRelation: "practice_assignments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quiz_sessions_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       school_classes: {
         Row: {
           class_year: string | null
@@ -1702,6 +1832,10 @@ export type Database = {
         Args: { p_class_year: string }
         Returns: Json
       }
+      calculate_level_from_ep: {
+        Args: { p_lifetime_ep: number }
+        Returns: number
+      }
       count_duplicate_question_clusters: {
         Args: { p_class_year: string }
         Returns: number
@@ -1765,6 +1899,7 @@ export type Database = {
       }
       get_invitation_details: { Args: { _token: string }; Returns: Json }
       get_public_leaderboard: { Args: never; Returns: Json }
+      get_required_ep_for_level: { Args: { p_level: number }; Returns: number }
       get_student_league_cohort: {
         Args: { p_student_id: string }
         Returns: Json
@@ -1825,6 +1960,34 @@ export type Database = {
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
+      start_quiz_session: {
+        Args: {
+          p_arena_challenge_id?: string
+          p_assignment_id?: string
+          p_mode: string
+          p_question_ids: string[]
+          p_subject?: string
+          p_topic?: string
+        }
+        Returns: Json
+      }
+      submit_duel_turn: {
+        Args: {
+          p_challenge_id: string
+          p_score: number
+          p_time_taken_seconds: number
+        }
+        Returns: Json
+      }
+      submit_quiz_answer: {
+        Args: {
+          p_question_id: string
+          p_selected_index: number
+          p_session_id: string
+          p_time_spent_ms?: number
+        }
+        Returns: Json
+      }
       update_student_cohort_points: {
         Args: { p_additional_ep: number; p_student_id: string }
         Returns: undefined
@@ -1962,6 +2125,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ["student", "parent", "school", "admin"],
