@@ -61,19 +61,19 @@ export function EditChildNameDialog({ open, onOpenChange, child, onSuccess }: Ed
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px] rounded-2xl border border-[#233148] bg-[#0c1628] text-slate-100 shadow-2xl">
+            <DialogContent className="sm:max-w-[425px] rounded-2xl border border-border bg-card text-card-foreground shadow-2xl">
                 <DialogHeader>
-                    <div className="w-10 h-10 bg-[#0c2438] text-[#58c4e8] rounded-xl flex items-center justify-center mb-2">
+                    <div className="w-10 h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center mb-2">
                         <User className="w-5 h-5" />
                     </div>
-                    <DialogTitle className="text-xl font-bold text-white">Edit Student Name</DialogTitle>
-                    <DialogDescription className="font-medium text-slate-400 text-xs sm:text-sm">
+                    <DialogTitle className="text-xl font-bold text-foreground">Edit Student Name</DialogTitle>
+                    <DialogDescription className="font-medium text-muted-foreground text-xs sm:text-sm">
                         Update the display name for your child's account.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-5 py-2">
                     <div className="space-y-2">
-                        <Label htmlFor="fullName" className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                        <Label htmlFor="fullName" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                             Full Name
                         </Label>
                         <Input
@@ -81,7 +81,7 @@ export function EditChildNameDialog({ open, onOpenChange, child, onSuccess }: Ed
                             value={fullName}
                             onChange={(e) => setFullName(e.target.value)}
                             placeholder="e.g. John Doe"
-                            className="h-11 rounded-xl border border-[#233148] bg-[#080f22] text-slate-100 placeholder:text-slate-500 font-medium focus-visible:border-[#3bc2f3]"
+                            className="h-11 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground font-medium focus-visible:ring-1 focus-visible:ring-primary"
                             required
                         />
                     </div>
@@ -90,14 +90,14 @@ export function EditChildNameDialog({ open, onOpenChange, child, onSuccess }: Ed
                             type="button"
                             variant="outline"
                             onClick={() => onOpenChange(false)}
-                            className="rounded-xl font-semibold border border-[#233148] bg-[#080f22] text-slate-200 hover:bg-[#15273f] hover:border-[#3bc2f3] hover:text-white h-11 px-5"
+                            className="rounded-xl font-semibold h-11 px-5"
                         >
                             Cancel
                         </Button>
                         <Button
                             type="submit"
                             disabled={isSubmitting || !fullName.trim() || fullName.trim() === child?.profile.full_name}
-                            className="rounded-xl font-bold h-11 px-6 bg-[#3bc2f3] text-slate-950 hover:bg-[#32ade0] shadow-md shadow-cyan-500/10"
+                            className="rounded-xl font-bold h-11 px-6 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
                         >
                             {isSubmitting ? (
                                 <>

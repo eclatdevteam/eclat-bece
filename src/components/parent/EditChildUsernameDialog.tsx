@@ -73,19 +73,19 @@ export function EditChildUsernameDialog({ open, onOpenChange, child, onSuccess }
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px] rounded-2xl border border-[#233148] bg-[#0c1628] text-slate-100 shadow-2xl">
+            <DialogContent className="sm:max-w-[425px] rounded-2xl border border-border bg-card text-card-foreground shadow-2xl">
                 <DialogHeader>
-                    <div className="w-10 h-10 bg-[#0c2438] text-[#58c4e8] rounded-xl flex items-center justify-center mb-2">
+                    <div className="w-10 h-10 bg-primary/10 text-primary rounded-xl flex items-center justify-center mb-2">
                         <Fingerprint className="w-5 h-5" />
                     </div>
-                    <DialogTitle className="text-xl font-bold text-white">Edit Username</DialogTitle>
-                    <DialogDescription className="font-medium text-slate-400 text-xs sm:text-sm">
+                    <DialogTitle className="text-xl font-bold text-foreground">Edit Username</DialogTitle>
+                    <DialogDescription className="font-medium text-muted-foreground text-xs sm:text-sm">
                         Change your child's login username. It must be unique.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-5 py-2">
                     <div className="space-y-2">
-                        <Label htmlFor="username" className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                        <Label htmlFor="username" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                             Username
                         </Label>
                         <Input
@@ -93,10 +93,10 @@ export function EditChildUsernameDialog({ open, onOpenChange, child, onSuccess }
                             value={username}
                             onChange={(e) => setUsername(e.target.value.replace(/\s+/g, '').toLowerCase())}
                             placeholder="e.g. jdoe123"
-                            className="h-11 rounded-xl border border-[#233148] bg-[#080f22] text-slate-100 placeholder:text-slate-500 font-mono focus-visible:border-[#3bc2f3] lowercase"
+                            className="h-11 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground font-mono focus-visible:ring-1 focus-visible:ring-primary lowercase"
                             required
                         />
-                        <p className="text-[10px] text-slate-400 font-medium flex items-center gap-1.5 px-1">
+                        <p className="text-[10px] text-muted-foreground font-medium flex items-center gap-1.5 px-1">
                             Username must be 2-20 characters, lowercase, and contain no spaces.
                         </p>
                     </div>
@@ -105,14 +105,14 @@ export function EditChildUsernameDialog({ open, onOpenChange, child, onSuccess }
                             type="button"
                             variant="outline"
                             onClick={() => onOpenChange(false)}
-                            className="rounded-xl font-semibold border border-[#233148] bg-[#080f22] text-slate-200 hover:bg-[#15273f] hover:border-[#3bc2f3] hover:text-white h-11 px-5"
+                            className="rounded-xl font-semibold h-11 px-5"
                         >
                             Cancel
                         </Button>
                         <Button
                             type="submit"
                             disabled={isSubmitting || !username.trim() || username.trim().toLowerCase() === child?.profile.username?.toLowerCase()}
-                            className="rounded-xl font-bold h-11 px-6 bg-[#3bc2f3] text-slate-950 hover:bg-[#32ade0] shadow-md shadow-cyan-500/10"
+                            className="rounded-xl font-bold h-11 px-6 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm"
                         >
                             {isSubmitting ? (
                                 <>

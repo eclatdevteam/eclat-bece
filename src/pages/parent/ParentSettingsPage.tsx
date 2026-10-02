@@ -358,41 +358,41 @@ export default function ParentSettingsPage() {
   }
 
   return (
-    <div className="w-full p-4 sm:p-6 space-y-8 animate-fade-in text-slate-100">
+    <div className="w-full p-4 sm:p-6 space-y-8 animate-fade-in text-foreground">
       {/* Header section */}
-      <div className="flex flex-col gap-1 pb-4 border-b border-[#202b43]">
-        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border border-[#2d4b68] bg-[#0c2438] text-[#58c4e8] w-fit mb-2">
+      <div className="flex flex-col gap-1 pb-4 border-b border-border">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold border border-primary/20 bg-primary/10 text-primary w-fit mb-2">
           <Settings className="h-3.5 w-3.5" />
           <span>Parent Portal Settings</span>
         </div>
-        <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-[#71c9ed] flex items-center gap-2">
-          Account <span className="text-[#3bc2f3]">Settings</span>
-          <span className="w-2 h-2 rounded-full bg-[#3bc2f3]" />
+        <h1 className="text-3xl sm:text-4xl font-black tracking-tight text-foreground flex items-center gap-2">
+          Account <span className="text-primary">Settings</span>
+          <span className="w-2 h-2 rounded-full bg-primary" />
         </h1>
-        <p className="text-slate-400 font-medium text-sm">
+        <p className="text-muted-foreground font-medium text-sm">
           Manage your personal details, secure your account, and configure dashboard preferences.
         </p>
       </div>
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
-        <TabsList className="bg-[#0c1628] p-1.5 rounded-2xl flex flex-row flex-nowrap overflow-x-auto no-scrollbar w-full sm:w-fit gap-1.5 border border-[#233148] h-auto shrink-0">
+        <TabsList className="bg-muted/60 p-1.5 rounded-2xl flex flex-row flex-nowrap overflow-x-auto no-scrollbar w-full sm:w-fit gap-1.5 border border-border h-auto shrink-0">
           <TabsTrigger 
             value="profile" 
-            className="rounded-xl font-bold py-2.5 px-5 flex-1 sm:flex-initial whitespace-nowrap transition-all duration-200 data-[state=active]:!bg-gradient-to-r data-[state=active]:!from-[#3bc2f3] data-[state=active]:!to-[#0c9dcc] data-[state=active]:!text-slate-950 data-[state=active]:!shadow-md text-slate-400 hover:text-white hover:bg-[#15233c] flex items-center justify-center shrink-0"
+            className="rounded-xl font-bold py-2.5 px-5 flex-1 sm:flex-initial whitespace-nowrap transition-all duration-200 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground flex items-center justify-center shrink-0"
           >
             <UserIcon className="h-4 w-4 mr-2 shrink-0" />
             Profile
           </TabsTrigger>
           <TabsTrigger 
             value="security" 
-            className="rounded-xl font-bold py-2.5 px-5 flex-1 sm:flex-initial whitespace-nowrap transition-all duration-200 data-[state=active]:!bg-gradient-to-r data-[state=active]:!from-[#3bc2f3] data-[state=active]:!to-[#0c9dcc] data-[state=active]:!text-slate-950 data-[state=active]:!shadow-md text-slate-400 hover:text-white hover:bg-[#15233c] flex items-center justify-center shrink-0"
+            className="rounded-xl font-bold py-2.5 px-5 flex-1 sm:flex-initial whitespace-nowrap transition-all duration-200 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground flex items-center justify-center shrink-0"
           >
             <Lock className="h-4 w-4 mr-2 shrink-0" />
             Security
           </TabsTrigger>
           <TabsTrigger 
             value="preferences" 
-            className="rounded-xl font-bold py-2.5 px-5 flex-1 sm:flex-initial whitespace-nowrap transition-all duration-200 data-[state=active]:!bg-gradient-to-r data-[state=active]:!from-[#3bc2f3] data-[state=active]:!to-[#0c9dcc] data-[state=active]:!text-slate-950 data-[state=active]:!shadow-md text-slate-400 hover:text-white hover:bg-[#15233c] flex items-center justify-center shrink-0"
+            className="rounded-xl font-bold py-2.5 px-5 flex-1 sm:flex-initial whitespace-nowrap transition-all duration-200 data-[state=active]:bg-card data-[state=active]:text-foreground data-[state=active]:shadow-sm text-muted-foreground hover:text-foreground flex items-center justify-center shrink-0"
           >
             <Users className="h-4 w-4 mr-2 shrink-0" />
             Children & Preferences
@@ -401,41 +401,41 @@ export default function ParentSettingsPage() {
 
         {/* Profile Details Tab Content */}
         <TabsContent value="profile" className="space-y-6 animate-in fade-in-50 duration-300">
-          <Card className="rounded-2xl border border-[#233148] bg-[#0c1628] text-slate-100 overflow-hidden shadow-sm">
-            <CardHeader className="pb-4 border-b border-[#202b43]">
-              <CardTitle className="text-xl sm:text-2xl font-bold text-[#71c9ed]">Profile Details</CardTitle>
-              <CardDescription className="text-slate-400 text-xs sm:text-sm">
+          <Card className="rounded-2xl border border-border bg-card text-card-foreground overflow-hidden shadow-sm">
+            <CardHeader className="pb-4 border-b border-border">
+              <CardTitle className="text-xl sm:text-2xl font-bold text-foreground">Profile Details</CardTitle>
+              <CardDescription className="text-muted-foreground text-xs sm:text-sm">
                 Update your display name, profile avatar, and email settings.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6 pt-6">
               {/* Profile Avatar Section */}
-              <div className="flex flex-col sm:flex-row items-center gap-6 p-5 rounded-2xl bg-[#080f22] border border-[#202b43]">
-                <Avatar className="h-20 w-20 border-2 border-[#3bc2f3]/40 shadow-md">
+              <div className="flex flex-col sm:flex-row items-center gap-6 p-5 rounded-2xl bg-muted/30 border border-border">
+                <Avatar className="h-20 w-20 border-2 border-primary/40 shadow-sm">
                   <AvatarImage src={avatarUrl} alt={displayName} />
-                  <AvatarFallback className="bg-[#0c2438] text-[#58c4e8] text-2xl font-black">
-                    {displayName ? displayName.substring(0, 2).toUpperCase() : <UserIcon className="h-8 w-8 text-slate-400" />}
+                  <AvatarFallback className="bg-primary/10 text-primary text-2xl font-black">
+                    {displayName ? displayName.substring(0, 2).toUpperCase() : <UserIcon className="h-8 w-8 text-muted-foreground" />}
                   </AvatarFallback>
                 </Avatar>
                 
                 <div className="flex flex-col gap-2.5 items-center sm:items-start">
-                  <h4 className="font-bold text-xs uppercase tracking-wider text-[#71c9ed]">Profile Avatar Image</h4>
+                  <h4 className="font-bold text-xs uppercase tracking-wider text-foreground">Profile Avatar Image</h4>
                   <div className="flex gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="rounded-xl font-semibold border border-[#233148] bg-[#0c1628] text-slate-200 hover:bg-[#15273f] hover:border-[#3bc2f3] hover:text-white h-9"
+                      className="rounded-xl font-semibold border border-border bg-card text-foreground hover:bg-accent h-9"
                       onClick={() => document.getElementById("avatar-input")?.click()}
                       disabled={uploadingAvatar}
                     >
                       {uploadingAvatar ? (
                         <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin text-[#3bc2f3]" />
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin text-primary" />
                           Uploading...
                         </>
                       ) : (
                         <>
-                          <Upload className="mr-2 h-4 w-4 text-[#58c4e8]" />
+                          <Upload className="mr-2 h-4 w-4 text-primary" />
                           Upload New File
                         </>
                       )}
@@ -452,7 +452,7 @@ export default function ParentSettingsPage() {
                       <Button
                         variant="destructive"
                         size="sm"
-                        className="rounded-xl font-bold h-9 bg-rose-600/20 text-rose-300 border border-rose-600/30 hover:bg-rose-600/40"
+                        className="rounded-xl font-bold h-9 bg-rose-600/20 text-rose-500 border border-rose-600/30 hover:bg-rose-600/40"
                         onClick={handleRemoveAvatar}
                         disabled={uploadingAvatar}
                       >
@@ -461,7 +461,7 @@ export default function ParentSettingsPage() {
                       </Button>
                     )}
                   </div>
-                  <p className="text-xs text-slate-400 font-medium">
+                  <p className="text-xs text-muted-foreground font-medium">
                     Supports JPG, PNG, GIF. Max file size: 5MB.
                   </p>
                 </div>
@@ -470,35 +470,35 @@ export default function ParentSettingsPage() {
               {/* Personal Details Form */}
               <form onSubmit={handleSaveProfile} className="space-y-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="displayName" className="font-semibold text-sm text-slate-200">Full Name</Label>
+                  <Label htmlFor="displayName" className="font-semibold text-sm text-foreground">Full Name</Label>
                   <Input
                     id="displayName"
                     value={displayName}
                     onChange={(e) => setDisplayName(e.target.value)}
                     placeholder="Enter your full name"
-                    className="rounded-xl border border-[#233148] bg-[#080f22] text-slate-100 placeholder:text-slate-500 h-11 font-medium focus-visible:border-[#3bc2f3]"
+                    className="rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground h-11 font-medium focus-visible:ring-1 focus-visible:ring-primary"
                     maxLength={100}
                   />
                   {errors.displayName && (
-                    <p className="text-xs font-semibold text-rose-400">{errors.displayName}</p>
+                    <p className="text-xs font-semibold text-rose-500">{errors.displayName}</p>
                   )}
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="email" className="font-semibold text-sm text-slate-200">Email Address</Label>
+                  <Label htmlFor="email" className="font-semibold text-sm text-foreground">Email Address</Label>
                   <Input
                     id="email"
                     type="email"
                     value={email}
                     disabled
-                    className="rounded-xl border border-[#202b43] bg-[#060c1c] text-slate-400 h-11 font-medium cursor-not-allowed opacity-80"
+                    className="rounded-xl border border-border bg-muted text-muted-foreground h-11 font-medium cursor-not-allowed opacity-80"
                   />
                 </div>
 
                 <Button
                   type="submit"
                   disabled={savingProfile}
-                  className="rounded-xl font-bold h-11 px-6 bg-[#3bc2f3] text-slate-950 hover:bg-[#32ade0] shadow-md shadow-cyan-500/10 mt-2"
+                  className="rounded-xl font-bold h-11 px-6 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm mt-2"
                 >
                   {savingProfile ? (
                     <>
@@ -516,17 +516,17 @@ export default function ParentSettingsPage() {
 
         {/* Security Tab Content */}
         <TabsContent value="security" className="space-y-6 animate-in fade-in-50 duration-300">
-          <Card className="rounded-2xl border border-[#233148] bg-[#0c1628] text-slate-100 overflow-hidden shadow-sm">
-            <CardHeader className="pb-4 border-b border-[#202b43]">
-              <CardTitle className="text-xl sm:text-2xl font-bold text-[#71c9ed]">Change Password</CardTitle>
-              <CardDescription className="text-slate-400 text-xs sm:text-sm">
+          <Card className="rounded-2xl border border-border bg-card text-card-foreground overflow-hidden shadow-sm">
+            <CardHeader className="pb-4 border-b border-border">
+              <CardTitle className="text-xl sm:text-2xl font-bold text-foreground">Change Password</CardTitle>
+              <CardDescription className="text-muted-foreground text-xs sm:text-sm">
                 Ensure your account is protected by setting a strong password.
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <form onSubmit={handleSavePassword} className="space-y-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="new-password" className="font-semibold text-sm text-slate-200">New Password</Label>
+                  <Label htmlFor="new-password" className="font-semibold text-sm text-foreground">New Password</Label>
                   <div className="relative">
                     <Input
                       id="new-password"
@@ -534,14 +534,14 @@ export default function ParentSettingsPage() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       placeholder="Minimum 6 characters"
-                      className="rounded-xl border border-[#233148] bg-[#080f22] text-slate-100 placeholder:text-slate-500 h-11 pr-10 font-medium focus-visible:border-[#3bc2f3]"
+                      className="rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground h-11 pr-10 font-medium focus-visible:ring-1 focus-visible:ring-primary"
                       required
                       minLength={6}
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {showPassword ? (
                         <EyeOff className="h-4 w-4" />
@@ -553,7 +553,7 @@ export default function ParentSettingsPage() {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="confirm-password" className="font-semibold text-sm text-slate-200">Confirm New Password</Label>
+                  <Label htmlFor="confirm-password" className="font-semibold text-sm text-foreground">Confirm New Password</Label>
                   <div className="relative">
                     <Input
                       id="confirm-password"
@@ -561,14 +561,14 @@ export default function ParentSettingsPage() {
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Repeat your new password"
-                      className="rounded-xl border border-[#233148] bg-[#080f22] text-slate-100 placeholder:text-slate-500 h-11 pr-10 font-medium focus-visible:border-[#3bc2f3]"
+                      className="rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground h-11 pr-10 font-medium focus-visible:ring-1 focus-visible:ring-primary"
                       required
                       minLength={6}
                     />
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                     >
                       {showConfirmPassword ? (
                         <EyeOff className="h-4 w-4" />
@@ -582,7 +582,7 @@ export default function ParentSettingsPage() {
                 <Button
                   type="submit"
                   disabled={savingPassword}
-                  className="rounded-xl font-bold h-11 px-6 bg-[#3bc2f3] text-slate-950 hover:bg-[#32ade0] shadow-md shadow-cyan-500/10 mt-2"
+                  className="rounded-xl font-bold h-11 px-6 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm mt-2"
                 >
                   {savingPassword ? (
                     <>
@@ -601,31 +601,31 @@ export default function ParentSettingsPage() {
         {/* Children & Preferences Tab Content */}
         <TabsContent value="preferences" className="space-y-6 animate-in fade-in-50 duration-300">
           {/* Appearance & Theme Preference Card */}
-          <Card className="rounded-2xl border border-[#233148] bg-[#0c1628] text-slate-100 overflow-hidden shadow-sm">
-            <CardHeader className="pb-4 border-b border-[#202b43]">
-              <CardTitle className="text-xl sm:text-2xl font-bold text-[#71c9ed] flex items-center gap-2">
-                <Palette className="h-5 w-5 text-[#3bc2f3]" />
+          <Card className="rounded-2xl border border-border bg-card text-card-foreground overflow-hidden shadow-sm">
+            <CardHeader className="pb-4 border-b border-border">
+              <CardTitle className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
+                <Palette className="h-5 w-5 text-primary" />
                 Appearance & Theme
               </CardTitle>
-              <CardDescription className="text-slate-400 text-xs sm:text-sm">
+              <CardDescription className="text-muted-foreground text-xs sm:text-sm">
                 Customize how Éclat looks on your screen. Choose between light, dark, or follow your system theme.
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
               <div className="space-y-3">
-                <Label className="font-semibold text-sm text-slate-200">Theme Preference</Label>
+                <Label className="font-semibold text-sm text-foreground">Theme Preference</Label>
                 <div className="grid grid-cols-3 gap-3 max-w-md">
                   <Button
                     type="button"
                     variant={theme === "light" ? "default" : "outline"}
                     className={`flex flex-col items-center justify-center gap-1.5 h-20 rounded-xl transition-all ${
                       theme === "light"
-                        ? "bg-[#3bc2f3] text-slate-950 font-bold shadow-md shadow-cyan-500/20 hover:bg-[#32ade0]"
-                        : "border-[#233148] bg-[#080f22] text-slate-300 hover:text-white hover:bg-[#15233c] hover:border-[#3bc2f3]"
+                        ? "bg-primary text-primary-foreground font-bold shadow-sm"
+                        : "border-border bg-card text-muted-foreground hover:text-foreground hover:bg-accent"
                     }`}
                     onClick={() => setTheme("light")}
                   >
-                    <Sun className="h-5 w-5 text-amber-400" />
+                    <Sun className="h-5 w-5 text-amber-500" />
                     <span className="text-xs font-semibold">Light</span>
                   </Button>
                   <Button
@@ -633,12 +633,12 @@ export default function ParentSettingsPage() {
                     variant={theme === "dark" ? "default" : "outline"}
                     className={`flex flex-col items-center justify-center gap-1.5 h-20 rounded-xl transition-all ${
                       theme === "dark"
-                        ? "bg-[#3bc2f3] text-slate-950 font-bold shadow-md shadow-cyan-500/20 hover:bg-[#32ade0]"
-                        : "border-[#233148] bg-[#080f22] text-slate-300 hover:text-white hover:bg-[#15233c] hover:border-[#3bc2f3]"
+                        ? "bg-primary text-primary-foreground font-bold shadow-sm"
+                        : "border-border bg-card text-muted-foreground hover:text-foreground hover:bg-accent"
                     }`}
                     onClick={() => setTheme("dark")}
                   >
-                    <Moon className="h-5 w-5 text-[#3bc2f3]" />
+                    <Moon className="h-5 w-5 text-sky-400" />
                     <span className="text-xs font-semibold">Dark</span>
                   </Button>
                   <Button
@@ -646,12 +646,12 @@ export default function ParentSettingsPage() {
                     variant={theme === "system" ? "default" : "outline"}
                     className={`flex flex-col items-center justify-center gap-1.5 h-20 rounded-xl transition-all ${
                       theme === "system"
-                        ? "bg-[#3bc2f3] text-slate-950 font-bold shadow-md shadow-cyan-500/20 hover:bg-[#32ade0]"
-                        : "border-[#233148] bg-[#080f22] text-slate-300 hover:text-white hover:bg-[#15233c] hover:border-[#3bc2f3]"
+                        ? "bg-primary text-primary-foreground font-bold shadow-sm"
+                        : "border-border bg-card text-muted-foreground hover:text-foreground hover:bg-accent"
                     }`}
                     onClick={() => setTheme("system")}
                   >
-                    <Laptop className="h-5 w-5 text-slate-400" />
+                    <Laptop className="h-5 w-5 text-muted-foreground" />
                     <span className="text-xs font-semibold">System</span>
                   </Button>
                 </div>
@@ -660,44 +660,44 @@ export default function ParentSettingsPage() {
           </Card>
 
           {/* Connection Code Box */}
-          <Card className="rounded-2xl border border-[#2d4b68] bg-[#0c1628] text-slate-100 overflow-hidden shadow-sm relative">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-[#3bc2f3]/10 rounded-full blur-3xl -translate-y-8 translate-x-8" />
-            <CardHeader className="pb-3 border-b border-[#202b43]">
-              <CardTitle className="text-xl sm:text-2xl font-bold text-[#71c9ed] flex items-center gap-2">
+          <Card className="rounded-2xl border border-primary/20 bg-card text-card-foreground overflow-hidden shadow-sm relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -translate-y-8 translate-x-8" />
+            <CardHeader className="pb-3 border-b border-border">
+              <CardTitle className="text-xl sm:text-2xl font-bold text-foreground flex items-center gap-2">
                 Your Parent Link Code
-                <span className="w-2 h-2 rounded-full bg-[#3bc2f3]" />
+                <span className="w-2 h-2 rounded-full bg-primary" />
               </CardTitle>
-              <CardDescription className="text-slate-400 text-xs sm:text-sm">
+              <CardDescription className="text-muted-foreground text-xs sm:text-sm">
                 Your children can use this code during registration or from their profile settings to connect to your parent portal.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 relative z-10 pt-6">
               <div className="flex max-w-sm gap-2">
-                <div className="flex-1 flex items-center justify-center h-12 bg-[#080f22] border border-dashed border-[#31506c] rounded-xl px-4 select-all">
-                  <span className="font-mono text-xl font-bold tracking-[0.25em] text-[#71c9ed]">{uniqueId}</span>
+                <div className="flex-1 flex items-center justify-center h-12 bg-muted/50 border border-dashed border-primary/30 rounded-xl px-4 select-all">
+                  <span className="font-mono text-xl font-bold tracking-[0.25em] text-primary">{uniqueId}</span>
                 </div>
                 <Button
                   onClick={copyConnectionCode}
                   variant="outline"
-                  className="rounded-xl border border-[#2d4b68] bg-[#080f22] hover:bg-[#15273f] hover:border-[#3bc2f3] text-slate-200 font-bold h-12 w-12 p-0 flex items-center justify-center shrink-0"
+                  className="rounded-xl border border-border bg-card hover:bg-accent font-bold h-12 w-12 p-0 flex items-center justify-center shrink-0"
                 >
-                  {copied ? <Check className="h-5 w-5 text-emerald-400" /> : <Copy className="h-5 w-5 text-[#58c4e8]" />}
+                  {copied ? <Check className="h-5 w-5 text-emerald-500" /> : <Copy className="h-5 w-5 text-primary" />}
                 </Button>
               </div>
             </CardContent>
           </Card>
 
           {/* Linked Children */}
-          <Card className="rounded-2xl border border-[#233148] bg-[#0c1628] text-slate-100 overflow-hidden shadow-sm">
-            <CardHeader className="pb-4 border-b border-[#202b43]">
-              <CardTitle className="text-xl sm:text-2xl font-bold text-[#71c9ed]">Linked Children</CardTitle>
-              <CardDescription className="text-slate-400 text-xs sm:text-sm">
+          <Card className="rounded-2xl border border-border bg-card text-card-foreground overflow-hidden shadow-sm">
+            <CardHeader className="pb-4 border-b border-border">
+              <CardTitle className="text-xl sm:text-2xl font-bold text-foreground">Linked Children</CardTitle>
+              <CardDescription className="text-muted-foreground text-xs sm:text-sm">
                 Children currently linked to your parent portal.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 pt-6">
               {children.length === 0 ? (
-                <div className="p-8 text-center bg-[#080f22] border border-dashed border-[#202b43] rounded-2xl text-slate-400 font-medium text-sm">
+                <div className="p-8 text-center bg-muted/20 border border-dashed border-border rounded-2xl text-muted-foreground font-medium text-sm">
                   No children linked yet. Share your connection code to link their account.
                 </div>
               ) : (
@@ -707,31 +707,31 @@ export default function ParentSettingsPage() {
                     return (
                       <div
                         key={child.id}
-                        className="flex items-center gap-4 p-4 rounded-xl border border-[#202b43] bg-[#080f22] hover:border-[#3bc2f3]/40 transition-colors"
+                        className="flex items-center gap-4 p-4 rounded-xl border border-border bg-card hover:border-primary/40 transition-colors shadow-sm"
                       >
-                        <Avatar className={`h-11 w-11 font-black shrink-0 ${child.is_premium ? "bg-gradient-to-br from-amber-400 to-amber-600" : "bg-gradient-to-br from-[#3bc2f3] to-[#0c9dcc]"}`}>
-                          <AvatarFallback className="text-slate-950 text-base font-black">
+                        <Avatar className={`h-11 w-11 font-black shrink-0 ${child.is_premium ? "bg-gradient-to-br from-amber-400 to-amber-600 text-slate-900" : "bg-gradient-to-br from-primary to-primary/80 text-primary-foreground"}`}>
+                          <AvatarFallback className="text-inherit text-base font-black">
                             {initials}
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex-1 min-w-0">
-                          <p className="font-bold text-white truncate">{child.profile?.full_name || "Unknown Name"}</p>
+                          <p className="font-bold text-foreground truncate">{child.profile?.full_name || "Unknown Name"}</p>
                           <div className="flex items-center gap-1.5 mt-0.5">
-                            <span className="text-[10px] font-bold text-[#58c4e8] uppercase">
+                            <span className="text-[10px] font-bold text-primary uppercase">
                               {classLabel(child.class_year)}
                             </span>
-                            <span className="text-xs text-slate-500">·</span>
-                            <span className="text-xs text-slate-400 font-medium">
+                            <span className="text-xs text-muted-foreground">·</span>
+                            <span className="text-xs text-muted-foreground font-medium">
                               @{child.profile?.username || "no-username"}
                             </span>
                           </div>
                         </div>
                         {child.is_premium ? (
-                          <Badge className="bg-[#352813] text-[#ffca6a] border border-[#5a421b] uppercase font-bold text-[10px]">
+                          <Badge className="bg-amber-500/10 text-amber-500 border border-amber-500/30 uppercase font-bold text-[10px]">
                             Premium
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="border-[#233148] text-slate-400 uppercase font-bold text-[10px]">Standard</Badge>
+                          <Badge variant="outline" className="border-border text-muted-foreground uppercase font-bold text-[10px]">Standard</Badge>
                         )}
                       </div>
                     );
@@ -742,18 +742,18 @@ export default function ParentSettingsPage() {
           </Card>
 
           {/* Preferences */}
-          <Card className="rounded-2xl border border-[#233148] bg-[#0c1628] text-slate-100 overflow-hidden shadow-sm">
-            <CardHeader className="pb-4 border-b border-[#202b43]">
-              <CardTitle className="text-xl sm:text-2xl font-bold text-[#71c9ed]">Notification Preferences</CardTitle>
-              <CardDescription className="text-slate-400 text-xs sm:text-sm">
+          <Card className="rounded-2xl border border-border bg-card text-card-foreground overflow-hidden shadow-sm">
+            <CardHeader className="pb-4 border-b border-border">
+              <CardTitle className="text-xl sm:text-2xl font-bold text-foreground">Notification Preferences</CardTitle>
+              <CardDescription className="text-muted-foreground text-xs sm:text-sm">
                 Choose how you want to be updated about your child's progress.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 pt-6">
-              <div className="flex items-center justify-between p-4 rounded-xl bg-[#080f22] border border-[#202b43]">
+              <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border">
                 <div className="space-y-0.5 pr-4">
-                  <p className="font-bold text-sm text-white">Weekly Digest Email</p>
-                  <p className="text-xs text-slate-400 font-medium">Receive a weekly summary email detailing your child's score improvements and completed assignments.</p>
+                  <p className="font-bold text-sm text-foreground">Weekly Digest Email</p>
+                  <p className="text-xs text-muted-foreground font-medium">Receive a weekly summary email detailing your child's score improvements and completed assignments.</p>
                 </div>
                 <Switch
                   checked={preferences.emailWeeklyDigest}
@@ -761,10 +761,10 @@ export default function ParentSettingsPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-between p-4 rounded-xl bg-[#080f22] border border-[#202b43]">
+              <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border">
                 <div className="space-y-0.5 pr-4">
-                  <p className="font-bold text-sm text-white">Real-time Activity Alerts</p>
-                  <p className="text-xs text-slate-400 font-medium">Get notifications immediately when your child finishes a practice quiz or receives an assignment.</p>
+                  <p className="font-bold text-sm text-foreground">Real-time Activity Alerts</p>
+                  <p className="text-xs text-muted-foreground font-medium">Get notifications immediately when your child finishes a practice quiz or receives an assignment.</p>
                 </div>
                 <Switch
                   checked={preferences.activityAlerts}
@@ -772,10 +772,10 @@ export default function ParentSettingsPage() {
                 />
               </div>
 
-              <div className="flex items-center justify-between p-4 rounded-xl bg-[#080f22] border border-[#202b43]">
+              <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border">
                 <div className="space-y-0.5 pr-4">
-                  <p className="font-bold text-sm text-white">Educational & Marketing News</p>
-                  <p className="text-xs text-slate-400 font-medium">Receive occasional emails with resources, tips, and new product updates.</p>
+                  <p className="font-bold text-sm text-foreground">Educational & Marketing News</p>
+                  <p className="text-xs text-muted-foreground font-medium">Receive occasional emails with resources, tips, and new product updates.</p>
                 </div>
                 <Switch
                   checked={preferences.marketingUpdates}

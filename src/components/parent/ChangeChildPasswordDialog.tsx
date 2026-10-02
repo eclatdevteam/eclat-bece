@@ -67,20 +67,20 @@ export function ChangeChildPasswordDialog({ open, onOpenChange, child }: ChangeC
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px] rounded-2xl border border-[#233148] bg-[#0c1628] text-slate-100 shadow-2xl">
+            <DialogContent className="sm:max-w-[425px] rounded-2xl border border-border bg-card text-card-foreground shadow-2xl">
                 <DialogHeader>
                     <div className="w-10 h-10 bg-amber-500/10 rounded-xl flex items-center justify-center mb-2">
-                        <Key className="w-5 h-5 text-amber-400" />
+                        <Key className="w-5 h-5 text-amber-500" />
                     </div>
-                    <DialogTitle className="text-xl font-bold text-white">Change Password</DialogTitle>
-                    <DialogDescription className="font-medium text-slate-400 text-xs sm:text-sm">
-                        Set a new password for <span className="text-white font-semibold">{child?.profile.full_name}</span>.
+                    <DialogTitle className="text-xl font-bold text-foreground">Change Password</DialogTitle>
+                    <DialogDescription className="font-medium text-muted-foreground text-xs sm:text-sm">
+                        Set a new password for <span className="text-foreground font-semibold">{child?.profile.full_name}</span>.
                     </DialogDescription>
                 </DialogHeader>
                 <form onSubmit={handleSubmit} className="space-y-5 py-2">
                     <div className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="newPassword" className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                            <Label htmlFor="newPassword" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                 New Password
                             </Label>
                             <div className="relative group">
@@ -90,20 +90,20 @@ export function ChangeChildPasswordDialog({ open, onOpenChange, child }: ChangeC
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}
                                     placeholder="Minimum 6 characters"
-                                    className="h-11 rounded-xl border border-[#233148] bg-[#080f22] text-slate-100 placeholder:text-slate-500 font-medium focus-visible:border-amber-400 pr-12 transition-all"
+                                    className="h-11 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground font-medium focus-visible:ring-1 focus-visible:ring-amber-500 pr-12 transition-all"
                                     required
                                 />
                                 <button
                                     type="button"
                                     onClick={() => setShowPassword(!showPassword)}
-                                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
                                 >
                                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                                 </button>
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="confirmPassword" className="text-xs font-semibold uppercase tracking-wider text-slate-300">
+                            <Label htmlFor="confirmPassword" className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                                 Confirm Password
                             </Label>
                             <Input
@@ -112,7 +112,7 @@ export function ChangeChildPasswordDialog({ open, onOpenChange, child }: ChangeC
                                 value={confirmPassword}
                                 onChange={(e) => setConfirmPassword(e.target.value)}
                                 placeholder="Repeat new password"
-                                className="h-11 rounded-xl border border-[#233148] bg-[#080f22] text-slate-100 placeholder:text-slate-500 font-medium focus-visible:border-amber-400"
+                                className="h-11 rounded-xl border border-border bg-background text-foreground placeholder:text-muted-foreground font-medium focus-visible:ring-1 focus-visible:ring-amber-500"
                                 required
                             />
                         </div>
@@ -122,14 +122,14 @@ export function ChangeChildPasswordDialog({ open, onOpenChange, child }: ChangeC
                             type="button"
                             variant="outline"
                             onClick={() => onOpenChange(false)}
-                            className="rounded-xl font-semibold border border-[#233148] bg-[#080f22] text-slate-200 hover:bg-[#15273f] hover:border-[#3bc2f3] hover:text-white h-11 px-5"
+                            className="rounded-xl font-semibold h-11 px-5"
                         >
                             Cancel
                         </Button>
                         <Button
                             type="submit"
                             disabled={isSubmitting || !password || password !== confirmPassword}
-                            className="rounded-xl font-bold h-11 px-6 bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-md shadow-amber-500/10"
+                            className="rounded-xl font-bold h-11 px-6 bg-amber-500 text-slate-950 hover:bg-amber-400 shadow-sm"
                         >
                             {isSubmitting ? (
                                 <>

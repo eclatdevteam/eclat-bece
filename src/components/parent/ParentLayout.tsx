@@ -30,8 +30,9 @@ export function ParentLayout({ children }: ParentLayoutProps) {
     const navigate = useNavigate();
     const location = useLocation();
     const { signOut, user } = useAuth();
-    const { theme, resolvedTheme } = useTheme();
-    const logo = theme === "dark" ? logoLight : logoDark;
+    const { resolvedTheme } = useTheme();
+    const isDark = resolvedTheme === "dark";
+    const logo = isDark ? logoLight : logoDark;
 
     const [displayName, setDisplayName] = useState("");
     const [email, setEmail] = useState("");
@@ -107,16 +108,16 @@ export function ParentLayout({ children }: ParentLayoutProps) {
 
     return (
         <SidebarProvider>
-            <div className="parent-shell min-h-screen flex w-full dashboard-theme">
+            <div className="parent-shell min-h-screen flex w-full dashboard-theme bg-background text-foreground">
                 <div className="print:hidden">
                     <ParentSidebar />
                 </div>
 
                 <div className="flex-1 flex flex-col relative print:p-0 print:m-0">
-                    <header className="sticky top-0 z-40 border-b border-border/40 bg-background/75 backdrop-blur-xl print:hidden">
+                    <header className="sticky top-0 z-40 border-b border-border/80 bg-background/90 backdrop-blur-xl print:hidden">
                         <div className="flex items-center justify-between px-4 py-4 sm:px-6">
                             <div className="flex items-center gap-4">
-                                <SidebarTrigger className="md:hidden text-slate-300 hover:text-white hover:bg-[#15233c] transition-colors" />
+                                <SidebarTrigger className="md:hidden text-foreground/70 hover:text-foreground hover:bg-accent transition-colors" />
                                 <img
                                     src={logo}
                                     alt="Éclat Logo"
@@ -126,9 +127,9 @@ export function ParentLayout({ children }: ParentLayoutProps) {
                             </div>
 
                             <div className="flex items-center gap-2 sm:gap-4">
-                                <div className="hidden items-center rounded-full border border-[#26344d] bg-[#0d162a] px-3 py-1.5 sm:flex">
-                                    <span className="mr-2 text-[10px] font-bold uppercase tracking-[0.2em] text-slate-400">Role</span>
-                                    <span className="rounded-full bg-[#0c2438] border border-[#2d4b68] px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-[#58c4e8]">Parent</span>
+                                <div className="hidden items-center rounded-full border border-border bg-card/80 px-3 py-1.5 shadow-sm sm:flex">
+                                    <span className="mr-2 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">Role</span>
+                                    <span className="rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[10px] font-black uppercase tracking-[0.18em] text-primary">Parent</span>
                                 </div>
                                 <NotificationBell />
                                 <ThemeToggle />
@@ -138,47 +139,47 @@ export function ParentLayout({ children }: ParentLayoutProps) {
                                         <Button
                                             variant="ghost"
                                             size="icon"
-                                            className="h-9 w-9 overflow-hidden rounded-full border border-[#26344d] p-0 transition hover:border-[#384c6e] sm:h-10 sm:w-10"
+                                            className="h-9 w-9 overflow-hidden rounded-full border border-border p-0 transition hover:border-primary/50 sm:h-10 sm:w-10"
                                         >
                                             <Avatar className="h-full w-full">
                                                 <AvatarImage src={avatarUrl} alt={displayName} />
-                                                <AvatarFallback className="bg-[#172338] text-sm font-bold text-[#58c4e8]">
+                                                <AvatarFallback className="bg-muted text-sm font-bold text-foreground">
                                                     {displayName ? displayName.substring(0, 2).toUpperCase() : <UserIcon className="h-4 w-4" />}
                                                 </AvatarFallback>
                                             </Avatar>
                                         </Button>
                                     </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-64 rounded-2xl border border-[#233148] bg-[#0c1628] p-2 text-slate-100 shadow-2xl">
+                                    <DropdownMenuContent align="end" className="w-64 rounded-2xl border border-border bg-popover p-2 text-popover-foreground shadow-2xl">
                                         <DropdownMenuLabel className="px-2.5 py-2 font-normal">
                                             <div className="flex flex-col space-y-1">
-                                                <p className="truncate text-sm font-black text-white">{displayName}</p>
-                                                <p className="truncate text-xs font-medium text-slate-400">{email}</p>
-                                                <span className="mt-1 w-fit rounded-full bg-[#0c2438] border border-[#2d4b68] px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-[#58c4e8]">
+                                                <p className="truncate text-sm font-black text-foreground">{displayName}</p>
+                                                <p className="truncate text-xs font-medium text-muted-foreground">{email}</p>
+                                                <span className="mt-1 w-fit rounded-full bg-primary/10 border border-primary/20 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.18em] text-primary">
                                                     Parent Account
                                                 </span>
                                             </div>
                                         </DropdownMenuLabel>
-                                        <DropdownMenuSeparator className="my-1.5 bg-[#202b43]" />
-                                        <DropdownMenuItem onClick={() => navigate("/dashboard/parent/settings")} className="cursor-pointer rounded-xl py-2 font-bold text-slate-200 hover:bg-[#172338] hover:text-white">
-                                            <Settings className="mr-2 h-4 w-4 text-slate-400" />
+                                        <DropdownMenuSeparator className="my-1.5" />
+                                        <DropdownMenuItem onClick={() => navigate("/dashboard/parent/settings")} className="cursor-pointer rounded-xl py-2 font-bold text-foreground hover:bg-accent hover:text-accent-foreground">
+                                            <Settings className="mr-2 h-4 w-4 text-muted-foreground" />
                                             <span>Profile Settings</span>
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => navigate("/dashboard/parent/settings?tab=security")} className="cursor-pointer rounded-xl py-2 font-bold text-slate-200 hover:bg-[#172338] hover:text-white">
-                                            <KeyRound className="mr-2 h-4 w-4 text-slate-400" />
+                                        <DropdownMenuItem onClick={() => navigate("/dashboard/parent/settings?tab=security")} className="cursor-pointer rounded-xl py-2 font-bold text-foreground hover:bg-accent hover:text-accent-foreground">
+                                            <KeyRound className="mr-2 h-4 w-4 text-muted-foreground" />
                                             <span>Change Password</span>
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={handleCopyCode} className="cursor-pointer rounded-xl py-2 font-bold text-slate-200 hover:bg-[#172338] hover:text-white">
+                                        <DropdownMenuItem onClick={handleCopyCode} className="cursor-pointer rounded-xl py-2 font-bold text-foreground hover:bg-accent hover:text-accent-foreground">
                                             {copied ? (
-                                                <Check className="mr-2 h-4 w-4 text-emerald-400" />
+                                                <Check className="mr-2 h-4 w-4 text-emerald-500" />
                                             ) : (
-                                                <Copy className="mr-2 h-4 w-4 text-slate-400" />
+                                                <Copy className="mr-2 h-4 w-4 text-muted-foreground" />
                                             )}
                                             <div className="flex w-full items-center justify-between">
                                                 <span>Copy Link Code</span>
-                                                <span className="select-all rounded border border-[#26344d] bg-[#0d162a] px-1.5 py-0.5 font-mono text-[10px] font-black text-[#58c4e8]">{uniqueId}</span>
+                                                <span className="select-all rounded border border-border bg-muted px-1.5 py-0.5 font-mono text-[10px] font-black text-primary">{uniqueId}</span>
                                             </div>
                                         </DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => navigate("/dashboard/parent/resources")} className="cursor-pointer rounded-xl py-2 font-bold">
+                                        <DropdownMenuItem onClick={() => navigate("/dashboard/parent/resources")} className="cursor-pointer rounded-xl py-2 font-bold text-foreground hover:bg-accent hover:text-accent-foreground">
                                             <HelpCircle className="mr-2 h-4 w-4 text-muted-foreground" />
                                             <span>Help & Resources</span>
                                         </DropdownMenuItem>
@@ -197,7 +198,7 @@ export function ParentLayout({ children }: ParentLayoutProps) {
                         <div className="parent-page-shell print:p-0 print:m-0 print:max-w-none">{children}</div>
                     </main>
 
-                    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/60 bg-background/95 px-2 py-3 backdrop-blur-xl shadow-[0_-10px_30px_rgba(0,0,0,0.18)] md:hidden print:hidden">
+                    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/80 bg-background/95 px-2 py-3 backdrop-blur-xl shadow-[0_-10px_30px_rgba(0,0,0,0.08)] md:hidden print:hidden">
                         <div className="mx-auto flex max-w-md items-center justify-around">
                             {navItems.map((item) => {
                                 const Icon = item.icon;
@@ -213,22 +214,22 @@ export function ParentLayout({ children }: ParentLayoutProps) {
                                                 navigate(item.url);
                                             }
                                         }}
-                                        className={`relative flex flex-col items-center gap-1 rounded-2xl px-4 py-1 transition-all duration-300 ${active ? 'scale-110 text-[#3bc2f3]' : 'text-slate-400 hover:text-slate-200'}`}
+                                        className={`relative flex flex-col items-center gap-1 rounded-2xl px-4 py-1 transition-all duration-300 ${active ? 'scale-105 text-primary font-bold' : 'text-muted-foreground hover:text-foreground'}`}
                                     >
                                         <Icon className={`h-6 w-6 ${active ? 'stroke-[2.5px]' : 'stroke-[2px]'}`} />
-                                        <span className={`text-[10px] font-bold uppercase tracking-tight ${active ? 'opacity-100' : 'opacity-60'}`}>
+                                        <span className={`text-[10px] font-bold uppercase tracking-tight ${active ? 'opacity-100' : 'opacity-70'}`}>
                                             {item.title}
                                         </span>
-                                        {active && <span className="absolute -top-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-[#3bc2f3] shadow-[0_0_10px_#3bc2f3]" />}
+                                        {active && <span className="absolute -top-1 left-1/2 h-1.5 w-1.5 -translate-x-1/2 rounded-full bg-primary shadow-[0_0_8px_hsl(var(--primary))]" />}
                                     </button>
                                 );
                             })}
                             <button
                                 onClick={() => signOut()}
-                                className="flex flex-col items-center gap-1 text-muted-foreground opacity-80 hover:text-destructive"
+                                className="flex flex-col items-center gap-1 text-muted-foreground opacity-80 hover:text-destructive transition-colors"
                             >
                                 <LogOut className="h-6 w-6 stroke-[2px]" />
-                                <span className="text-[10px] font-bold uppercase tracking-tight opacity-60">Exit</span>
+                                <span className="text-[10px] font-bold uppercase tracking-tight opacity-70">Exit</span>
                             </button>
                         </div>
                     </nav>

@@ -280,14 +280,14 @@ export default function MyChildren() {
             {/* Header Section */}
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                 <div>
-                    <div className="inline-flex items-center gap-1.5 rounded-full border border-[#2d4b68] bg-[#0c2438] px-3 py-1 text-[11px] font-semibold text-[#58c4e8]">
+                    <div className="inline-flex items-center gap-1.5 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-[11px] font-semibold text-primary">
                         <Users className="h-3.5 w-3.5" />
                         <span>Learner Management</span>
                     </div>
-                    <h1 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-[#71c9ed]">
-                        My Children<span className="text-[#3bc2f3]">.</span>
+                    <h1 className="mt-2 text-2xl sm:text-3xl lg:text-4xl font-black tracking-tight text-foreground">
+                        My Children<span className="text-primary">.</span>
                     </h1>
-                    <p className="mt-1 text-xs sm:text-sm text-slate-400">
+                    <p className="mt-1 text-xs sm:text-sm text-muted-foreground">
                         Manage student profiles, view comprehensive exam stats, and assign practice.
                     </p>
                 </div>
@@ -295,14 +295,14 @@ export default function MyChildren() {
                     <Button
                         onClick={() => navigate("/dashboard/parent")}
                         variant="outline"
-                        className="border-slate-700 bg-slate-900/60 text-slate-200 hover:bg-slate-800 text-xs sm:text-sm"
+                        className="text-xs sm:text-sm"
                     >
                         <LayoutDashboard className="mr-1.5 h-4 w-4" />
                         Dashboard
                     </Button>
                     <Button
                         onClick={() => setAddChildOpen(true)}
-                        className="bg-[#3bc2f3] text-[#041c2d] hover:bg-[#6cd8ff] font-semibold text-xs sm:text-sm"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold text-xs sm:text-sm shadow-sm"
                     >
                         <Plus className="mr-1.5 h-4 w-4" />
                         Add New Child
@@ -312,28 +312,28 @@ export default function MyChildren() {
 
             {/* Metrics Overview */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-                <Card className="rounded-2xl border border-[#233148] bg-[#0c1628] text-slate-100 p-4 sm:p-5">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Enrolled Children</p>
+                <Card className="rounded-2xl border border-border bg-card text-card-foreground shadow-sm p-4 sm:p-5">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Enrolled Children</p>
                     <div className="flex items-baseline gap-2 mt-1">
-                        <p className="text-2xl sm:text-3xl font-black text-white">{children.length}</p>
-                        <p className="text-xs text-[#58c4e8]">Active</p>
+                        <p className="text-2xl sm:text-3xl font-black text-foreground">{children.length}</p>
+                        <p className="text-xs text-primary font-medium">Active</p>
                     </div>
                 </Card>
-                <Card className="rounded-2xl border border-[#233148] bg-[#0c1628] text-slate-100 p-4 sm:p-5">
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Premium Access</p>
+                <Card className="rounded-2xl border border-border bg-card text-card-foreground shadow-sm p-4 sm:p-5">
+                    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Premium Access</p>
                     <div className="flex items-baseline gap-2 mt-1">
-                        <p className="text-2xl sm:text-3xl font-black text-amber-400">{children.filter(c => c.is_premium).length}</p>
-                        <p className="text-xs text-amber-400/70">VIP</p>
+                        <p className="text-2xl sm:text-3xl font-black text-amber-500">{children.filter(c => c.is_premium).length}</p>
+                        <p className="text-xs text-amber-500/80 font-medium">VIP</p>
                     </div>
                 </Card>
             </div>
 
             {/* Search and Filters */}
             <div className="relative max-w-md">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                     placeholder="Search by name or username..."
-                    className="pl-10 h-10 rounded-xl border border-[#26344d] bg-[#0d162a] text-xs sm:text-sm text-slate-200 placeholder:text-slate-400 focus:border-[#3bc2f3]/60 focus:ring-1 focus:ring-[#3bc2f3]/20"
+                    className="pl-10 h-10 rounded-xl border border-border bg-background text-xs sm:text-sm text-foreground placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-primary"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
                 />
@@ -342,7 +342,7 @@ export default function MyChildren() {
             {/* Children Grid */}
             {isLoading ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                    {[1, 2].map(i => <div key={i} className="h-64 rounded-2xl bg-[#0c1628] animate-pulse border border-[#233148]" />)}
+                    {[1, 2].map(i => <div key={i} className="h-64 rounded-2xl bg-card animate-pulse border border-border" />)}
                 </div>
             ) : filteredChildren.length > 0 ? (
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pb-20">

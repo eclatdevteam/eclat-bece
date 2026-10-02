@@ -63,26 +63,26 @@ export function DummyPaymentModal({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px] rounded-2xl border border-[#233148] bg-[#0c1628] text-slate-100 shadow-2xl">
+            <DialogContent className="sm:max-w-[425px] rounded-2xl border border-border bg-card text-card-foreground shadow-2xl">
                 <DialogHeader>
-                    <div className="mx-auto bg-[#0c2438] w-12 h-12 rounded-2xl flex items-center justify-center mb-3 text-[#58c4e8]">
-                        <Zap className="h-6 w-6 text-[#3bc2f3]" />
+                    <div className="mx-auto bg-primary/10 w-12 h-12 rounded-2xl flex items-center justify-center mb-3 text-primary">
+                        <Zap className="h-6 w-6 text-primary" />
                     </div>
-                    <DialogTitle className="text-center text-xl font-bold text-white">Unlock Premium Features</DialogTitle>
-                    <DialogDescription className="text-center text-slate-400 text-xs sm:text-sm">
-                        Upgrade <strong className="text-white font-semibold">{studentName}</strong>'s account for unlimited practice questions and detailed analytics.
+                    <DialogTitle className="text-center text-xl font-bold text-foreground">Unlock Premium Features</DialogTitle>
+                    <DialogDescription className="text-center text-muted-foreground text-xs sm:text-sm">
+                        Upgrade <strong className="text-foreground font-semibold">{studentName}</strong>'s account for unlimited practice questions and detailed analytics.
                     </DialogDescription>
                 </DialogHeader>
                 <div className="py-4 space-y-4">
-                    <div className="bg-[#080f22] p-4 rounded-xl border border-[#202b43] flex justify-between items-center">
+                    <div className="bg-muted/40 p-4 rounded-xl border border-border flex justify-between items-center">
                         <div>
-                            <p className="font-semibold text-white text-sm">1 Year Subscription</p>
-                            <p className="text-xs text-slate-400">Billed annually</p>
+                            <p className="font-semibold text-foreground text-sm">1 Year Subscription</p>
+                            <p className="text-xs text-muted-foreground">Billed annually</p>
                         </div>
-                        <p className="text-2xl font-black text-[#3bc2f3]">₦15,000</p>
+                        <p className="text-2xl font-black text-primary">₦15,000</p>
                     </div>
                     <div className="text-center">
-                        <p className="text-xs text-amber-300 bg-amber-950/40 border border-amber-800/40 p-2.5 rounded-xl inline-block leading-relaxed">
+                        <p className="text-xs text-amber-600 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 p-2.5 rounded-xl inline-block leading-relaxed">
                             Notice: This is a dummy payment process for testing. No real charges will be made.
                         </p>
                     </div>
@@ -92,14 +92,14 @@ export function DummyPaymentModal({
                         variant="outline"
                         onClick={() => onOpenChange(false)}
                         disabled={isProcessing}
-                        className="rounded-xl font-semibold border border-[#233148] bg-[#080f22] text-slate-200 hover:bg-[#15273f] hover:border-[#3bc2f3] hover:text-white h-11 px-5"
+                        className="rounded-xl font-semibold h-11 px-5"
                     >
                         Cancel
                     </Button>
                     <Button
                         onClick={handlePayment}
                         disabled={isProcessing}
-                        className="rounded-xl font-bold h-11 px-6 bg-[#3bc2f3] text-slate-950 hover:bg-[#32ade0] shadow-md shadow-cyan-500/10 gap-2"
+                        className="rounded-xl font-bold h-11 px-6 bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm gap-2"
                     >
                         {isProcessing ? (
                             <>
