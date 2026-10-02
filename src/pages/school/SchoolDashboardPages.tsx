@@ -1,9 +1,0 @@
-export { default as SchoolOverviewPage } from "./SchoolOverviewPage";
-export { default as SchoolStudentsPage } from "./SchoolStudentsPage";
-export { default as SchoolTeachersPage } from "./SchoolTeachersPage";
-export { default as SchoolClassesPage } from "./SchoolClassesPage";
-export { default as SchoolAssignmentsPage } from "./SchoolAssignmentsPage";
-export { default as SchoolReportsPage } from "./SchoolReportsPage";
-export { default as SchoolExamsPage } from "./SchoolExamsPage";
-export { default as SchoolLeaderboardPage } from "./SchoolLeaderboardPage";
-export { default as SchoolSettingsPage } from "./SchoolSettingsPage";
