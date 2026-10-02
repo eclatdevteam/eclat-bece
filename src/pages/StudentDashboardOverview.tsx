@@ -418,17 +418,17 @@ export default function StudentDashboardOverview() {
   };
 
   return (
-    <div className="w-full px-5 py-8 text-slate-100 sm:px-8">
-      <section className="relative mb-7 overflow-hidden rounded-xl border border-[#25344d] bg-[#101c31] px-6 py-7 shadow-2xl sm:px-8">
-        <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_center,rgba(14,157,204,.22),transparent_65%)]" />
+    <div className="w-full px-5 py-8 text-foreground sm:px-8">
+      <section className="relative mb-7 overflow-hidden rounded-xl border border-border bg-card text-card-foreground px-6 py-7 shadow-sm sm:px-8">
+        <div className="absolute inset-y-0 right-0 w-1/2 bg-[radial-gradient(circle_at_center,rgba(14,157,204,.12),transparent_65%)] dark:bg-[radial-gradient(circle_at_center,rgba(14,157,204,.22),transparent_65%)]" />
         <div className="relative max-w-xl">
-          <p className="mb-2 flex items-center gap-2 text-sm text-slate-200">Welcome back, {userName}! <Sparkles className="h-4 w-4 text-[#f4d21f]" /></p>
-          <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">{classYear === 'year_6' ? 'Year 6 · Common Entrance' : 'Year 9 · BECE'}</h1>
-          <p className="mt-2 text-sm text-slate-400">Level {levelInfo.level} {levelInfo.title} · {levelInfo.lifetimeEP.toLocaleString()} Lifetime EP</p>
+          <p className="mb-2 flex items-center gap-2 text-sm text-foreground/80">Welcome back, {userName}! <Sparkles className="h-4 w-4 text-amber-500" /></p>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl">{classYear === 'year_6' ? 'Year 6 · Common Entrance' : 'Year 9 · BECE'}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Level {levelInfo.level} {levelInfo.title} · {levelInfo.lifetimeEP.toLocaleString()} Lifetime EP</p>
           <div className="mt-6 flex flex-wrap gap-3">
-            <Button onClick={() => navigate('/dashboard/student/practice')} className="bg-[#72c9ed] text-[#071023] hover:bg-[#91d9f4]">continue practice <ArrowRight className="ml-2 h-4 w-4" /></Button>
+            <Button onClick={() => navigate('/dashboard/student/practice')} className="bg-primary text-primary-foreground hover:bg-primary/90 font-semibold shadow-sm">continue practice <ArrowRight className="ml-2 h-4 w-4" /></Button>
             {dailyChallengeCompleted ? (
-              <Button disabled className="border border-emerald-500/40 bg-emerald-500/20 text-emerald-300 font-bold cursor-default">
+              <Button disabled className="border border-emerald-500/40 bg-emerald-500/20 text-emerald-600 dark:text-emerald-300 font-bold cursor-default">
                 Daily Challenge Done <CheckCircle2 className="ml-1.5 h-4 w-4" />
               </Button>
             ) : (
@@ -436,49 +436,49 @@ export default function StudentDashboardOverview() {
                 Daily Challenge <Flame className="ml-1.5 h-4 w-4" />
               </Button>
             )}
-            <Button onClick={() => navigate('/quiz')} variant="outline" className="border-slate-500 bg-transparent text-slate-100 hover:bg-slate-700">take mock exam</Button>
+            <Button onClick={() => navigate('/quiz')} variant="outline">take mock exam</Button>
           </div>
         </div>
       </section>
 
       {/* Daily Challenge Spotlight Card (PRD Section 3.6 & Epic EP-04) */}
-      <section className={`mb-7 overflow-hidden rounded-xl border p-5 shadow-lg transition-all ${
+      <section className={`mb-7 overflow-hidden rounded-xl border p-5 shadow-sm transition-all ${
         dailyChallengeCompleted
-          ? "border-emerald-500/40 bg-gradient-to-r from-emerald-500/15 via-[#13282c] to-[#0e192b]"
-          : "border-amber-500/50 bg-gradient-to-r from-amber-500/15 via-[#231e33] to-[#0e192b]"
+          ? "border-emerald-500/30 bg-emerald-500/5 dark:bg-gradient-to-r dark:from-emerald-500/15 dark:via-[#13282c] dark:to-[#0e192b]"
+          : "border-amber-500/30 bg-amber-500/5 dark:bg-gradient-to-r dark:from-amber-500/15 dark:via-[#231e33] dark:to-[#0e192b]"
       }`}>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-start gap-4">
             <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border shadow-inner ${
               dailyChallengeCompleted
-                ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/30"
-                : "bg-amber-500/20 text-amber-400 border-amber-500/30"
+                ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                : "bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30"
             }`}>
               {dailyChallengeCompleted ? (
-                <CheckCircle2 className="h-6 w-6 text-emerald-400" />
+                <CheckCircle2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
               ) : (
-                <Flame className="h-6 w-6 text-amber-400" />
+                <Flame className="h-6 w-6 text-amber-600 dark:text-amber-400" />
               )}
             </div>
             <div>
               <div className="flex items-center gap-2">
                 <span className={`text-[10px] font-black uppercase tracking-wider ${
-                  dailyChallengeCompleted ? "text-emerald-400" : "text-amber-400"
+                  dailyChallengeCompleted ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"
                 }`}>
                   {dailyChallengeCompleted ? "Daily Challenge Claimed" : "Daily Challenge • 10 Questions"}
                 </span>
                 <span className={`rounded px-1.5 py-0.2 text-[9px] font-bold ${
-                  dailyChallengeCompleted ? "bg-emerald-400/20 text-emerald-300" : "bg-amber-400/20 text-amber-300"
+                  dailyChallengeCompleted ? "bg-emerald-400/20 text-emerald-700 dark:text-emerald-300" : "bg-amber-400/20 text-amber-700 dark:text-amber-300"
                 }`}>
                   +20 to +50 EP
                 </span>
               </div>
-              <h3 className="text-lg font-black text-white mt-0.5">
+              <h3 className="text-lg font-black text-foreground mt-0.5">
                 {dailyChallengeCompleted
                   ? "Today's Challenge Crushed! 🌟"
                   : "Today's 10-Question Sprint"}
               </h3>
-              <p className="text-xs text-slate-300 mt-1 max-w-xl">
+              <p className="text-xs text-muted-foreground mt-1 max-w-xl">
                 {dailyChallengeCompleted
                   ? "You claimed today's rewards and protected your daily streak! Fresh challenge unlocks at 00:00 UTC."
                   : `Curated mixed questions across your curriculum. Earn +20 baseline EP up to +50 EP for high accuracy and keep your ${currentStreak}-day streak alive!`}
@@ -490,14 +490,14 @@ export default function StudentDashboardOverview() {
             {dailyChallengeCompleted ? (
               <Button
                 disabled
-                className="w-full sm:w-auto border border-emerald-500/40 bg-emerald-500/20 text-emerald-300 font-bold cursor-default"
+                className="w-full sm:w-auto border border-emerald-500/40 bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold cursor-default"
               >
                 <CheckCircle2 className="mr-1.5 h-4 w-4" /> Completed for Today
               </Button>
             ) : (
               <Button
                 onClick={() => navigate("/quiz?mode=daily_challenge")}
-                className="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black hover:from-amber-400 hover:to-orange-400 shadow-lg shadow-amber-500/20"
+                className="w-full sm:w-auto bg-gradient-to-r from-amber-500 to-orange-500 text-slate-950 font-black hover:from-amber-400 hover:to-orange-400 shadow-md shadow-amber-500/20"
               >
                 Start Daily Challenge →
               </Button>
@@ -508,23 +508,23 @@ export default function StudentDashboardOverview() {
 
       {/* Signature Weak-Topic Focus Recommendation (PRD Section 1.2 & 3.3) */}
       {focusTopic && (
-        <section className="mb-7 rounded-xl border border-amber-500/40 bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent p-5">
+        <section className="mb-7 rounded-xl border border-amber-500/40 bg-amber-500/5 dark:bg-gradient-to-r dark:from-amber-500/10 dark:via-amber-500/5 dark:to-transparent p-5">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <span className="text-xs font-bold text-amber-500 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-xs font-bold text-amber-600 dark:text-amber-500 uppercase tracking-wider flex items-center gap-1.5">
                 <AlertCircle className="w-3.5 h-3.5" />
                 Recommended Focus Area (Weak Topic)
               </span>
-              <h3 className="text-lg font-black text-slate-100 mt-0.5">
+              <h3 className="text-lg font-black text-foreground mt-0.5">
                 Confront Your Weakness: {focusTopic.topic} ({focusTopic.subject})
               </h3>
-              <p className="text-xs text-slate-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Current accuracy is {Math.round(focusTopic.rolling_accuracy)}%. Practice this topic now to earn +25% Focus EP and the +75 EP Transition Reward!
               </p>
             </div>
             <Button
               onClick={() => navigate(`/quiz?subject=${encodeURIComponent(focusTopic.subject)}&topic=${encodeURIComponent(focusTopic.topic)}`)}
-              className="bg-amber-500 text-slate-950 hover:bg-amber-400 font-bold shrink-0 shadow-md"
+              className="bg-amber-500 text-slate-950 hover:bg-amber-400 font-bold shrink-0 shadow-sm"
             >
               Confront Weakness →
             </Button>
@@ -535,45 +535,45 @@ export default function StudentDashboardOverview() {
       {/* The Four-Pillar Measurement System (PRD Section 2) */}
       <section className="mb-8 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
         {/* Pillar 1: Éclat Points & Level */}
-        <div className="rounded-lg border border-[#1d2a40] bg-[#0e192b] p-5 flex flex-col justify-between">
+        <div className="rounded-xl border border-border bg-card text-card-foreground p-5 flex flex-col justify-between shadow-sm">
           <div>
             <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="rounded-lg bg-[#183149] p-2 text-[#71c9ed]">
+                <div className="rounded-lg bg-sky-50 text-sky-600 dark:bg-[#183149] dark:text-[#71c9ed] p-2">
                   <Zap size={18} />
                 </div>
-                <span className="text-xs font-bold text-slate-300">Level {levelInfo.level}</span>
+                <span className="text-xs font-bold text-foreground">Level {levelInfo.level}</span>
               </div>
               <Badge variant="outline" className="text-[10px] border-primary/30 text-primary">
                 {levelInfo.title}
               </Badge>
             </div>
-            <p className="text-2xl sm:text-3xl font-black text-[#71c9ed]">
-              {levelInfo.lifetimeEP.toLocaleString()} <span className="text-xs font-bold text-slate-400">EP</span>
+            <p className="text-2xl sm:text-3xl font-black text-sky-600 dark:text-[#71c9ed]">
+              {levelInfo.lifetimeEP.toLocaleString()} <span className="text-xs font-bold text-muted-foreground">EP</span>
             </p>
           </div>
           <div className="mt-3">
             <Progress value={levelInfo.progressPercent} className="h-1.5 rounded-full" />
-            <span className="text-[10px] text-slate-400 mt-1 block">
+            <span className="text-[10px] text-muted-foreground mt-1 block">
               {levelInfo.progressPercent}% to Level {levelInfo.level + 1}
             </span>
           </div>
         </div>
 
         {/* Pillar 2: Academic Mastery Score % */}
-        <div className="rounded-lg border border-[#1d2a40] bg-[#0e192b] p-5 flex flex-col justify-between">
+        <div className="rounded-xl border border-border bg-card text-card-foreground p-5 flex flex-col justify-between shadow-sm">
           <div>
             <div className="mb-3 flex items-center gap-2.5">
-              <div className="rounded-lg bg-[#183149] p-2 text-emerald-400">
+              <div className="rounded-lg bg-emerald-50 text-emerald-600 dark:bg-[#183149] dark:text-emerald-400 p-2">
                 <Target size={18} />
               </div>
-              <span className="text-xs font-bold text-slate-300">Academic Mastery</span>
+              <span className="text-xs font-bold text-foreground">Academic Mastery</span>
             </div>
-            <p className="text-2xl sm:text-3xl font-black text-emerald-400">
+            <p className="text-2xl sm:text-3xl font-black text-emerald-600 dark:text-emerald-400">
               {averageScore}%
             </p>
           </div>
-          <p className="mt-3 text-[11px] text-slate-400">
+          <p className="mt-3 text-[11px] text-muted-foreground">
             {totalQuestions} questions evaluated
           </p>
         </div>
@@ -581,58 +581,76 @@ export default function StudentDashboardOverview() {
         {/* Pillar 3: Competitive Rank & League */}
         <div 
           onClick={() => navigate('/dashboard/student/leaderboard')}
-          className="cursor-pointer group rounded-lg border border-[#1d2a40] bg-[#0e192b] p-5 flex flex-col justify-between hover:border-primary/40 transition-colors"
+          className="cursor-pointer group rounded-xl border border-border bg-card text-card-foreground p-5 flex flex-col justify-between hover:border-primary/40 transition-colors shadow-sm"
         >
           <div>
             <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="rounded-lg bg-[#183149] p-2 text-amber-400">
+                <div className="rounded-lg bg-amber-50 text-amber-600 dark:bg-[#183149] dark:text-amber-400 p-2">
                   <Trophy size={18} />
                 </div>
-                <span className="text-xs font-bold text-slate-300">Competitive Rank</span>
+                <span className="text-xs font-bold text-foreground">Competitive Rank</span>
               </div>
               <Badge variant="outline" className={`text-[10px] ${getLeagueTierConfig(currentLeagueTier).borderColor} ${getLeagueTierConfig(currentLeagueTier).color}`}>
                 {getLeagueTierConfig(currentLeagueTier).badge} {getLeagueTierConfig(currentLeagueTier).name}
               </Badge>
             </div>
-            <p className="text-2xl sm:text-3xl font-black text-amber-400">
+            <p className="text-2xl sm:text-3xl font-black text-amber-600 dark:text-amber-400">
               {monthlyRank ? `#${monthlyRank}` : "—"}
             </p>
           </div>
-          <p className="mt-3 text-[11px] text-slate-400 flex items-center justify-between">
+          <p className="mt-3 text-[11px] text-muted-foreground flex items-center justify-between">
             <span>View 30-Player Cohort</span>
             <span className="text-primary font-bold group-hover:translate-x-0.5 transition-transform">→</span>
           </p>
         </div>
 
         {/* Pillar 4: Practice Streak & Shields */}
-        <div className="rounded-lg border border-[#1d2a40] bg-[#0e192b] p-5 flex flex-col justify-between">
+        <div className="rounded-xl border border-border bg-card text-card-foreground p-5 flex flex-col justify-between shadow-sm">
           <div>
             <div className="mb-3 flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="rounded-lg bg-[#183149] p-2 text-rose-500">
+                <div className="rounded-lg bg-rose-50 text-rose-600 dark:bg-[#183149] dark:text-rose-500 p-2">
                   <Flame size={18} />
                 </div>
-                <span className="text-xs font-bold text-slate-300">Daily Streak</span>
+                <span className="text-xs font-bold text-foreground">Daily Streak</span>
               </div>
-              <div className="flex items-center gap-1 text-[11px] font-bold text-slate-300">
-                <Shield className="w-3.5 h-3.5 text-cyan-400" />
+              <div className="flex items-center gap-1 text-[11px] font-bold text-foreground">
+                <Shield className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
                 <span>{streakShields} / 2</span>
               </div>
             </div>
-            <p className="text-2xl sm:text-3xl font-black text-rose-500">
-              {currentStreak} <span className="text-xs font-bold text-slate-400">Days</span>
+            <p className="text-2xl sm:text-3xl font-black text-rose-600 dark:text-rose-500">
+              {currentStreak} <span className="text-xs font-bold text-muted-foreground">Days</span>
             </p>
           </div>
-          <p className="mt-3 text-[11px] text-slate-400">
+          <p className="mt-3 text-[11px] text-muted-foreground">
             {streakShields > 0 ? `${streakShields} Streak Shield protected` : "Practice daily to build habit"}
           </p>
         </div>
       </section>
 
-      <h2 className="mb-4 text-lg font-semibold">Quick Actions</h2>
+      <h2 className="mb-4 text-lg font-semibold text-foreground">Quick Actions</h2>
       <section className="mb-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {featureCards.slice(0, 4).map((feature) => { const Icon = feature.icon; return <button key={feature.title} onClick={() => navigate(feature.url)} className="group flex items-center gap-3 rounded-md border border-[#1d2a40] bg-[#0e192b] p-4 text-left transition hover:border-[#159dca] hover:bg-[#13223a]"><span className={`rounded-md bg-[#183149] p-2 ${feature.color}`}><Icon size={19} /></span><span className="min-w-0 flex-1"><strong className="block text-sm font-medium text-slate-100">{feature.title}</strong><small className="block text-xs text-slate-400">{feature.description}</small></span><ArrowRight className="h-4 w-4 text-slate-500 transition group-hover:translate-x-1 group-hover:text-[#71c9ed]" /></button>; })}
+        {featureCards.slice(0, 4).map((feature) => {
+          const Icon = feature.icon;
+          return (
+            <button
+              key={feature.title}
+              onClick={() => navigate(feature.url)}
+              className="group flex items-center gap-3 rounded-xl border border-border bg-card text-card-foreground p-4 text-left transition hover:border-primary/50 hover:bg-muted/40 shadow-sm"
+            >
+              <span className={`rounded-lg bg-muted p-2 ${feature.color}`}>
+                <Icon size={19} />
+              </span>
+              <span className="min-w-0 flex-1">
+                <strong className="block text-sm font-medium text-foreground">{feature.title}</strong>
+                <small className="block text-xs text-muted-foreground">{feature.description}</small>
+              </span>
+              <ArrowRight className="h-4 w-4 text-muted-foreground transition group-hover:translate-x-1 group-hover:text-primary" />
+            </button>
+          );
+        })}
       </section>
 
       {/* 5-Slot Badge Showcase (PRD Section 9.1) */}
@@ -648,10 +666,53 @@ export default function StudentDashboardOverview() {
       </section>
 
       <section className="grid gap-4 lg:grid-cols-[1fr_280px]">
-        <div className="rounded-lg border border-[#1d2a40] bg-[#0e192b] p-5"><div className="mb-5 flex items-center justify-between"><h2 className="text-lg font-semibold">Recent Activity</h2><button onClick={() => navigate('/dashboard/student/progress')} className="text-xs text-[#71c9ed]">View All</button></div>{recentActivity.length === 0 ? <p className="py-6 text-sm text-slate-400">Complete a practice quiz to see your recent activity.</p> : <div className="space-y-4">{recentActivity.map((activity) => <div key={activity.id} className="flex items-center gap-3"><span className="rounded-md bg-[#183149] p-2 text-[#71c9ed]"><BarChart3 size={18} /></span><div className="flex-1"><p className="text-sm font-medium">{activity.subject}</p><p className="text-xs text-slate-400">{activity.total_questions} questions · {formatDistanceToNow(new Date(activity.completed_at), { addSuffix: true })}</p></div><strong className={activity.score >= 80 ? 'text-[#71c9ed]' : 'text-[#f4a83a]'}>{activity.score}%</strong></div>)}</div>}</div>
-        <div className="rounded-lg border border-[#1d2a40] bg-[#0e192b] p-5"><h2 className="text-lg font-semibold">Parent Link Code</h2><p className="mt-1 text-xs text-slate-400">Share this code with your parent or guardian</p>{studentCode ? <><code className="mt-5 block border border-dashed border-[#31506c] bg-[#091426] px-3 py-4 text-center text-2xl font-bold tracking-[0.25em] text-[#71c9ed]">{studentCode}</code><Button onClick={handleCopyCode} variant="outline" className="mt-3 w-full border-slate-500 text-slate-200">{copiedCode ? <><Check className="mr-2 h-4 w-4" />copied</> : <><Copy className="mr-2 h-4 w-4" />copy code</>}</Button></> : <p className="mt-6 text-sm text-slate-400">Your link code will appear here.</p>}</div>
+        <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-sm">
+          <div className="mb-5 flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-foreground">Recent Activity</h2>
+            <button onClick={() => navigate('/dashboard/student/progress')} className="text-xs text-primary font-semibold hover:underline">
+              View All
+            </button>
+          </div>
+          {recentActivity.length === 0 ? (
+            <p className="py-6 text-sm text-muted-foreground">Complete a practice quiz to see your recent activity.</p>
+          ) : (
+            <div className="space-y-4">
+              {recentActivity.map((activity) => (
+                <div key={activity.id} className="flex items-center gap-3">
+                  <span className="rounded-lg bg-sky-50 text-sky-600 dark:bg-[#183149] dark:text-[#71c9ed] p-2">
+                    <BarChart3 size={18} />
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{activity.subject}</p>
+                    <p className="text-xs text-muted-foreground">{activity.total_questions} questions · {formatDistanceToNow(new Date(activity.completed_at), { addSuffix: true })}</p>
+                  </div>
+                  <strong className={activity.score >= 80 ? 'text-sky-600 dark:text-[#71c9ed]' : 'text-amber-600 dark:text-[#f4a83a]'}>
+                    {activity.score}%
+                  </strong>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-xl border border-border bg-card text-card-foreground p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground">Parent Link Code</h2>
+          <p className="mt-1 text-xs text-muted-foreground">Share this code with your parent or guardian</p>
+          {studentCode ? (
+            <>
+              <code className="mt-5 block border border-dashed border-border bg-muted/60 px-3 py-4 text-center text-2xl font-bold tracking-[0.25em] text-primary rounded-xl font-mono select-all">
+                {studentCode}
+              </code>
+              <Button onClick={handleCopyCode} variant="outline" className="mt-3 w-full">
+                {copiedCode ? <><Check className="mr-2 h-4 w-4" />copied</> : <><Copy className="mr-2 h-4 w-4" />copy code</>}
+              </Button>
+            </>
+          ) : (
+            <p className="mt-6 text-sm text-muted-foreground">Your link code will appear here.</p>
+          )}
+        </div>
       </section>
-      {badges.length > 0 && totalWins > 0 && <p className="mt-5 text-xs text-slate-400">{badgeLevel} badge · {totalWins} high scores</p>}
+      {badges.length > 0 && totalWins > 0 && <p className="mt-5 text-xs text-muted-foreground">{badgeLevel} badge · {totalWins} high scores</p>}
     </div>
   );
 }

@@ -113,12 +113,63 @@ export default function StudentPractice() {
 
 
   return (
-    <div className="w-full px-5 py-8 text-slate-100 sm:px-8">
-      <div className="mb-7"><h1 className="text-3xl font-bold tracking-tight">Practice Zone<span className="text-[#71c9ed]">.</span></h1><p className="mt-1 text-sm text-slate-400">Choose your learning path and start practicing</p></div>
-      <div className="mb-7 grid gap-3 md:grid-cols-[1fr_180px_180px_110px]"><label className="flex items-center gap-3 rounded-md border border-[#2b3a54] bg-[#111d32] px-4"><Search className="h-4 w-4 text-slate-400" /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search subjects or topics..." className="w-full bg-transparent py-3 text-sm outline-none placeholder:text-slate-500" /></label><select value={difficulty} onChange={(event) => setDifficulty(event.target.value)} className="rounded-md border border-[#2b3a54] bg-[#111d32] px-3 text-sm text-slate-200 outline-none"><option value="all">All Subjects</option><option value="core">Core Subjects</option></select><select className="rounded-md border border-[#2b3a54] bg-[#111d32] px-3 text-sm text-slate-200 outline-none"><option>All Difficulties</option><option>Beginner</option><option>Advanced</option></select><button className="flex items-center justify-center gap-2 rounded-md border border-[#2b3a54] bg-[#111d32] text-sm text-slate-200"><SlidersHorizontal size={15} />Sort</button></div>
-      <div className="mb-7 rounded-md border border-[#2b3a54] bg-[#111d32] p-1"><Tabs value={activeTab} onValueChange={setActiveTab}><TabsList className="grid w-full grid-cols-2 bg-transparent"><TabsTrigger value="subject" className="text-slate-400 data-[state=active]:bg-[#2d3a53] data-[state=active]:text-white">By Subject</TabsTrigger><TabsTrigger value="topic" className="text-slate-400 data-[state=active]:bg-[#2d3a53] data-[state=active]:text-white">By Topic</TabsTrigger></TabsList></Tabs></div>
-      <Card className="border-[#2b3a54] bg-transparent shadow-none p-4">
-        <CardHeader className="px-0"><CardTitle className="flex items-center gap-2 text-lg">Recommended for You <span className="text-[#71c9ed]">·</span></CardTitle><CardDescription className="text-slate-400">Build momentum with a focused practice session.</CardDescription></CardHeader>
+    <div className="w-full px-5 py-8 text-foreground sm:px-8">
+      <div className="mb-7">
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">
+          Practice Zone<span className="text-primary">.</span>
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">Choose your learning path and start practicing</p>
+      </div>
+
+      <div className="mb-7 grid gap-3 md:grid-cols-[1fr_180px_180px_110px]">
+        <label className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 shadow-sm">
+          <Search className="h-4 w-4 text-muted-foreground" />
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search subjects or topics..."
+            className="w-full bg-transparent py-2.5 text-sm outline-none placeholder:text-muted-foreground text-foreground"
+          />
+        </label>
+        <select
+          value={difficulty}
+          onChange={(event) => setDifficulty(event.target.value)}
+          className="rounded-xl border border-border bg-card px-3 text-sm text-foreground outline-none shadow-sm cursor-pointer"
+        >
+          <option value="all">All Subjects</option>
+          <option value="core">Core Subjects</option>
+        </select>
+        <select className="rounded-xl border border-border bg-card px-3 text-sm text-foreground outline-none shadow-sm cursor-pointer">
+          <option>All Difficulties</option>
+          <option>Beginner</option>
+          <option>Advanced</option>
+        </select>
+        <button className="flex items-center justify-center gap-2 rounded-xl border border-border bg-card text-sm text-foreground shadow-sm hover:bg-muted transition-colors">
+          <SlidersHorizontal size={15} />
+          Sort
+        </button>
+      </div>
+
+      <div className="mb-7 rounded-xl border border-border bg-card p-1 shadow-sm">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2 bg-transparent">
+            <TabsTrigger value="subject" className="text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground font-semibold rounded-lg">
+              By Subject
+            </TabsTrigger>
+            <TabsTrigger value="topic" className="text-muted-foreground data-[state=active]:bg-muted data-[state=active]:text-foreground font-semibold rounded-lg">
+              By Topic
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
+      <Card className="border-border bg-card text-card-foreground shadow-sm p-4 rounded-xl">
+        <CardHeader className="px-0">
+          <CardTitle className="flex items-center gap-2 text-lg text-foreground">
+            Recommended for You <span className="text-primary">·</span>
+          </CardTitle>
+          <CardDescription className="text-muted-foreground">Build momentum with a focused practice session.</CardDescription>
+        </CardHeader>
         <CardContent className="px-0">
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="hidden"><TabsTrigger value="subject">By Subject</TabsTrigger><TabsTrigger value="topic">By Topic</TabsTrigger></TabsList>
@@ -126,25 +177,26 @@ export default function StudentPractice() {
               {filteredSubjects.filter((subject) => difficulty === "all" || subject.difficulty === "Core Subject").map((subject, index) => (
                 <div
                   key={index}
-                  className="flex flex-col gap-4 rounded-lg border border-[#2b3a54] bg-[#111d32] p-4 transition hover:border-[#159dca] sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 transition hover:border-primary/50 hover:shadow-sm sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="rounded-md bg-[#1b2e47] p-3 text-2xl">{subject.icon}</span>
+                    <span className="rounded-xl bg-muted p-3 text-2xl">{subject.icon}</span>
                     <div>
-                      <h4 className="font-semibold text-slate-100">{subject.name}</h4>
-                      <p className="text-sm text-slate-400">{subject.questions} questions</p>
+                      <h4 className="font-semibold text-foreground">{subject.name}</h4>
+                      <p className="text-sm text-muted-foreground">{subject.questions} questions</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="rounded-full bg-[#26344d] px-3 py-1 text-xs font-medium text-slate-300">
+                    <span className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-foreground">
                       {subject.difficulty}
                     </span>
                     <Button 
                       variant="default"
                       size="sm" 
                       onClick={() => navigate(`/quiz?subject=${encodeURIComponent(subject.name)}`)}
+                      className="shadow-sm"
                     >
-                      Start Practice <span className="ml-1 text-[#71c9ed]">→</span>
+                      Start Practice <span className="ml-1 text-primary-foreground">→</span>
                     </Button>
                   </div>
                 </div>
@@ -154,21 +206,22 @@ export default function StudentPractice() {
               {filteredTopics.map((topic, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between rounded-lg border border-[#2b3a54] bg-[#111d32] p-4 transition hover:border-[#159dca]"
+                  className="flex items-center justify-between rounded-xl border border-border bg-card p-4 transition hover:border-primary/50 hover:shadow-sm"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="rounded-md bg-[#1b2e47] p-3 text-2xl">{topic.icon}</span>
+                    <span className="rounded-xl bg-muted p-3 text-2xl">{topic.icon}</span>
                     <div>
-                      <h4 className="font-semibold text-slate-100">{topic.name}</h4>
-                      <p className="text-sm text-slate-400">{topic.subject} · {topic.questions} questions</p>
+                      <h4 className="font-semibold text-foreground">{topic.name}</h4>
+                      <p className="text-sm text-muted-foreground">{topic.subject} · {topic.questions} questions</p>
                     </div>
                   </div>
                   <Button 
                     variant="default"
                     size="sm" 
                     onClick={() => navigate(`/quiz?topic=${encodeURIComponent(topic.name)}&subject=${encodeURIComponent(topic.subject)}`)}
+                    className="shadow-sm"
                   >
-                    Start Practice <span className="ml-1 text-[#71c9ed]">→</span>
+                    Start Practice <span className="ml-1 text-primary-foreground">→</span>
                   </Button>
                 </div>
               ))}

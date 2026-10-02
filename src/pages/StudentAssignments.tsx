@@ -49,10 +49,12 @@ export default function StudentAssignments() {
   }, [user]);
 
   return (
-    <div className="w-full py-8 text-slate-100 sm:px-8">
+    <div className="w-full px-5 py-8 text-foreground sm:px-8">
       <div className="mb-7 animate-fade-in">
-        <h2 className="flex items-center gap-2 text-2xl font-bold tracking-tight sm:text-3xl">Practice Assignments <span className="text-[#71c9ed]">·</span></h2>
-        <p className="mt-1 text-sm text-slate-400">Complete your assigned practice sessions</p>
+        <h2 className="flex items-center gap-2 text-2xl font-bold tracking-tight text-foreground sm:text-3xl">
+          Practice Assignments <span className="text-primary">·</span>
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">Complete your assigned practice sessions</p>
       </div>
 
       <div className="animate-scale-in">

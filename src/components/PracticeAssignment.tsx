@@ -49,27 +49,27 @@ export const PracticeAssignment = ({
   }
 
   return (
-    <Card className="overflow-hidden border-[#2b3a54] bg-transparent shadow-none px-5 py-4">
-      <CardHeader className="border-b border-[#26344d] bg-transparent ">
+    <Card className="overflow-hidden border-border bg-card text-card-foreground shadow-sm px-5 py-4 rounded-xl">
+      <CardHeader className="border-b border-border bg-transparent px-0 pb-4">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <CardTitle className="flex items-center gap-2 text-lg font-semibold text-slate-100">
-              <Target className="text-[#71c9ed]" size={20} />
+            <CardTitle className="flex items-center gap-2 text-lg font-semibold text-foreground">
+              <Target className="text-primary" size={20} />
               Assigned practice
             </CardTitle>
-            <CardDescription className="text-slate-400">Curated practice sets from your parents</CardDescription>
+            <CardDescription className="text-muted-foreground">Curated practice sets from your parents</CardDescription>
           </div>
-          <Badge variant="outline" className="border-[#2b3a54] bg-[#111d32] text-slate-300">{assignments.length} Tasks</Badge>
+          <Badge variant="outline" className="border-border bg-muted/50 text-foreground font-semibold">{assignments.length} Tasks</Badge>
         </div>
       </CardHeader>
       <CardContent className="space-y-3 px-0 py-6">
         {assignments.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-[#2b3a54] bg-[#0e192b] px-6 py-12 text-center">
-            <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center mx-auto mb-4 border-2 border-primary/20">
-              <BookOpen className="h-8 w-8 text-primary/40" />
+          <div className="rounded-xl border border-dashed border-border bg-muted/30 px-6 py-12 text-center">
+            <div className="w-16 h-16 bg-card rounded-full flex items-center justify-center mx-auto mb-4 border border-border shadow-xs">
+              <BookOpen className="h-8 w-8 text-muted-foreground/60" />
             </div>
-              <p className="mb-1 text-sm font-semibold text-slate-300">No assignments yet</p>
-              <p className="mx-auto max-w-[240px] text-xs leading-relaxed text-slate-500">
+            <p className="mb-1 text-sm font-semibold text-foreground">No assignments yet</p>
+            <p className="mx-auto max-w-[240px] text-xs leading-relaxed text-muted-foreground">
               No pending tasks right now. Great job keeping your plate clean!
             </p>
           </div>
@@ -77,10 +77,10 @@ export const PracticeAssignment = ({
           assignments.map((assignment) => (
             <div
               key={assignment.id}
-                className={`group relative rounded-lg border p-5 transition-all duration-300 ${
+              className={`group relative rounded-xl border p-5 transition-all duration-300 ${
                 assignment.status === 'completed' 
-                  ? "border-[#26344d] bg-[#0b1628] opacity-70"
-                  : "border-[#2b3a54] bg-[#111d32] hover:border-[#159dca]"
+                  ? "border-border bg-muted/30 opacity-80"
+                  : "border-border bg-card hover:border-primary/50 hover:shadow-sm"
               }`}
             >
               <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
@@ -90,7 +90,7 @@ export const PracticeAssignment = ({
                       {assignment.subject}
                     </Badge>
                     {assignment.status === 'completed' ? (
-                      <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 font-black text-[10px] uppercase py-0.5 rounded-lg flex items-center gap-1">
+                      <Badge className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 font-black text-[10px] uppercase py-0.5 rounded-lg flex items-center gap-1">
                         <CheckCircle2 size={10} /> Completed
                       </Badge>
                     ) : (
@@ -100,21 +100,21 @@ export const PracticeAssignment = ({
                     )}
                   </div>
                   
-                    <h4 className="mb-1 text-lg font-semibold leading-tight text-slate-100 transition-colors group-hover:text-[#71c9ed]">
+                  <h4 className="mb-1 text-lg font-semibold leading-tight text-foreground transition-colors group-hover:text-primary">
                     {assignment.topics.length > 1 ? `${assignment.topics[0]} & More` : assignment.topics[0]}
                   </h4>
                   
-                  <div className="flex items-center gap-4 text-xs font-medium text-slate-400">
+                  <div className="flex items-center gap-4 text-xs font-medium text-muted-foreground">
                     <div className="flex items-center gap-1.5">
-                      <Clock size={14} className="text-primary/60" />
+                      <Clock size={14} className="text-primary/70" />
                       <span>{assignment.duration}m</span>
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <Target size={14} className="text-primary/60" />
+                      <Target size={14} className="text-primary/70" />
                       <span>{assignment.num_questions} Questions</span>
                     </div>
                     <div className="hidden sm:flex items-center gap-1.5">
-                      <Calendar size={14} className="text-primary/60" />
+                      <Calendar size={14} className="text-primary/70" />
                       <span>{formatDistanceToNow(new Date(assignment.created_at), { addSuffix: true })}</span>
                     </div>
                   </div>
@@ -128,9 +128,9 @@ export const PracticeAssignment = ({
                     </div>
                   )}
                   <Button
-                    variant={assignment.status === 'completed' ? "outline" : "hero"}
+                    variant={assignment.status === 'completed' ? "outline" : "default"}
                     size="sm"
-                    className={`h-10 rounded-md px-5 font-semibold ${assignment.status === 'completed' ? 'border border-slate-600 bg-transparent' : 'bg-[#31405a] text-[#71c9ed] hover:bg-[#3b4c69]'}`}
+                    className="h-9 rounded-lg px-5 font-semibold shadow-sm"
                     onClick={() => handleStart(assignment)}
                   >
                     {assignment.status === 'completed' ? "Retry" : "Start Task"}
