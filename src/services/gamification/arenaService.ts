@@ -9,8 +9,7 @@ import {
   ArenaMatchResult,
   ArenaChallenge,
 } from "./types";
-import { calculateArenaMatchEP } from "./arenaEngine";
-import { calculateStudentLevel } from "./levelEngine";
+import { submitDuelTurnServer } from "@/services/quizSession";
 
 export interface CreateChallengeInput {
   challengerId: string;
@@ -178,174 +177,37 @@ export async function updateChallengeStatus(
 }
 
 /**
- * Submits duel performance for a student and completes the match if both have played
+ * Submits duel performance for a student and completes the match if both have played.
+ *
+ * Server-authoritative: turn recording, winner resolution and EP awarding all
+ * happen in the submit_duel_turn RPC. The client no longer computes arena EP
+ * or writes ledger/profile rows.
  */
 export async function submitDuelTurn(params: {
   challengeId: string;
-  studentId: string;
   score: number;
   timeTakenSeconds: number;
 }): Promise<{ isMatchComplete: boolean; matchResult?: ArenaMatchResult }> {
-  const { challengeId, studentId, score, timeTakenSeconds } = params;
+  const { challengeId, score, timeTakenSeconds } = params;
 
-  try {
-    // 1. Fetch challenge details
-    const { data: challenge, error: fetchErr } = await supabase
-      .from("arena_challenges")
-      .select("*")
-      .eq("id", challengeId)
-      .single();
+  const result = await submitDuelTurnServer(challengeId, score, timeTakenSeconds);
 
-    if (fetchErr || !challenge) {
-      throw new Error("Challenge not found");
-    }
-
-    const isChallenger = challenge.challenger_id === studentId;
-    const opponentId = isChallenger ? challenge.opponent_id : challenge.challenger_id;
-
-    // 2. Update this player's submission
-    const updatePayload: any = isChallenger
-      ? { challenger_score: score, challenger_time_taken: timeTakenSeconds }
-      : { opponent_score: score, opponent_time_taken: timeTakenSeconds };
-
-    const opponentAlreadySubmitted = isChallenger
-      ? challenge.opponent_score !== null && challenge.opponent_score !== undefined
-      : challenge.challenger_score !== null && challenge.challenger_score !== undefined;
-
-    // If opponent hasn't played yet, just save turn and wait
-    if (!opponentAlreadySubmitted) {
-      await supabase
-        .from("arena_challenges")
-        .update(updatePayload)
-        .eq("id", challengeId);
-
-      return { isMatchComplete: false };
-    }
-
-    // Both players have now submitted: determine winner and calculate EP!
-    const cScore = isChallenger ? score : challenge.challenger_score;
-    const cTime = isChallenger ? timeTakenSeconds : challenge.challenger_time_taken;
-    const oScore = isChallenger ? challenge.opponent_score : score;
-    const oTime = isChallenger ? challenge.opponent_time_taken : timeTakenSeconds;
-
-    let winnerId: string | null = null;
-    if (cScore > oScore) {
-      winnerId = challenge.challenger_id;
-    } else if (oScore > cScore) {
-      winnerId = challenge.opponent_id;
-    } else {
-      // Scores tied -> tiebreaker is faster solving time
-      if (cTime < oTime) {
-        winnerId = challenge.challenger_id;
-      } else if (oTime < cTime) {
-        winnerId = challenge.opponent_id;
-      } else {
-        winnerId = null; // Absolute Draw
-      }
-    }
-
-    // Determine current player's outcome
-    let playerOutcome: "win" | "draw" | "loss" = "draw";
-    if (winnerId === studentId) playerOutcome = "win";
-    else if (winnerId !== null) playerOutcome = "loss";
-
-    // 3. Count matches between this pair in the last 24 hours (anti-collusion check)
-    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-    const { count: pairMatchesCount } = await supabase
-      .from("arena_challenges")
-      .select("*", { count: "exact", head: true })
-      .or(
-        `and(challenger_id.eq.${challenge.challenger_id},opponent_id.eq.${challenge.opponent_id}),and(challenger_id.eq.${challenge.opponent_id},opponent_id.eq.${challenge.challenger_id})`
-      )
-      .eq("status", "completed")
-      .gte("created_at", twentyFourHoursAgo);
-
-    // 4. Fetch profiles for tier & win streak info
-    const { data: pProfile } = await supabase
-      .from("student_gamification_profile")
-      .select("current_league_tier, lifetime_ep, weekly_ep, monthly_ep")
-      .eq("student_id", studentId)
-      .maybeSingle();
-
-    const { data: oProfile } = await supabase
-      .from("student_gamification_profile")
-      .select("current_league_tier")
-      .eq("student_id", opponentId)
-      .maybeSingle();
-
-    const playerTier = pProfile?.current_league_tier || 1;
-    const opponentTier = oProfile?.current_league_tier || 1;
-
-    // Calculate EP for this player
-    const matchResult = calculateArenaMatchEP({
-      outcome: playerOutcome,
-      playerTier,
-      opponentTier,
-      currentWinStreak: 0,
-      matchesBetweenPairToday: pairMatchesCount || 0,
-    });
-
-    // 5. Save completed challenge record
-    updatePayload.winner_id = winnerId;
-    updatePayload.status = "completed";
-    updatePayload.completed_at = new Date().toISOString();
-    if (isChallenger) {
-      updatePayload.challenger_ep = matchResult.totalEP;
-    } else {
-      updatePayload.opponent_ep = matchResult.totalEP;
-    }
-
-    await supabase
-      .from("arena_challenges")
-      .update(updatePayload)
-      .eq("id", challengeId);
-
-    // 6. Record points in ledger & profile if EP > 0
-    if (matchResult.totalEP > 0) {
-      await supabase.from("student_points_ledger").insert({
-        student_id: studentId,
-        amount: matchResult.totalEP,
-        source_type: "session_bonus",
-        reference_id: challengeId,
-        metadata: {
-          label: `Head-to-Head Arena (${playerOutcome.toUpperCase()})`,
-          isUpset: matchResult.isUpset,
-          streakBonus: matchResult.streakBonusEP,
-        },
-      });
-
-      const currentLifetime = Number(pProfile?.lifetime_ep || 0);
-      const newLifetime = currentLifetime + matchResult.totalEP;
-      const levelCalc = calculateStudentLevel(newLifetime);
-
-      await supabase.from("student_gamification_profile").upsert(
-        {
-          student_id: studentId,
-          lifetime_ep: newLifetime,
-          current_level: levelCalc.level,
-          weekly_ep: Number(pProfile?.weekly_ep || 0) + matchResult.totalEP,
-          monthly_ep: Number(pProfile?.monthly_ep || 0) + matchResult.totalEP,
-          updated_at: new Date().toISOString(),
-        },
-        { onConflict: "student_id" }
-      );
-
-      // Update weekly cohort points
-      try {
-        if (typeof supabase.rpc === "function") {
-          await supabase.rpc("update_student_cohort_points", {
-            p_student_id: studentId,
-            p_additional_ep: matchResult.totalEP,
-          });
-        }
-      } catch (cohortErr) {
-        console.warn("Failed to sync cohort points for arena match:", cohortErr);
-      }
-    }
-
-    return { isMatchComplete: true, matchResult };
-  } catch (err) {
-    console.error("Error submitting duel turn:", err);
-    throw err;
+  if (!result.resolved) {
+    return { isMatchComplete: false };
   }
+
+  const outcome = (result.outcome ?? "draw") as "win" | "draw" | "loss";
+  const matchResult: ArenaMatchResult = {
+    outcome,
+    baseEP: result.ep_awarded ?? 0,
+    upsetBonusEP: 0,
+    streakBonusEP: 0,
+    totalEP: result.ep_awarded ?? 0,
+    newWinStreak: 0,
+    isUpset: false,
+    cappedByCollusion: false,
+    breakdown: [],
+  };
+  return { isMatchComplete: true, matchResult };
 }
+

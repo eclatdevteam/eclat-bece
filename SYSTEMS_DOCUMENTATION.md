@@ -1214,6 +1214,40 @@ Schools can link students using their unique school code (stored in `schools.uni
 
 ## Quiz & Practice System
 
+### Server-Authoritative Scoring (quiz sessions)
+
+Quiz scoring is enforced server-side. Correct answers are never shipped to the
+browser; per-question grading and the EP pipeline run on the server.
+
+**Flow (client `src/services/quizSession.ts`):**
+1. `start_quiz_session` (RPC) — opens a `quiz_sessions` row for the student,
+   validates the daily-challenge lock server-side, and receives only question
+   IDs. The client then fetches sanitized question content (no
+   `correct_answer`, options without `is_correct`).
+2. `submit_quiz_answer` (RPC) — grades each answer server-side against the
+   option rows and returns `{is_correct, correct_index, explanation}` for the
+   instant-feedback UI; the graded answer is stored in
+   `quiz_session_answers` with real per-question timing.
+3. `complete-quiz-session` (Edge Function) — re-grades from stored answers,
+   runs the EP pipeline (points, anti-gaming with real timings, mastery,
+   streak, daily challenge, badges) using the shared TypeScript engines from
+   `src/services/gamification/`, writes `quiz_results`, the points ledger,
+   mastery, badges, gamification profile and league cohort points, updates
+   assignment status and notifies the parent.
+4. `submit_duel_turn` (RPC) — records arena turns and resolves winner/EP
+   server-side.
+
+**Hardening:** `assign_student_to_weekly_cohort` and
+`update_student_cohort_points` validate the caller; the points-ledger
+reconciliation job is scheduled via pg_cron (`reconcile-student-points`,
+daily 02:15 UTC).
+
+**Rollout gate:** migration
+`20261002230000_..._phase_b_rls_lockdown.sql` revokes the legacy client write
+policies (ledger/profile/badges/mastery/cohort/quiz_results INSERTs). It must
+only be applied AFTER the client using the session flow above is deployed —
+see the header of that migration for details and rollback notes.
+
 ### Question Structure
 
 **Question Tables:**

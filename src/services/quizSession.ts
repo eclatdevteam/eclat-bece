@@ -1,0 +1,129 @@
+/**
+ * Server-authoritative quiz session client.
+ *
+ * Correctness is graded server-side (submit_quiz_answer) and the EP pipeline
+ * runs in the complete-quiz-session Edge Function. Questions are delivered
+ * without correct answers; per-question feedback comes from the grading RPC.
+ */
+import { supabase } from "@/integrations/supabase/client";
+import type {
+  GamificationSessionOutcome,
+} from "@/services/gamification/gamificationService";
+
+export type QuizSessionMode = "practice" | "daily_challenge" | "duel";
+
+export interface StartSessionParams {
+  mode: QuizSessionMode;
+  questionIds: string[];
+  subject?: string | null;
+  topic?: string | null;
+  assignmentId?: string | null;
+  arenaChallengeId?: string | null;
+}
+
+export interface SubmitAnswerResult {
+  is_correct: boolean;
+  correct_index: number | null;
+  explanation: string | null;
+}
+
+export interface QuestionAnswerKeyEntry {
+  question_id: string;
+  is_correct: boolean;
+  correct_index: number | null;
+}
+
+export interface CompleteSessionResult {
+  quizResultId?: string;
+  pointResult: GamificationSessionOutcome["pointResult"];
+  masteryOutcome?: GamificationSessionOutcome["masteryOutcome"];
+  streakOutcome?: GamificationSessionOutcome["streakOutcome"];
+  dailyChallengeOutcome?: GamificationSessionOutcome["dailyChallengeOutcome"];
+  levelOutcome: GamificationSessionOutcome["levelOutcome"];
+  unlockedBadges: GamificationSessionOutcome["unlockedBadges"];
+  questionAnswerKey: QuestionAnswerKeyEntry[];
+}
+
+export async function startQuizSession(
+  params: StartSessionParams
+): Promise<string> {
+  const result = await callRpc<{ session_id?: string }>("start_quiz_session", {
+    p_mode: params.mode,
+    p_question_ids: params.questionIds,
+    p_subject: params.subject ?? null,
+    p_topic: params.topic ?? null,
+    p_assignment_id: params.assignmentId ?? null,
+    p_arena_challenge_id: params.arenaChallengeId ?? null,
+  });
+  if (!result?.session_id) {
+    throw new Error("Failed to start quiz session");
+  }
+  return result.session_id;
+}
+
+export async function submitQuizAnswer(
+  sessionId: string,
+  questionId: string,
+  selectedIndex: number,
+  timeSpentMs: number
+): Promise<SubmitAnswerResult> {
+  return callRpc<SubmitAnswerResult>("submit_quiz_answer", {
+    p_session_id: sessionId,
+    p_question_id: questionId,
+    p_selected_index: selectedIndex,
+    p_time_spent_ms: Math.max(0, Math.round(timeSpentMs)),
+  });
+}
+
+export async function completeQuizSession(
+  sessionId: string
+): Promise<CompleteSessionResult> {
+  const { data, error } = await supabase.functions.invoke("complete-quiz-session", {
+    body: { sessionId },
+  });
+  if (error) {
+    throw new Error(error.message || "Failed to complete quiz session");
+  }
+  const payload = data as { outcome?: CompleteSessionResult; error?: string } | null;
+  if (payload?.error) {
+    throw new Error(payload.error);
+  }
+  if (!payload?.outcome) {
+    throw new Error("Failed to complete quiz session");
+  }
+  return payload.outcome;
+}
+
+export async function submitDuelTurnServer(
+  challengeId: string,
+  score: number,
+  timeTakenSeconds: number
+): Promise<{ status: string; resolved: boolean; outcome?: string; winner_id?: string | null; ep_awarded?: number }> {
+  return callRpc("submit_duel_turn", {
+    p_challenge_id: challengeId,
+    p_score: score,
+    p_time_taken_seconds: timeTakenSeconds,
+  });
+}
+
+export function isDailyChallengeError(err: unknown): boolean {
+  return String((err as Error)?.message ?? "").includes("DAILY_CHALLENGE_ALREADY_COMPLETED");
+}
+
+/**
+ * Typed bridge for RPCs that are not yet part of the generated Database
+ * types (start_quiz_session, submit_quiz_answer, submit_duel_turn were
+ * introduced by migration 20261002220000). Re-run `npm run types:regen`
+ * after applying the migration and inline these calls.
+ */
+async function callRpc<T>(fn: string, args: Record<string, unknown>): Promise<T> {
+  const rpc = supabase.rpc as unknown as (
+    fn: string,
+    args: Record<string, unknown>
+  ) => Promise<{ data: T | null; error: { message: string } | null }>;
+  const { data, error } = await rpc(fn, args);
+  if (error) {
+    throw new Error(error.message);
+  }
+  return data as T;
+}
