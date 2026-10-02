@@ -1,18 +1,12 @@
 import { useState, useMemo } from "react";
-import { Users, Search, Filter, Plus } from "lucide-react";
+import { Users, Search, Plus, BookOpen, FileText, Sparkles, Trophy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SchoolLayout } from "@/components/school/SchoolLayout";
 import { CreateStudentDialog } from "@/components/school/SchoolCreateDialogs";
-import { useSchoolData } from "@/hooks/useSchoolData";
-
-const fallbackStudents = [
-  { name: "Ayo Johnson", id: "STU-00123", cohort: "Year 9 (JSS 3)", score: "85%", status: "Active" },
-  { name: "Blessing Adeyemi", id: "STU-00124", cohort: "Year 9 (JSS 3)", score: "90%", status: "Active" },
-  { name: "Chiamaka Okafor", id: "STU-00125", cohort: "Year 6 (Primary 6)", score: "78%", status: "Active" },
-  { name: "Daniel Adeboye", id: "STU-00126", cohort: "Year 9 (JSS 3)", score: "72%", status: "Active" },
-  { name: "Emeka Nwosu", id: "STU-00127", cohort: "Year 6 (Primary 6)", score: "64%", status: "Active" },
-];
+import { StudentReportDialog } from "@/components/StudentReportDialog";
+import { SchoolAssignPracticeDialog } from "@/components/school/SchoolAssignPracticeDialog";
+import { useSchoolData, SchoolStudent } from "@/hooks/useSchoolData";
 
 export function SchoolStudentsPage() {
   const [studentDialogOpen, setStudentDialogOpen] = useState(false);
@@ -20,48 +14,44 @@ export function SchoolStudentsPage() {
   const [classFilter, setClassFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const { students, refresh, isLoading } = useSchoolData();
+  // Selected student dialog states
+  const [selectedReportStudent, setSelectedReportStudent] = useState<SchoolStudent | null>(null);
+  const [reportOpen, setReportOpen] = useState(false);
 
-  // Combine real students with fallback if empty
-  const displayStudents = useMemo(() => {
-    if (students.length > 0) {
-      return students.map((s) => ({
-        name: s.name,
-        id: s.unique_id || s.id.slice(0, 8),
-        cohort: s.class_year === "year_6" ? "Year 6 (Primary 6)" : "Year 9 (JSS 3)",
-        score: s.quizCount > 0 ? `${s.avgScore}%` : "—",
-        status: s.status,
-      }));
-    }
-    return fallbackStudents;
-  }, [students]);
+  const [selectedAssignStudent, setSelectedAssignStudent] = useState<SchoolStudent | null>(null);
+  const [assignOpen, setAssignOpen] = useState(false);
+
+  const { school, students, gamificationTotals, refresh } = useSchoolData();
 
   const filteredStudents = useMemo(() => {
-    return displayStudents.filter((student) => {
+    return students.filter((student) => {
+      const q = searchQuery.toLowerCase();
       const matchesSearch =
-        student.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        student.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        student.cohort.toLowerCase().includes(searchQuery.toLowerCase());
+        student.name.toLowerCase().includes(q) ||
+        (student.unique_id && student.unique_id.toLowerCase().includes(q)) ||
+        (student.username && student.username.toLowerCase().includes(q));
 
       const matchesClass =
         classFilter === "all" ||
-        (classFilter === "year_6" && student.cohort.includes("Year 6")) ||
-        (classFilter === "year_9" && student.cohort.includes("Year 9"));
+        (classFilter === "year_6" && student.class_year === "year_6") ||
+        (classFilter === "year_9" && student.class_year === "year_9");
 
       const matchesStatus =
         statusFilter === "all" || student.status.toLowerCase() === statusFilter.toLowerCase();
 
       return matchesSearch && matchesClass && matchesStatus;
     });
-  }, [displayStudents, searchQuery, classFilter, statusFilter]);
+  }, [students, searchQuery, classFilter, statusFilter]);
 
-  const totalCount = displayStudents.length;
-  const activeCount = displayStudents.filter((s) => s.status === "Active").length;
+  const totalCount = students.length;
+  const activeCount = gamificationTotals.activeLearnersCount;
+  const year9Count = students.filter((s) => s.class_year === "year_9").length;
+  const year6Count = students.filter((s) => s.class_year === "year_6").length;
 
   return (
     <SchoolLayout
       title="Students"
-      subtitle="Review active learners, class cohorts, and performance records."
+      subtitle="Review active learners, diagnostic profiles, and performance records."
       actions={
         <Button
           onClick={() => setStudentDialogOpen(true)}
@@ -76,9 +66,9 @@ export function SchoolStudentsPage() {
       <div className="mb-6 grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {[
           ["Total students", totalCount.toString(), "Enrolled learners"],
-          ["Active students", activeCount.toString(), `${Math.round((activeCount / totalCount) * 100)}% active`],
-          ["Year 9 (JSS 3)", displayStudents.filter((s) => s.cohort.includes("Year 9")).length.toString(), "BECE candidates"],
-          ["Year 6 (Primary 6)", displayStudents.filter((s) => s.cohort.includes("Year 6")).length.toString(), "Common entrance"],
+          ["Active learners", activeCount.toString(), totalCount > 0 ? `${Math.round((activeCount / totalCount) * 100)}% active` : "Awaiting drills"],
+          ["Year 9 (JSS 3)", year9Count.toString(), "BECE candidates"],
+          ["Year 6 (Primary 6)", year6Count.toString(), "Common entrance"],
         ].map(([label, value, hint]) => (
           <Card key={label} className="border border-[#2a3852] bg-[#151e33] text-slate-100 min-w-0">
             <CardContent className="p-4 sm:p-5">
@@ -92,7 +82,7 @@ export function SchoolStudentsPage() {
         ))}
       </div>
 
-      {/* Table Container */}
+      {/* Main Table / Container */}
       <div className="rounded-xl border border-[#2a3852] bg-[#0f182b] overflow-hidden">
         {/* Filter Controls Bar */}
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-[#2a3852] p-4 text-xs">
@@ -101,7 +91,7 @@ export function SchoolStudentsPage() {
             <input
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by student name, ID or cohort..."
+              placeholder="Search by student name, username, or unique ID..."
               className="w-full bg-transparent text-xs text-white placeholder:text-slate-400 focus:outline-none"
             />
           </div>
@@ -129,62 +119,153 @@ export function SchoolStudentsPage() {
           </div>
         </div>
 
-        {/* Scrollable Table to Prevent Screen Blowout */}
-        <div className="overflow-x-auto">
-          <div className="min-w-[620px]">
-            <div className="grid grid-cols-[1.5fr_1fr_1.2fr_1fr_0.8fr] border-b border-[#2a3852] px-4 py-3 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 bg-[#0c1424]">
-              <span>Student</span>
-              <span>Student ID</span>
-              <span>Class / Cohort</span>
-              <span>Status</span>
-              <span className="text-right">Avg Score</span>
+        {/* Empty State vs Student Table */}
+        {students.length === 0 ? (
+          <div className="p-12 text-center space-y-4">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-[#162945] text-[#71c9ed]">
+              <Users className="h-7 w-7" />
             </div>
-
-            {filteredStudents.length === 0 ? (
-              <div className="p-8 text-center text-xs text-slate-400">
-                No students match your filter criteria.
-              </div>
-            ) : (
-              filteredStudents.map((student) => (
-                <div
-                  key={student.id}
-                  className="grid grid-cols-[1.5fr_1fr_1.2fr_1fr_0.8fr] items-center border-b border-[#202b43] px-4 py-3 text-xs text-slate-200 hover:bg-[#15233c]/60 transition-colors"
-                >
-                  <span className="font-semibold text-white truncate">{student.name}</span>
-                  <span className="font-mono text-slate-400 text-[11px] truncate">{student.id}</span>
-                  <span className="text-slate-300 truncate">{student.cohort}</span>
-                  <span>
-                    <span
-                      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium ${
-                        student.status === "Active"
-                          ? "bg-emerald-500/10 text-emerald-400 border border-emerald-500/20"
-                          : "bg-red-500/10 text-red-400 border border-red-500/20"
-                      }`}
-                    >
-                      • {student.status}
-                    </span>
-                  </span>
-                  <span className="text-right font-bold text-white">{student.score}</span>
-                </div>
-              ))
-            )}
+            <div>
+              <h3 className="text-lg font-bold text-white">No Students Enrolled Yet</h3>
+              <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto leading-relaxed">
+                Add learners to your institution directory to create their login accounts and start tracking curriculum progress.
+              </p>
+            </div>
+            <Button
+              onClick={() => setStudentDialogOpen(true)}
+              className="bg-[#2184a7] text-white hover:bg-[#2c9bc2] text-xs font-semibold"
+            >
+              <Plus className="mr-1.5 h-3.5 w-3.5" />
+              Add First Student
+            </Button>
           </div>
-        </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <div className="min-w-[760px]">
+              <div className="grid grid-cols-[1.5fr_1fr_1fr_1fr_0.8fr_1.4fr] border-b border-[#2a3852] px-4 py-3 text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400 bg-[#0c1424]">
+                <span>Student</span>
+                <span>Student ID</span>
+                <span>Cohort</span>
+                <span>Gamification</span>
+                <span className="text-right">Avg Score</span>
+                <span className="text-right pr-2">Actions</span>
+              </div>
 
-        {/* Footer pagination info */}
+              {filteredStudents.length === 0 ? (
+                <div className="p-8 text-center text-xs text-slate-400">
+                  No students match your filter criteria.
+                </div>
+              ) : (
+                filteredStudents.map((student) => (
+                  <div
+                    key={student.id}
+                    className="grid grid-cols-[1.5fr_1fr_1fr_1fr_0.8fr_1.4fr] items-center border-b border-[#202b43] px-4 py-3 text-xs text-slate-200 hover:bg-[#15233c]/60 transition-colors"
+                  >
+                    {/* Student Name */}
+                    <div className="min-w-0 pr-2">
+                      <p className="font-semibold text-white truncate">{student.name}</p>
+                      <p className="text-[11px] text-slate-400 font-mono truncate">@{student.username}</p>
+                    </div>
+
+                    {/* ID */}
+                    <span className="font-mono text-slate-400 text-[11px] truncate">
+                      {student.unique_id || student.id.slice(0, 8)}
+                    </span>
+
+                    {/* Cohort */}
+                    <span className="text-slate-300 text-xs truncate">
+                      {student.class_year === "year_6" ? "Year 6 (Primary 6)" : "Year 9 (JSS 3)"}
+                    </span>
+
+                    {/* Gamification stats */}
+                    <div className="flex items-center gap-1.5 text-xs text-amber-400 font-medium">
+                      <Trophy className="h-3.5 w-3.5 flex-shrink-0" />
+                      <span>{(student.lifetime_ep || 0).toLocaleString()} EP</span>
+                      <span className="text-[10px] text-slate-400 font-normal">Lvl {student.current_level}</span>
+                    </div>
+
+                    {/* Score */}
+                    <span className="text-right font-bold text-white">
+                      {student.quizCount > 0 ? `${student.avgScore}%` : "—"}
+                    </span>
+
+                    {/* Action Triggers */}
+                    <div className="flex items-center justify-end gap-1.5">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedReportStudent(student);
+                          setReportOpen(true);
+                        }}
+                        className="h-7 px-2 text-xs text-[#55c8ed] hover:text-white hover:bg-sky-500/10"
+                        title="View Diagnostic Report"
+                      >
+                        <FileText className="mr-1 h-3.5 w-3.5" />
+                        Report
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSelectedAssignStudent(student);
+                          setAssignOpen(true);
+                        }}
+                        className="h-7 px-2 text-xs text-amber-300 hover:text-white hover:bg-amber-500/10"
+                        title="Assign Targeted Practice"
+                      >
+                        <BookOpen className="mr-1 h-3.5 w-3.5" />
+                        Assign
+                      </Button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Footer info */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-2 p-3 text-[11px] text-slate-400 border-t border-[#2a3852]">
           <span>
-            Showing {filteredStudents.length} of {displayStudents.length} students
+            Showing {filteredStudents.length} of {students.length} enrolled students
           </span>
           <span className="text-slate-300">Page 1 of 1</span>
         </div>
       </div>
 
+      {/* Create Student Modal */}
       <CreateStudentDialog
         open={studentDialogOpen}
         onOpenChange={setStudentDialogOpen}
         onCreated={() => refresh()}
       />
+
+      {/* Student Diagnostic Report Modal */}
+      {selectedReportStudent && (
+        <StudentReportDialog
+          open={reportOpen}
+          onOpenChange={setReportOpen}
+          studentId={selectedReportStudent.id}
+          studentName={selectedReportStudent.name}
+          studentClass={selectedReportStudent.class_year === "year_6" ? "Year 6 (Common Entrance)" : "Year 9 (BECE)"}
+          avatar={selectedReportStudent.avatar || "🎓"}
+        />
+      )}
+
+      {/* Assign Practice Modal Pre-Selected for Student */}
+      {school?.id && selectedAssignStudent && (
+        <SchoolAssignPracticeDialog
+          open={assignOpen}
+          onOpenChange={setAssignOpen}
+          schoolId={school.id}
+          defaultCohort={selectedAssignStudent.class_year || "year_9"}
+          students={[{ id: selectedAssignStudent.id, name: selectedAssignStudent.name, class_year: selectedAssignStudent.class_year }]}
+          onSuccess={() => {
+            refresh();
+          }}
+        />
+      )}
     </SchoolLayout>
   );
 }

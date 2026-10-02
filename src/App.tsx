@@ -37,7 +37,6 @@ import SubscriptionsPage from "./pages/parent/SubscriptionsPage";
 import ParentSettingsPage from "./pages/parent/ParentSettingsPage";
 import ParentResourcesPage from "./pages/parent/ParentResourcesPage";
 import ActivityFeedPage from "./pages/parent/ActivityFeedPage";
-import SchoolDashboard from "./pages/SchoolDashboard";
 import {
   SchoolOverviewPage,
   SchoolStudentsPage,

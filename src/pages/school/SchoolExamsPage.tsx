@@ -114,6 +114,7 @@ export function SchoolExamsPage() {
                 <Button
                   variant="outline"
                   size="sm"
+                  onClick={() => toast.info(`${exam.title}: Standardized mock evaluation timed for ${exam.duration} with ${exam.questions} past examination items.`)}
                   className="border-slate-700 bg-slate-900/40 text-xs text-slate-200 hover:bg-slate-800"
                 >
                   Inspect details
