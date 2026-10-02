@@ -447,10 +447,11 @@ serve(async (req) => {
     for (const q of year6Questions) {
       const { options, ...questionData } = q;
       
-      // Insert question
+      // Insert question (service-role client bypasses the auth.uid() trigger,
+      // so attribute the insert to the calling admin explicitly)
       const { data: question, error: questionError } = await supabase
         .from('quiz_questions_year6')
-        .insert(questionData)
+        .insert({ ...questionData, uploaded_by: user.id })
         .select()
         .single();
 
@@ -481,10 +482,11 @@ serve(async (req) => {
     for (const q of year9Questions) {
       const { options, ...questionData } = q;
       
-      // Insert question
+      // Insert question (service-role client bypasses the auth.uid() trigger,
+      // so attribute the insert to the calling admin explicitly)
       const { data: question, error: questionError } = await supabase
         .from('quiz_questions_year9')
-        .insert(questionData)
+        .insert({ ...questionData, uploaded_by: user.id })
         .select()
         .single();
 

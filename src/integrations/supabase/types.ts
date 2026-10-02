@@ -431,10 +431,11 @@ export type Database = {
           reason: string
           resolved_at: string | null
           resolved_by: string | null
-          status: string | null
+          status: string
           student_id: string
           subject: string
           topic: string | null
+          uploaded_by: string | null
         }
         Insert: {
           class_year: string
@@ -446,10 +447,11 @@ export type Database = {
           reason: string
           resolved_at?: string | null
           resolved_by?: string | null
-          status?: string | null
+          status?: string
           student_id: string
           subject: string
           topic?: string | null
+          uploaded_by?: string | null
         }
         Update: {
           class_year?: string
@@ -461,10 +463,11 @@ export type Database = {
           reason?: string
           resolved_at?: string | null
           resolved_by?: string | null
-          status?: string | null
+          status?: string
           student_id?: string
           subject?: string
           topic?: string | null
+          uploaded_by?: string | null
         }
         Relationships: [
           {
@@ -897,6 +900,7 @@ export type Database = {
           subject: string
           topic: string | null
           updated_at: string | null
+          uploaded_by: string | null
         }
         Insert: {
           correct_answer: string
@@ -910,6 +914,7 @@ export type Database = {
           subject: string
           topic?: string | null
           updated_at?: string | null
+          uploaded_by?: string | null
         }
         Update: {
           correct_answer?: string
@@ -923,6 +928,7 @@ export type Database = {
           subject?: string
           topic?: string | null
           updated_at?: string | null
+          uploaded_by?: string | null
         }
         Relationships: [
           {
@@ -947,6 +953,7 @@ export type Database = {
           subject: string
           topic: string | null
           updated_at: string | null
+          uploaded_by: string | null
         }
         Insert: {
           correct_answer: string
@@ -960,6 +967,7 @@ export type Database = {
           subject: string
           topic?: string | null
           updated_at?: string | null
+          uploaded_by?: string | null
         }
         Update: {
           correct_answer?: string
@@ -973,6 +981,7 @@ export type Database = {
           subject?: string
           topic?: string | null
           updated_at?: string | null
+          uploaded_by?: string | null
         }
         Relationships: [
           {
@@ -1876,6 +1885,13 @@ export type Database = {
       }
       generate_invitation_token: { Args: never; Returns: string }
       generate_unique_id: { Args: never; Returns: string }
+      get_admin_display_names: {
+        Args: { p_user_ids: string[] }
+        Returns: {
+          full_name: string
+          user_id: string
+        }[]
+      }
       get_admin_id: { Args: { _user_id: string }; Returns: string }
       get_admin_subjects_with_counts: {
         Args: never
