@@ -57,6 +57,23 @@ export interface GamificationTotals {
   totalQuizzesTaken: number;
   activeLearnersCount: number;
   topAchievers: SchoolStudent[];
+export interface SchoolExamItem {
+  id: string;
+  school_id: string;
+  title: string;
+  cohort: "year_6" | "year_9";
+  class_id: string | null;
+  class_name?: string;
+  subject: string;
+  exam_date: string;
+  start_time: string | null;
+  duration_minutes: number;
+  question_count: number;
+  passing_score: number;
+  status: "Scheduled" | "In Progress" | "Completed" | "Draft" | "Archived";
+  instructions: string | null;
+  created_at: string;
+  eligibleStudentCount?: number;
 }
 
 export function useSchoolData() {
@@ -66,6 +83,7 @@ export function useSchoolData() {
   const [classes, setClasses] = useState<SchoolClassItem[]>([]);
   const [topicMastery, setTopicMastery] = useState<SchoolTopicMasteryRecord[]>([]);
   const [assignments, setAssignments] = useState<SchoolAssignmentItem[]>([]);
+  const [exams, setExams] = useState<SchoolExamItem[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const fetchSchoolData = useCallback(async () => {
@@ -101,8 +119,8 @@ export function useSchoolData() {
 
       setSchool(currentSchool as SchoolData);
 
-      // 2. Fetch Linked Students, Classes & Assignments in parallel
-      const [rawStudentsRes, rawClassesRes, rawAssignmentsRes] = await Promise.all([
+      // 2. Fetch Linked Students, Classes, Assignments & Exams in parallel
+      const [rawStudentsRes, rawClassesRes, rawAssignmentsRes, rawExamsRes] = await Promise.all([
         supabase
           .from("students")
           .select("id, user_id, class_year, class_id, is_premium, created_at")
@@ -117,6 +135,11 @@ export function useSchoolData() {
           .select("id, student_id, subject, topics, num_questions, duration, status, created_at, completed_at, score")
           .eq("school_id", currentSchool.id)
           .order("created_at", { ascending: false }),
+        supabase
+          .from("school_exams" as any)
+          .select("id, school_id, title, cohort, class_id, subject, exam_date, start_time, duration_minutes, question_count, passing_score, status, instructions, created_at")
+          .eq("school_id", currentSchool.id)
+          .order("exam_date", { ascending: true }),
       ]);
 
       if (rawStudentsRes.error) throw rawStudentsRes.error;
@@ -305,6 +328,36 @@ export function useSchoolData() {
       }));
       setAssignments(parsedAssignments);
 
+      // 8. Assemble exams
+      const rawExams = (rawExamsRes.data || []) as any[];
+      const classMap = new Map(rawClasses.map((c: any) => [c.id, c.name]));
+      const parsedExams: SchoolExamItem[] = rawExams.map((e) => {
+        const matchingStudents = studentList.filter((s) => {
+          if (e.class_id) return s.class_id === e.class_id;
+          return s.class_year === e.cohort;
+        });
+
+        return {
+          id: e.id,
+          school_id: e.school_id,
+          title: e.title,
+          cohort: e.cohort,
+          class_id: e.class_id || null,
+          class_name: e.class_id ? classMap.get(e.class_id) || "Assigned Class" : "All Cohort Classes",
+          subject: e.subject,
+          exam_date: e.exam_date,
+          start_time: e.start_time || null,
+          duration_minutes: Number(e.duration_minutes || 60),
+          question_count: Number(e.question_count || 40),
+          passing_score: Number(e.passing_score || 50),
+          status: e.status || "Scheduled",
+          instructions: e.instructions || null,
+          created_at: e.created_at,
+          eligibleStudentCount: matchingStudents.length,
+        };
+      });
+      setExams(parsedExams);
+
     } catch (err: unknown) {
       console.error("Failed to load school data:", err);
       setError(err instanceof Error ? err.message : "Error loading school data");
@@ -356,6 +409,7 @@ export function useSchoolData() {
     topicMastery,
     assignments,
     assignmentStats,
+    exams,
     cohortAverages,
     gamificationTotals,
     isLoading,
