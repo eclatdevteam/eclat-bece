@@ -1177,13 +1177,20 @@ All admin actions are logged to `admin_audit_log` table via `log_admin_action` f
 
 ### School Dashboard
 
-**Page:** `SchoolDashboard` (`/dashboard/school`)
+**Page:** `SchoolOverviewPage` (`/dashboard/school`) — one of 9 routed school pages exported from `src/pages/school/SchoolDashboardPages.tsx`
 
-**Features:**
-- School overview
-- Linked students
-- School analytics
-- School unique code for student linking
+**Routed school pages:**
+- `/dashboard/school` - `SchoolOverviewPage` (stats, top subject by mastery, top achievers)
+- `/dashboard/school/students` - `SchoolStudentsPage`
+- `/dashboard/school/teachers` - `SchoolTeachersPage` (teacher registry, departments, class allocations)
+- `/dashboard/school/classes` - `SchoolClassesPage` (classes and arms)
+- `/dashboard/school/assignments` - `SchoolAssignmentsPage`
+- `/dashboard/school/reports` - `SchoolReportsPage`
+- `/dashboard/school/exams` - `SchoolExamsPage` (exam scheduler, candidate seating roster)
+- `/dashboard/school/leaderboard` - `SchoolLeaderboardPage`
+- `/dashboard/school/settings` - `SchoolSettingsPage`
+
+**Data layer:** the `useSchoolData` hook aggregates schools, students, school_classes, practice_assignments, school_exams, school_teachers, profiles, quiz_results, and gamification data client-side.
 
 ### School Onboarding
 
