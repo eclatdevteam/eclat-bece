@@ -32,7 +32,7 @@ export const Hero = ({ onGetStartedClick }: HeroProps) => {
         </h1>
 
         {/* Concise High-Impact Subtitle */}
-        <p className="text-base sm:text-xl text-slate-600 dark:text-slate-300 max-w-2xl mx-auto leading-relaxed mb-10 animate-slide-up font-normal" style={{ animationDelay: "0.1s" }}>
+        <p className="text-base sm:text-xl text-slate-700 dark:text-slate-200 max-w-2xl mx-auto leading-relaxed mb-10 animate-slide-up font-medium" style={{ animationDelay: "0.1s" }}>
           Gamified CBT prep with authentic past questions, live duel challenges, and monthly cash prizes for top Nigerian scholars.
         </p>
 
