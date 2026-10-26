@@ -6,7 +6,7 @@ import logo from "@/assets/logo.png";
 
 export const Footer = () => {
   return (
-    <footer id="contact" className="bg-[#050b18] text-slate-400 py-16 px-4 sm:px-6 lg:px-8 border-t border-[#1d2a40]">
+    <footer id="contact" className="bg-[#050b18]/90 backdrop-blur-sm text-slate-400 py-16 px-4 sm:px-6 lg:px-8 border-t border-[#1d2a40]/50">
       <div className="container mx-auto max-w-6xl">
         <div className="grid md:grid-cols-4 gap-10 mb-12">
           {/* Logo & Description */}

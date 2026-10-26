@@ -287,7 +287,7 @@ export default function StudentDashboardOverview() {
       color: "text-primary",
       bgColor: "bg-primary/10",
       url: "/dashboard/student/practice",
-      badge: availableQuestionsCount > 0 
+      badge: availableQuestionsCount > 0
         ? `${availableQuestionsCount.toLocaleString()} Questions`
         : "Start Now",
     },
@@ -397,18 +397,16 @@ export default function StudentDashboardOverview() {
       </section>
 
       {/* Daily Challenge Spotlight Card (PRD Section 3.6 & Epic EP-04) */}
-      <section className={`mb-7 overflow-hidden rounded-xl border p-5 shadow-sm transition-all ${
-        dailyChallengeCompleted
+      <section className={`mb-7 overflow-hidden rounded-xl border p-5 shadow-sm transition-all ${dailyChallengeCompleted
           ? "border-emerald-500/30 bg-emerald-500/5 dark:bg-gradient-to-r dark:from-emerald-500/15 dark:via-[#13282c] dark:to-[#0e192b]"
           : "border-amber-500/30 bg-amber-500/5 dark:bg-gradient-to-r dark:from-amber-500/15 dark:via-[#231e33] dark:to-[#0e192b]"
-      }`}>
+        }`}>
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-start gap-4">
-            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border shadow-inner ${
-              dailyChallengeCompleted
+            <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border shadow-inner ${dailyChallengeCompleted
                 ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
                 : "bg-amber-500/20 text-amber-600 dark:text-amber-400 border-amber-500/30"
-            }`}>
+              }`}>
               {dailyChallengeCompleted ? (
                 <CheckCircle2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
               ) : (
@@ -417,14 +415,12 @@ export default function StudentDashboardOverview() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <span className={`text-[10px] font-black uppercase tracking-wider ${
-                  dailyChallengeCompleted ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"
-                }`}>
+                <span className={`text-[10px] font-black uppercase tracking-wider ${dailyChallengeCompleted ? "text-emerald-600 dark:text-emerald-400" : "text-amber-600 dark:text-amber-400"
+                  }`}>
                   {dailyChallengeCompleted ? "Daily Challenge Claimed" : "Daily Challenge • 10 Questions"}
                 </span>
-                <span className={`rounded px-1.5 py-0.2 text-[9px] font-bold ${
-                  dailyChallengeCompleted ? "bg-emerald-400/20 text-emerald-700 dark:text-emerald-300" : "bg-amber-400/20 text-amber-700 dark:text-amber-300"
-                }`}>
+                <span className={`rounded px-1.5 py-0.2 text-[9px] font-bold ${dailyChallengeCompleted ? "bg-emerald-400/20 text-emerald-700 dark:text-emerald-300" : "bg-amber-400/20 text-amber-700 dark:text-amber-300"
+                  }`}>
                   +20 to +50 EP
                 </span>
               </div>
@@ -534,7 +530,7 @@ export default function StudentDashboardOverview() {
         </div>
 
         {/* Pillar 3: Competitive Rank & League */}
-        <div 
+        <div
           onClick={() => navigate('/dashboard/student/leaderboard')}
           className="cursor-pointer group rounded-xl border border-border bg-card text-card-foreground p-5 flex flex-col justify-between hover:border-primary/40 transition-colors shadow-sm"
         >

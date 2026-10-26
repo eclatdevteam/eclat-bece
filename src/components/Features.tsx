@@ -52,7 +52,7 @@ export const Features = () => {
   ];
 
   return (
-    <section id="features" className="py-24 px-4 sm:px-6 lg:px-8 bg-slate-50 dark:bg-[#080f22] border-y border-slate-200 dark:border-[#202b43] relative overflow-hidden transition-colors duration-200">
+    <section id="features" className="py-24 px-4 sm:px-6 lg:px-8 border-y border-slate-200/50 dark:border-[#202b43]/50 relative overflow-hidden transition-colors duration-200">
       {/* Ambient Lighting */}
       <div className="absolute top-1/4 -left-32 w-80 h-80 bg-[#3bc2f3]/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 right-0 w-80 h-80 bg-[#ffca6a]/5 rounded-full blur-3xl pointer-events-none" />

@@ -806,7 +806,7 @@ export default function QuizPage() {
 
     const finalAnswers = overrideAnswers || answers;
     const finalResponses = overrideResponses || userResponses;
-    const finalScore = overrideScore !== undefined ? overrideScore : finalAnswers.filter(Boolean).length;    const percentage = questions.length > 0 ? Math.round((finalScore / questions.length) * 100) : 0;
+    const finalScore = overrideScore !== undefined ? overrideScore : finalAnswers.filter(Boolean).length; const percentage = questions.length > 0 ? Math.round((finalScore / questions.length) * 100) : 0;
 
     try {
       // Server-authoritative completion: the edge function grades the recorded
@@ -1113,9 +1113,8 @@ export default function QuizPage() {
         <Card className="w-full max-w-2xl p-6 sm:p-8 text-center animate-scale-in shadow-xl border-border/80">
           <div className="mb-6">
             <Trophy
-              className={`w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 ${
-                isPassed ? "text-primary" : "text-muted-foreground"
-              }`}
+              className={`w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-3 ${isPassed ? "text-primary" : "text-muted-foreground"
+                }`}
             />
             <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight mb-1">
               Quiz Complete! 🎉
@@ -1164,8 +1163,8 @@ export default function QuizPage() {
                       ? duelOutcome.matchResult.outcome === "win"
                         ? "Arena Victory! 🏆"
                         : duelOutcome.matchResult.outcome === "draw"
-                        ? "Arena Battle Tie! 🤝"
-                        : "Arena Battle Concluded 🛡️"
+                          ? "Arena Battle Tie! 🤝"
+                          : "Arena Battle Concluded 🛡️"
                       : "Duel Round Recorded! ⚡"}
                   </h3>
                   <p className="text-xs text-muted-foreground">
@@ -1173,8 +1172,8 @@ export default function QuizPage() {
                       ? duelOutcome.matchResult.cappedByCollusion
                         ? "Daily duel limit with this opponent reached — the match counts, but today's rematches award no EP."
                         : duelOutcome.matchResult.isUpset
-                        ? `Upset Victory! You took down a higher-ranked opponent and claimed +${duelOutcome.matchResult.totalEP} EP!`
-                        : `Battle completed! You earned +${duelOutcome.matchResult.totalEP} EP in the Head-to-Head Arena.`
+                          ? `Upset Victory! You took down a higher-ranked opponent and claimed +${duelOutcome.matchResult.totalEP} EP!`
+                          : `Battle completed! You earned +${duelOutcome.matchResult.totalEP} EP in the Head-to-Head Arena.`
                       : "Your score and completion time are locked in. Awaiting your opponent's round in the Arena Hub."}
                   </p>
                   {duelOutcome.matchResult && duelOutcome.matchResult.streakBonusEP > 0 && (
@@ -1239,20 +1238,18 @@ export default function QuizPage() {
                     setSnapshotInitialIndex(index);
                     setSnapshotDialogOpen(true);
                   }}
-                  className={`group relative aspect-square rounded-xl flex flex-col items-center justify-center gap-1 border-2 transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
-                    correct
+                  className={`group relative aspect-square rounded-xl flex flex-col items-center justify-center gap-1 border-2 transition-all cursor-pointer shadow-sm hover:scale-105 active:scale-95 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${correct
                       ? "bg-emerald-50 hover:bg-emerald-100/90 border-emerald-300 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/60 dark:border-emerald-800"
                       : "bg-rose-50 hover:bg-rose-100/90 border-rose-300 dark:bg-rose-950/30 dark:hover:bg-rose-950/60 dark:border-rose-800"
-                  }`}
+                    }`}
                   aria-label={`View Question ${index + 1} snapshot (${correct ? "Correct" : "Incorrect"})`}
                   title={`Click to review Question ${index + 1}`}
                 >
                   <span
-                    className={`text-[11px] sm:text-xs font-black ${
-                      correct
+                    className={`text-[11px] sm:text-xs font-black ${correct
                         ? "text-emerald-700 dark:text-emerald-300"
                         : "text-rose-700 dark:text-rose-300"
-                    }`}
+                      }`}
                   >
                     Q{index + 1}
                   </span>
@@ -1435,16 +1432,14 @@ export default function QuizPage() {
                   size="sm"
                   onClick={() => handleOpenFlagDialog(question)}
                   disabled={flaggedQuestionIds.includes(question.id)}
-                  className={`h-7 px-2.5 text-xs flex items-center gap-1.5 font-semibold transition-all border rounded-full ${
-                    flaggedQuestionIds.includes(question.id)
+                  className={`h-7 px-2.5 text-xs flex items-center gap-1.5 font-semibold transition-all border rounded-full ${flaggedQuestionIds.includes(question.id)
                       ? "text-green-600 bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-900/30"
                       : "text-red-600 bg-red-50 hover:bg-red-100 border-red-200 dark:text-red-400 dark:bg-red-950/20 dark:hover:bg-red-950/40 dark:border-red-900/30"
-                  }`}
+                    }`}
                 >
                   <Flag
-                    className={`h-3 w-3 ${
-                      flaggedQuestionIds.includes(question.id) ? "" : "fill-current"
-                    }`}
+                    className={`h-3 w-3 ${flaggedQuestionIds.includes(question.id) ? "" : "fill-current"
+                      }`}
                   />
                   {flaggedQuestionIds.includes(question.id) ? "Flagged" : "Flag"}
                 </Button>
@@ -1455,13 +1450,12 @@ export default function QuizPage() {
               {/* Active Assignment Countdown Timer */}
               {assignmentDuration && timeLeft !== null && (
                 <div
-                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border transition-all ${
-                    timeLeft < 120
+                  className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black border transition-all ${timeLeft < 120
                       ? "bg-rose-50 text-rose-600 border-rose-300 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800 animate-pulse"
                       : timeLeft < 300
-                      ? "bg-amber-50 text-amber-600 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
-                      : "bg-primary/10 text-primary border-primary/20"
-                  }`}
+                        ? "bg-amber-50 text-amber-600 border-amber-300 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
+                        : "bg-primary/10 text-primary border-primary/20"
+                    }`}
                   title={`Parent assigned time limit: ${assignmentDuration} minutes`}
                 >
                   <Clock className="w-3.5 h-3.5 shrink-0" />
@@ -1523,15 +1517,14 @@ export default function QuizPage() {
                   key={index}
                   onClick={() => handleAnswerSelect(index)}
                   disabled={showFeedback}
-                  className={`w-full p-4 text-left rounded-lg border-2 transition-all ${
-                    showCorrect
+                  className={`w-full p-4 text-left rounded-lg border-2 transition-all ${showCorrect
                       ? "border-green-500 bg-green-50 dark:bg-green-900/20"
                       : showIncorrect
-                      ? "border-red-500 bg-red-50 dark:bg-red-900/20"
-                      : isSelected
-                      ? "border-primary bg-primary/10"
-                      : "border-border hover:border-primary/50 hover:bg-muted/50"
-                  } ${showFeedback ? "cursor-not-allowed" : "cursor-pointer"}`}
+                        ? "border-red-500 bg-red-50 dark:bg-red-900/20"
+                        : isSelected
+                          ? "border-primary bg-primary/10"
+                          : "border-border hover:border-primary/50 hover:bg-muted/50"
+                    } ${showFeedback ? "cursor-not-allowed" : "cursor-pointer"}`}
                 >
                   <div className="flex flex-col gap-3">
                     {option.image_url && (
@@ -1561,11 +1554,10 @@ export default function QuizPage() {
 
           {showFeedback && question && (
             <div
-              className={`p-4 rounded-lg mb-6 animate-fade-in ${
-                selectedAnswer === question.correctAnswer
+              className={`p-4 rounded-lg mb-6 animate-fade-in ${selectedAnswer === question.correctAnswer
                   ? "bg-green-50 dark:bg-green-900/20 border-2 border-green-200 dark:border-green-800"
                   : "bg-red-50 dark:bg-red-900/20 border-2 border-red-200 dark:border-red-800"
-              }`}
+                }`}
             >
               <div className="flex items-start gap-3">
                 {selectedAnswer === question.correctAnswer ? (

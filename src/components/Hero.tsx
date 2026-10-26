@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Sparkles, Trophy, ArrowRight, BookOpen, Flame, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import heroStudy from "@/assets/Hero.jpg";
 
 interface HeroProps {
   onGetStartedClick: () => void;
@@ -11,20 +10,11 @@ export const Hero = ({ onGetStartedClick }: HeroProps) => {
   const navigate = useNavigate();
 
   return (
-    <section id="hero" className="relative min-h-[90vh] lg:min-h-[92vh] flex items-center justify-center pt-20 pb-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-slate-100 via-slate-50 to-white dark:from-[#071023] dark:via-[#081225] dark:to-[#080f22] text-slate-900 dark:text-white overflow-hidden transition-colors duration-200">
+    <section id="hero" className="relative min-h-[90vh] lg:min-h-[92vh] flex items-center justify-center pt-20 pb-16 px-4 sm:px-6 lg:px-8 text-slate-900 dark:text-white overflow-hidden transition-colors duration-200">
       {/* Background Glows & Ambient Mesh */}
       <div className="absolute -top-32 -left-32 w-96 h-96 bg-[#3bc2f3]/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute top-1/3 -right-32 w-96 h-96 bg-[#0c9dcc]/15 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-32 left-1/3 w-96 h-96 bg-[#ffca6a]/10 rounded-full blur-3xl pointer-events-none" />
-
-      {/* Subtle Background Graphic Overlay */}
-      <div className="absolute inset-0 z-0 opacity-10 pointer-events-none mix-blend-overlay">
-        <img 
-          src={heroStudy} 
-          alt="Students studying" 
-          className="w-full h-full object-cover object-center scale-105"
-        />
-      </div>
 
       <div className="container mx-auto relative z-10 max-w-5xl text-center">
         {/* Top Floating Pill */}

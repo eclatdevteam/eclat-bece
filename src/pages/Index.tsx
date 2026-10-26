@@ -4,6 +4,7 @@ import { Features } from "@/components/Features";
 import { About } from "@/components/About";
 import { Footer } from "@/components/Footer";
 import { usePublicAuthAction } from "@/hooks/usePublicAuthAction";
+import heroStudyBg from "@/assets/hero-study.jpg";
 
 const Index = () => {
   const { handleLoginClick, handleGetStartedClick } = usePublicAuthAction();

@@ -207,31 +207,33 @@ export default function StudentLeaderboardPage() {
               <Users className="w-3.5 h-3.5" />
               Weekly League Cohort (30 Scholars)
             </TabsTrigger>
-            <TabsTrigger value="national" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 text-xs font-bold">
+            <TabsTrigger value="national" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 text-xs font-bold whitespace-nowrap">
               <Trophy className="w-3.5 h-3.5" />
               National Leaderboards
             </TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="cohort" className="mt-0 focus-visible:outline-none">
+        <TabsContent value="cohort" className="mt-0 focus-visible:outline-none min-w-0">
           <WeeklyLeagueCohortCard />
         </TabsContent>
 
-        <TabsContent value="national" className="mt-0 focus-visible:outline-none">
-          <CompetitionLeaderboards
-            showCurrentUserPosition={true}
-            currentUserName={currentUserName}
-            weeklyLeaders={weeklyLeaders}
-            monthlyLeaders={monthlyLeaders}
-            annualLeaders={annualLeaders}
-            schoolLeaders={schoolLeaders}
-            mathLeaders={mathLeaders}
-            englishLeaders={englishLeaders}
-            currentUserRanks={currentUserRanks}
-            currentUserPoints={currentUserPoints}
-            defaultTab="weekly"
-          />
+        <TabsContent value="national" className="mt-0 focus-visible:outline-none min-w-0 overflow-hidden">
+          <div className="min-w-0">
+            <CompetitionLeaderboards
+              showCurrentUserPosition={true}
+              currentUserName={currentUserName}
+              weeklyLeaders={weeklyLeaders}
+              monthlyLeaders={monthlyLeaders}
+              annualLeaders={annualLeaders}
+              schoolLeaders={schoolLeaders}
+              mathLeaders={mathLeaders}
+              englishLeaders={englishLeaders}
+              currentUserRanks={currentUserRanks}
+              currentUserPoints={currentUserPoints}
+              defaultTab="weekly"
+            />
+          </div>
         </TabsContent>
       </Tabs>
     </div>
