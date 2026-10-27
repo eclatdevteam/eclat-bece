@@ -1,11 +1,11 @@
-import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Menu, X, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import logo from "@/assets/logo.png";
+import logoDark from "@/assets/logo-dark.png";
 import logoLight from "@/assets/logo-light.png";
 import { useNavigate, useLocation } from "react-router-dom";
-import { useTheme } from "next-themes";
 
 interface NavigationProps {
   onLoginClick: () => void;
@@ -14,12 +14,33 @@ interface NavigationProps {
 
 export const Navigation = ({ onLoginClick, onGetStartedClick }: NavigationProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [activeLink, setActiveLink] = useState<string>("");
   const navigate = useNavigate();
   const location = useLocation();
-  const { theme } = useTheme();
+
+  const navItems = [
+    { name: "About", path: "/about", sectionId: "about" },
+    { name: "Features", path: "/features", sectionId: "features" },
+    { name: "Leaderboard", path: "/leaderboard", sectionId: "leaderboard" },
+  ];
+
+  // Sync active link with location path on direct page loads
+  useEffect(() => {
+    if (location.pathname === "/about") {
+      setActiveLink("about");
+    } else if (location.pathname === "/features") {
+      setActiveLink("features");
+    } else if (location.pathname === "/leaderboard") {
+      setActiveLink("leaderboard");
+    } else {
+      setActiveLink("");
+    }
+  }, [location.pathname]);
 
   const handleNavClick = (path: string, sectionId: string) => {
     setMobileMenuOpen(false);
+    setActiveLink(sectionId);
+
     if (location.pathname === "/") {
       const element = document.getElementById(sectionId);
       if (element) {
@@ -31,65 +52,77 @@ export const Navigation = ({ onLoginClick, onGetStartedClick }: NavigationProps)
   };
 
   return (
-    <nav className="sticky top-0 z-50 bg-[#071023]/95 backdrop-blur-md border-b border-[#202b43] text-slate-100 shadow-xl shadow-black/20">
-      <div className="container mx-auto px-4 sm:px-6 md:px-8 lg:px-12">
-        <div className="flex items-center justify-between gap-6 h-16 md:h-20">
+    <nav className="sticky top-0 z-50 bg-white/90 dark:bg-[#060e20]/90 backdrop-blur-md border-b border-slate-200/80 dark:border-[#1a2844] text-slate-900 dark:text-slate-100 transition-colors duration-200">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+        <div className="flex items-center justify-between h-16 md:h-20">
           {/* Logo */}
           <div
-            className="flex items-center gap-2 sm:gap-3 cursor-pointer hover:scale-105 transition-all duration-300 hover:drop-shadow-2xl"
+            className="flex items-center gap-2 cursor-pointer transition-transform hover:scale-[1.02]"
             onClick={() => {
+              setActiveLink("");
               navigate("/");
               window.scrollTo({ top: 0, behavior: "smooth" });
             }}
           >
-            <img src={logoLight || logo} alt="Éclat Logo" className="h-8 sm:h-10 md:h-11 w-auto filter drop-shadow-lg" />
+            {/* Dark mode logo */}
+            <img
+              src={logoLight}
+              alt="Éclat Logo"
+              className="hidden dark:block h-8 sm:h-9 w-auto object-contain"
+            />
+            {/* Light mode logo */}
+            <img
+              src={logoDark || logo}
+              alt="Éclat Logo"
+              className="block dark:hidden h-8 sm:h-9 w-auto object-contain"
+            />
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden lg:flex flex-1 items-center justify-center gap-6 xl:gap-8">
-            <button
-              onClick={() => handleNavClick("/about", "about")}
-              className="text-slate-300 hover:text-[#3bc2f3] transition-all duration-200 font-semibold text-sm xl:text-base tracking-tight hover:scale-105"
-            >
-              About Us
-            </button>
-            <button
-              onClick={() => handleNavClick("/features", "features")}
-              className="text-slate-300 hover:text-[#3bc2f3] transition-all duration-200 font-semibold text-sm xl:text-base tracking-tight hover:scale-105"
-            >
-              Features
-            </button>
-            <button
-              onClick={() => handleNavClick("/leaderboard", "leaderboard")}
-              className="text-slate-300 hover:text-[#3bc2f3] transition-all duration-200 font-semibold text-sm xl:text-base tracking-tight hover:scale-105"
-            >
-              Leaderboard
-            </button>
+          <div className="hidden md:flex items-center gap-8">
+            {navItems.map((item) => {
+              const isActive = activeLink === item.sectionId;
+              return (
+                <button
+                  key={item.sectionId}
+                  onClick={() => handleNavClick(item.path, item.sectionId)}
+                  className={`text-sm py-1 transition-all ${
+                    isActive
+                      ? "font-semibold text-cyan-600 dark:text-[#38bdf8] relative after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-cyan-500 after:rounded-full"
+                      : "font-medium text-slate-600 hover:text-cyan-600 dark:text-slate-300 dark:hover:text-[#38bdf8]"
+                  }`}
+                >
+                  {item.name}
+                </button>
+              );
+            })}
           </div>
 
-          {/* CTA Buttons */}
-          <div className="hidden lg:flex items-center justify-center gap-3">
-            <ThemeToggle className="text-slate-200 hover:text-white hover:bg-[#15273f]" />
-            <Button
-              variant="outline"
+          {/* Desktop CTA Buttons & Theme Toggle */}
+          <div className="hidden md:flex items-center gap-3">
+            <ThemeToggle className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white" />
+            
+            <button
               onClick={onLoginClick}
-              className="font-bold text-sm px-5 h-10 rounded-xl border border-[#233148] bg-[#0c1628] text-slate-200 hover:bg-[#15273f] hover:border-[#3bc2f3] hover:text-white transition-all hover:scale-105"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-semibold text-slate-700 dark:text-slate-200 hover:text-slate-950 dark:hover:text-white border border-slate-200 dark:border-[#223555] bg-slate-50/80 dark:bg-[#0c1830] hover:bg-slate-100 dark:hover:bg-[#142444] transition-all"
             >
-              Login
-            </Button>
-            <Button
+              <User size={15} className="text-slate-500 dark:text-slate-400" />
+              <span>Login</span>
+            </button>
+
+            <button
               onClick={onGetStartedClick}
-              className="font-bold text-sm px-6 h-10 rounded-xl bg-[#3bc2f3] text-slate-950 hover:bg-[#32ade0] shadow-lg shadow-cyan-500/20 transition-all hover:scale-105"
+              className="inline-flex items-center justify-center px-5 py-2 rounded-full text-sm font-bold bg-[#00a8e8] hover:bg-[#0096d1] text-slate-950 shadow-md shadow-cyan-500/20 hover:shadow-cyan-500/30 transition-all hover:scale-[1.02]"
             >
               Get Started
-            </Button>
+            </button>
           </div>
 
-          {/* Mobile Menu & Theme Button */}
-          <div className="lg:hidden flex items-center gap-1.5">
-            <ThemeToggle className="text-slate-200 hover:text-white hover:bg-[#15273f]" />
+          {/* Mobile Actions */}
+          <div className="md:hidden flex items-center gap-2">
+            <ThemeToggle className="text-slate-600 dark:text-slate-300" />
             <button
-              className="p-2 text-slate-200 hover:text-[#3bc2f3] transition-colors rounded-xl hover:bg-[#15273f]"
+              className="p-2 text-slate-700 dark:text-slate-200 hover:text-cyan-600 dark:hover:text-cyan-400 rounded-lg"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle menu"
             >
@@ -98,42 +131,36 @@ export const Navigation = ({ onLoginClick, onGetStartedClick }: NavigationProps)
           </div>
         </div>
 
-        {/* Mobile Menu */}
+        {/* Mobile Dropdown */}
         {mobileMenuOpen && (
-          <div className="lg:hidden py-5 space-y-2 border-t border-[#202b43] animate-fade-in bg-[#0c1628] rounded-b-2xl px-2">
-            <button
-              onClick={() => handleNavClick("/about", "about")}
-              className="block w-full text-left px-4 py-3 text-slate-200 hover:text-[#3bc2f3] hover:bg-[#15273f] rounded-xl transition-all duration-200 font-semibold text-sm"
-            >
-              About
-            </button>
-            <button
-              onClick={() => handleNavClick("/features", "features")}
-              className="block w-full text-left px-4 py-3 text-slate-200 hover:text-[#3bc2f3] hover:bg-[#15273f] rounded-xl transition-all duration-200 font-semibold text-sm"
-            >
-              Features
-            </button>
-            <button
-              onClick={() => handleNavClick("/leaderboard", "leaderboard")}
-              className="block w-full text-left px-4 py-3 text-slate-200 hover:text-[#3bc2f3] hover:bg-[#15273f] rounded-xl transition-all duration-200 font-semibold text-sm"
-            >
-              Leaderboard
-            </button>
+          <div className="md:hidden py-4 px-2 space-y-2 border-t border-slate-200 dark:border-[#1a2844] bg-white/95 dark:bg-[#060e20]/95 backdrop-blur-md rounded-b-2xl animate-fade-in shadow-xl">
+            {navItems.map((item) => {
+              const isActive = activeLink === item.sectionId;
+              return (
+                <button
+                  key={item.sectionId}
+                  onClick={() => handleNavClick(item.path, item.sectionId)}
+                  className={`block w-full text-left px-4 py-2.5 rounded-xl text-sm transition-colors ${
+                    isActive
+                      ? "font-semibold text-cyan-600 dark:text-cyan-400 bg-cyan-500/10"
+                      : "font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-[#0e1c36]"
+                  }`}
+                >
+                  {item.name}
+                </button>
+              );
+            })}
 
-            {/* Mobile CTA Buttons */}
-            <div className="pt-3 space-y-2 px-2">
-              <div className="flex items-center justify-between px-3 py-2 rounded-xl bg-[#080f22] border border-[#233148] text-xs font-semibold text-slate-300">
-                <span>Theme</span>
-                <ThemeToggle className="text-slate-200 hover:text-white" />
-              </div>
+            <div className="pt-3 border-t border-slate-200 dark:border-[#1a2844] space-y-2">
               <Button
                 variant="outline"
                 onClick={() => {
                   setMobileMenuOpen(false);
                   onLoginClick();
                 }}
-                className="w-full font-bold text-sm h-11 rounded-xl border border-[#233148] bg-[#080f22] text-slate-200 hover:bg-[#15273f] hover:border-[#3bc2f3] hover:text-white"
+                className="w-full rounded-full border-slate-300 dark:border-[#223555] bg-transparent text-slate-800 dark:text-slate-200 font-semibold text-sm h-10"
               >
+                <User size={15} className="mr-2" />
                 Login
               </Button>
               <Button
@@ -141,7 +168,7 @@ export const Navigation = ({ onLoginClick, onGetStartedClick }: NavigationProps)
                   setMobileMenuOpen(false);
                   onGetStartedClick();
                 }}
-                className="w-full font-bold text-sm h-11 rounded-xl bg-[#3bc2f3] text-slate-950 hover:bg-[#32ade0] shadow-md shadow-cyan-500/20"
+                className="w-full rounded-full bg-[#00a8e8] hover:bg-[#0096d1] text-slate-950 font-bold text-sm h-10 shadow-md shadow-cyan-500/20"
               >
                 Get Started
               </Button>
