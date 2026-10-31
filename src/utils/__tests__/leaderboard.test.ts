@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from "vitest";
-import { getEmojiAvatar, fetchLeaderboardData } from "../leaderboard";
+import { getEmojiAvatar, fetchLeaderboardData, formatPublicStudentName } from "../leaderboard";
 
 // Mock supabase
 vi.mock("@/integrations/supabase/client", () => ({
@@ -78,6 +78,14 @@ vi.mock("@/integrations/supabase/client", () => ({
 }));
 
 describe("Leaderboard Utilities", () => {
+  it("formats student names safely for public display with last initial", () => {
+    expect(formatPublicStudentName("Chiamaka Okonkwo")).toBe("Chiamaka O.");
+    expect(formatPublicStudentName("David Kalu")).toBe("David K.");
+    expect(formatPublicStudentName("Farouq")).toBe("Farouq");
+    expect(formatPublicStudentName("Ada Lovelace (You)")).toBe("Ada L. (You)");
+    expect(formatPublicStudentName("")).toBe("Scholar");
+  });
+
   it("generates deterministic emoji avatar based on ID", () => {
     const avatar1 = getEmojiAvatar("student-abc");
     const avatar2 = getEmojiAvatar("student-abc");
