@@ -1,7 +1,7 @@
 # Éclat BECE Platform - Systems Documentation
 
-**Generated:** 2025-01-08  
-**Version:** 2.0 (Fresh Analysis)
+**Generated:** 2026-11-01  
+**Version:** 2.2 (Multi-Environment Deployment & Live Gamification Architecture)
 
 ---
 
@@ -63,7 +63,7 @@
 - **Email Service:** Resend API
 
 ### Infrastructure
-- **Hosting:** Vercel
+- **Hosting:** Vercel (Two-Tier Continuous Deployment: Production on `eclatapp.com.ng` via `main`, Staging / QA on `eclatapp.xyz` via `staging`)
 - **Database:** Supabase Cloud
 - **Edge Functions:** Supabase Edge Functions
 
@@ -1425,24 +1425,21 @@ see the header of that migration for details and rollback notes.
 
 **Component:** `AddCompetitionDialog`
 
-### Leaderboard Calculation
+### Leaderboard Calculation & Public Rankings
 
-**Page:** `StudentLeaderboardPage` (`/dashboard/student/leaderboard`)
+**Pages & Views:**
+- `StudentLeaderboardPage` (`/dashboard/student/leaderboard`) - In-portal competition rankings
+- `PublicLeaderboardPage` (`/leaderboard`) - Full public national rankings
+- `LeaderboardSection` (`/` homepage) - Live season showcase with top-3 podium, countdown, and active category tabs
 
-**Calculation:**
-1. Fetch all students with profiles and schools
-2. Fetch all quiz results
-3. Calculate points based on quiz results
-4. Rank students by points
-5. Separate monthly and annual leaderboards
-6. Highlight current user position
+**Architecture & Security:**
+- **Authoritative RPC (`public.get_public_leaderboard`):** A `SECURITY DEFINER` function querying `student_gamification_profile` (`weekly_ep`, `monthly_ep`, `lifetime_ep`) and `student_points_ledger` (subject specializations).
+- **Subject Specializations:** Mathematics (`%Math%`), English Language (`%English%`), and Basic Science & Technology (`%Sci%`).
+- **Student Profile Photos:** Exposes `avatar_url` from `profiles`. Frontend `<StudentAvatar />` provides a graceful fallback to rank-gradient monogram initials (`CO`, `DK`) if unuploaded.
+- **Public Minor Privacy:** `formatPublicStudentName()` masks surnames on public-facing leaderboards (e.g. `Chiamaka Okonkwo` -> `Chiamaka O.`) while keeping `(You)` indicators for authenticated scholars.
+- **Client Caching:** `useLeaderboardData` hook leverages TanStack Query with a 60-second stale time for optimal database performance.
 
-**Points System:**
-- Points calculated from quiz results
-- Monthly leaderboard: Current month only
-- Annual leaderboard: Year-to-date
-
-**Component:** `CompetitionLeaderboards`
+**Components:** `CompetitionLeaderboards` & `LeaderboardSection`
 
 ---
 
