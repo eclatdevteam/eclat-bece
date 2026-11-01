@@ -32,5 +32,11 @@ supabase/.temp
 # TypeScript incremental build cache
 *.tsbuildinfo
 
+# Alternative package manager lockfiles (standardized on npm)
+bun.lockb
+bun.lock
+yarn.lock
+pnpm-lock.yaml
+
 # ZCode session artifacts
 .zcode/
