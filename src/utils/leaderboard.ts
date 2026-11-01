@@ -7,6 +7,7 @@ export interface LeaderboardStudent {
   school: string;
   points: number;
   avatar: string;
+  avatarUrl?: string | null;
   isCurrentUser?: boolean;
   schoolId?: string | null;
   level?: number;
@@ -29,6 +30,7 @@ export interface LeaderboardData {
   annualLeaders: LeaderboardStudent[]; // All-time Hall of Fame
   mathLeaders: LeaderboardStudent[];
   englishLeaders: LeaderboardStudent[];
+  scienceLeaders: LeaderboardStudent[];
   schoolLeaders?: SchoolLeaderboardItem[];
   currentUserRanks?: {
     weekly: number;
@@ -36,6 +38,7 @@ export interface LeaderboardData {
     annual: number;
     math: number;
     english: number;
+    science: number;
   };
   currentUserPoints?: {
     weekly: number;
@@ -43,10 +46,26 @@ export interface LeaderboardData {
     annual: number;
     math: number;
     english: number;
+    science: number;
   };
 }
 
 const avatars = ["🎓", "📚", "🌟", "💫", "🎯", "👑", "🏆", "✨", "💎", "🔥", "🚀", "💪"];
+
+/**
+ * Formats a student's name for public leaderboard display, masking the last name for privacy.
+ * e.g., "Chiamaka Okonkwo" -> "Chiamaka O.", "David Kalu" -> "David K."
+ */
+export function formatPublicStudentName(name: string): string {
+  if (!name) return "Scholar";
+  const isYou = name.includes("(You)");
+  const clean = name.replace(/\s*\(You\)$/i, "").trim();
+  const parts = clean.split(/\s+/).filter(Boolean);
+  if (parts.length <= 1) return name;
+  const firstName = parts[0];
+  const lastInitial = parts[parts.length - 1].charAt(0).toUpperCase();
+  return `${firstName} ${lastInitial}.${isYou ? " (You)" : ""}`;
+}
 
 export const getEmojiAvatar = (id: string) => {
   let hash = 0;
@@ -81,6 +100,7 @@ export const fetchLeaderboardData = async (userId?: string): Promise<Leaderboard
       const rawAnnual: any[] = parsedData.all_time || parsedData.annual || [];
       const rawMath: any[] = parsedData.math || [];
       const rawEnglish: any[] = parsedData.english || [];
+      const rawScience: any[] = parsedData.science || [];
 
       const mapItems = (items: any[]): LeaderboardStudent[] =>
         items.map((item, index) => {
@@ -95,6 +115,7 @@ export const fetchLeaderboardData = async (userId?: string): Promise<Leaderboard
             level: Number(item.level) || 1,
             leagueTier: Number(item.league_tier) || 1,
             avatar: isCurrentUser ? "👤" : getEmojiAvatar(item.student_id || String(index)),
+            avatarUrl: item.avatar_url || null,
             isCurrentUser,
           };
         });
@@ -104,6 +125,7 @@ export const fetchLeaderboardData = async (userId?: string): Promise<Leaderboard
       const annualLeaders = mapItems(rawAnnual);
       const mathLeaders = mapItems(rawMath);
       const englishLeaders = mapItems(rawEnglish);
+      const scienceLeaders = mapItems(rawScience);
 
       const findUserRank = (list: LeaderboardStudent[]) => {
         const found = list.find((s) => s.isCurrentUser);
@@ -121,12 +143,14 @@ export const fetchLeaderboardData = async (userId?: string): Promise<Leaderboard
         annualLeaders,
         mathLeaders,
         englishLeaders,
+        scienceLeaders,
         currentUserRanks: {
           weekly: findUserRank(weeklyLeaders),
           monthly: findUserRank(monthlyLeaders),
           annual: findUserRank(annualLeaders),
           math: findUserRank(mathLeaders),
           english: findUserRank(englishLeaders),
+          science: findUserRank(scienceLeaders),
         },
         currentUserPoints: {
           weekly: findUserPoints(weeklyLeaders),
@@ -134,13 +158,14 @@ export const fetchLeaderboardData = async (userId?: string): Promise<Leaderboard
           annual: findUserPoints(annualLeaders),
           math: findUserPoints(mathLeaders),
           english: findUserPoints(englishLeaders),
+          science: findUserPoints(scienceLeaders),
         },
       };
     }
 
     // 2. Fallback to querying student_gamification_profile directly
     const { data: studentsData } = await supabase.from("students").select("id, user_id, school_id");
-    const { data: profilesData } = await supabase.from("profiles").select("id, full_name, username");
+    const { data: profilesData } = await supabase.from("profiles").select("id, full_name, username, avatar_url");
     const { data: schoolsData } = await supabase.from("schools").select("id, school_name");
     const { data: gameProfiles } = await supabase.from("student_gamification_profile").select("*");
 
@@ -168,6 +193,7 @@ export const fetchLeaderboardData = async (userId?: string): Promise<Leaderboard
             level: Number(g?.current_level || 1),
             leagueTier: Number(g?.current_league_tier || 1),
             avatar: isCurrentUser ? "👤" : getEmojiAvatar(s.id),
+            avatarUrl: p?.avatar_url || null,
             isCurrentUser,
           };
         })
@@ -221,6 +247,7 @@ export const fetchLeaderboardData = async (userId?: string): Promise<Leaderboard
       annualLeaders,
       mathLeaders: [],
       englishLeaders: [],
+      scienceLeaders: [],
       schoolLeaders,
       currentUserRanks: {
         weekly: weeklyLeaders.find((s) => s.isCurrentUser)?.rank || 0,
@@ -228,6 +255,7 @@ export const fetchLeaderboardData = async (userId?: string): Promise<Leaderboard
         annual: annualLeaders.find((s) => s.isCurrentUser)?.rank || 0,
         math: 0,
         english: 0,
+        science: 0,
       },
       currentUserPoints: {
         weekly: weeklyLeaders.find((s) => s.isCurrentUser)?.points || 0,
@@ -235,6 +263,7 @@ export const fetchLeaderboardData = async (userId?: string): Promise<Leaderboard
         annual: annualLeaders.find((s) => s.isCurrentUser)?.points || 0,
         math: 0,
         english: 0,
+        science: 0,
       },
     };
   } catch (error) {
@@ -245,9 +274,10 @@ export const fetchLeaderboardData = async (userId?: string): Promise<Leaderboard
       annualLeaders: [],
       mathLeaders: [],
       englishLeaders: [],
+      scienceLeaders: [],
       schoolLeaders: [],
-      currentUserRanks: { weekly: 0, monthly: 0, annual: 0, math: 0, english: 0 },
-      currentUserPoints: { weekly: 0, monthly: 0, annual: 0, math: 0, english: 0 },
+      currentUserRanks: { weekly: 0, monthly: 0, annual: 0, math: 0, english: 0, science: 0 },
+      currentUserPoints: { weekly: 0, monthly: 0, annual: 0, math: 0, english: 0, science: 0 },
     };
   }
 };
