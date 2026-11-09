@@ -216,7 +216,7 @@ export function CreateStudentDialog({ open, onOpenChange, classes = [], onCreate
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="border-border bg-muted/40 text-foreground w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6">
+      <DialogContent className="border-border bg-card text-foreground w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto p-4 sm:p-6">
         <DialogHeader>
           <DialogTitle className="text-xl text-white">Add new student</DialogTitle>
           <DialogDescription className="text-muted-foreground">
