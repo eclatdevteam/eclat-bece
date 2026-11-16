@@ -1,4 +1,4 @@
-import { LayoutDashboard, BookOpen, ClipboardList, TrendingUp, Trophy, Swords, Settings, ChevronLeft, ChevronRight, LogOut } from "lucide-react";
+import { LayoutDashboard, BookOpen, ClipboardList, TrendingUp, Trophy, Swords, Settings, ChevronLeft, ChevronRight, LogOut, ShieldCheck } from "lucide-react";
 import logoDark from "@/assets/logo-dark.png";
 import logoLight from "@/assets/logo-light.png";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -27,6 +27,7 @@ const menuItems = [
   { title: "Progress", url: "/dashboard/student/progress", icon: TrendingUp },
   { title: "Leaderboard", url: "/dashboard/student/leaderboard", icon: Trophy },
   { title: "Settings", url: "/dashboard/student/settings", icon: Settings },
+  { title: "Privacy & Safety", url: "/dashboard/student/privacy", icon: ShieldCheck },
 ];
 
 export function StudentSidebar() {

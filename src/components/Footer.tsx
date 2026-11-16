@@ -119,13 +119,21 @@ export const Footer = () => {
             </a>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
             <Link to="/privacy-policy" className="hover:text-slate-800 dark:hover:text-slate-200 transition-colors">
               Privacy Policy
             </Link>
             <span>•</span>
             <Link to="/terms-of-service" className="hover:text-slate-800 dark:hover:text-slate-200 transition-colors">
               Terms of Service
+            </Link>
+            <span>•</span>
+            <Link to="/agreements" className="hover:text-slate-800 dark:hover:text-slate-200 transition-colors">
+              Agreements
+            </Link>
+            <span>•</span>
+            <Link to="/pupil-privacy" className="hover:text-slate-800 dark:hover:text-slate-200 transition-colors">
+              Pupil Privacy
             </Link>
           </div>
         </div>
