@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { ArrowLeft, ArrowRight, Eye, EyeOff, Loader2, LockKeyhole, Mail, UserRound } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,10 +24,21 @@ export default function ParentSignUpPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const { toast } = useToast();
 
   const handleSignup = async (event: React.FormEvent) => {
     event.preventDefault();
+
+    if (!agreedToTerms) {
+      toast({
+        title: "Agreement Required",
+        description: "Please confirm that you have read and agree to the Parent/Guardian Agreement and Terms of Service.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
@@ -166,6 +177,35 @@ export default function ParentSignUpPage() {
                 <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} aria-label={showConfirmPassword ? "Hide password" : "Show password"} className="absolute right-3 top-1/2 -translate-y-1/2 text-[#718097] hover:text-[#dce7ff]">{showConfirmPassword ? <EyeOff size={16} /> : <Eye size={16} />}</button>
               </div>
             </label>
+
+            {/* Parent Agreement Checkbox */}
+            <div className="pt-1 pb-1">
+              <label className="flex items-start gap-2 text-[11px] text-slate-600 dark:text-[#a0aec0] cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={agreedToTerms}
+                  onChange={(e) => setAgreedToTerms(e.target.checked)}
+                  required
+                  className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 text-sky-500 focus:ring-sky-400 dark:border-[#2d3c55] dark:bg-[#111b30]"
+                />
+                <span className="leading-tight">
+                  I agree to Éclat's{" "}
+                  <Link to="/terms-of-service" target="_blank" className="text-sky-600 dark:text-[#72c8f6] underline hover:opacity-80">
+                    Terms of Service
+                  </Link>
+                  , acknowledge the{" "}
+                  <Link to="/privacy-policy" target="_blank" className="text-sky-600 dark:text-[#72c8f6] underline hover:opacity-80">
+                    Privacy Policy
+                  </Link>
+                  , and accept the{" "}
+                  <Link to="/agreements" target="_blank" className="text-sky-600 dark:text-[#72c8f6] underline hover:opacity-80">
+                    Parent/Guardian Agreement
+                  </Link>
+                  .
+                </span>
+              </label>
+            </div>
+
             <button type="submit" disabled={isLoading} className="flex h-9 w-full items-center justify-center gap-2 bg-sky-500 text-[12px] font-bold tracking-[1px] text-white transition-colors hover:bg-sky-600 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-[#72c8f6] dark:text-[#0a1a31] dark:hover:bg-[#8bd4fb]">
               {isLoading ? <><Loader2 className="h-4 w-4 animate-spin" />Creating account...</> : <>Create Account <ArrowRight size={16} /></>}
             </button>
