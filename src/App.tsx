@@ -137,6 +137,7 @@ const App = () => (
                 <Route path="/student-login" element={<StudentLogInPage />} />
                 <Route path="/student-signup" element={<Navigate to="/student-login" replace />} />
                 <Route path="/school-login" element={<SchoolLogInPage />} />
+                <Route path="/school-signup" element={<SchoolSignUpPage />} />
                 <Route path="/teacher-login" element={<TeacherLoginPage />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/password-reset" element={<PasswordResetPage />} />
