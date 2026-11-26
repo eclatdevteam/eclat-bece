@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Users, Search, Plus, BookOpen, FileText, Trophy, Upload, Edit2, Link2 } from "lucide-react";
+import { Users, Search, Plus, BookOpen, FileText, Trophy, Upload, Edit2, Link2, FileSpreadsheet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { SchoolPageHeader } from "@/components/school/SchoolPageHeader";
@@ -91,8 +91,8 @@ export function SchoolStudentsPage() {
               onClick={() => setBulkDialogOpen(true)}
               className="border-border bg-card text-foreground hover:bg-accent font-semibold text-xs sm:text-sm"
             >
-              <Upload className="mr-1.5 h-4 w-4" />
-              Bulk Import CSV
+              <FileSpreadsheet className="mr-1.5 h-4 w-4 text-[#3bc2f3]" />
+              Bulk Import (Excel / CSV)
             </Button>
             <Button
               onClick={() => setStudentDialogOpen(true)}
@@ -348,6 +348,7 @@ export function SchoolStudentsPage() {
         onOpenChange={setStudentDialogOpen}
         classes={classes}
         onCreated={() => refresh()}
+        onSwitchToBulk={() => setBulkDialogOpen(true)}
       />
 
       {/* Link Existing Student Modal */}

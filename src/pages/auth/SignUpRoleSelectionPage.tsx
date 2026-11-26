@@ -73,9 +73,7 @@ export default function SignUpRoleSelectionPage({ login = false }: { login?: boo
                   navigate(
                     login
                       ? `/${id === "student" ? "student-login" : `${id}-login`}`
-                      : id === "parent"
-                        ? "/parent-signup"
-                        : `/auth?role=${id}`
+                      : `/${id}-signup`
                   )
                 }
               >

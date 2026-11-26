@@ -10,12 +10,14 @@ import {
   BookOpen,
   Award,
   Sparkles,
+  FileSpreadsheet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SchoolPageHeader } from "@/components/school/SchoolPageHeader";
 import { SchoolDataState } from "@/components/school/SchoolDataState";
 import { CreateClassDialog, CreateStudentDialog } from "@/components/school/SchoolCreateDialogs";
+import { SchoolBulkStudentDialog } from "@/components/school/SchoolBulkStudentDialog";
 import { StatCard } from "./schoolPageShared";
 import { useSchoolData } from "@/hooks/useSchoolData";
 
@@ -23,6 +25,7 @@ export function SchoolOverviewPage() {
   const navigate = useNavigate();
   const { school, students, classes, teachers, assignmentStats, cohortAverages, gamificationTotals, topicMastery, refresh, isLoading, error } = useSchoolData();
   const [studentDialogOpen, setStudentDialogOpen] = useState(false);
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [classDialogOpen, setClassDialogOpen] = useState(false);
 
   // Registered teachers only — legacy virtual rows are not real accounts.
@@ -112,6 +115,14 @@ export function SchoolOverviewPage() {
               className="border-border bg-card text-foreground hover:bg-accent h-9 text-xs sm:text-sm font-medium"
             >
               View reports
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => setBulkDialogOpen(true)}
+              className="border-border bg-card text-foreground hover:bg-accent h-9 text-xs sm:text-sm font-medium"
+            >
+              <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5 text-sky-500" />
+              Bulk import
             </Button>
             <Button
               onClick={() => setStudentDialogOpen(true)}
@@ -250,6 +261,13 @@ export function SchoolOverviewPage() {
         open={studentDialogOpen}
         onOpenChange={setStudentDialogOpen}
         onCreated={() => refresh()}
+        onSwitchToBulk={() => setBulkDialogOpen(true)}
+      />
+      <SchoolBulkStudentDialog
+        open={bulkDialogOpen}
+        onOpenChange={setBulkDialogOpen}
+        classes={classes}
+        onSuccess={() => refresh()}
       />
       <CreateClassDialog
         teachers={registeredTeachers}

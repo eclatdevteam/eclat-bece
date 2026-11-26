@@ -46,7 +46,15 @@ export const RoleSelectionDialog = ({ open, onOpenChange }: RoleSelectionDialogP
 
   const handleRoleSelect = (role: string) => {
     const roleParam = role.toLowerCase().replace("/dashboard/", "");
-    navigate(`/auth?role=${roleParam}`);
+    if (roleParam === "school") {
+      navigate("/school-signup");
+    } else if (roleParam === "parent") {
+      navigate("/parent-signup");
+    } else if (roleParam === "student") {
+      navigate("/student-login");
+    } else {
+      navigate(`/auth?role=${roleParam}`);
+    }
     onOpenChange(false);
   };
 
