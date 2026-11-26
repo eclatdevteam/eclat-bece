@@ -183,7 +183,7 @@ export const Hero = ({ onGetStartedClick }: HeroProps) => {
 
               {/* 2 Feature mini-cards */}
               <div className="grid grid-cols-2 gap-3 mb-3">
-                <div className="p-3 rounded-xl bg-emerald-50 dark:bg-[#0c2420] border border-emerald-200 dark:border-emerald-800/40 text-left">
+                <div className="p-3 rounded-xl bg-emerald-50 dark:bg-[#000000] border border-emerald-200 dark:border-emerald-800/40 text-left">
                   <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 text-xs font-bold mb-0.5">
                     <CheckCircle2 size={13} />
                     <span>Today, {todayLabel}</span>
