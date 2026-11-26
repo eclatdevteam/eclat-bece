@@ -14,6 +14,10 @@ interface HeroProps {
 export const Hero = ({ onGetStartedClick }: HeroProps) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
+  const todayLabel = new Date().toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "short",
+  });
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -182,7 +186,7 @@ export const Hero = ({ onGetStartedClick }: HeroProps) => {
                 <div className="p-3 rounded-xl bg-emerald-50 dark:bg-[#0c2420] border border-emerald-200 dark:border-emerald-800/40 text-left">
                   <div className="flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400 text-xs font-bold mb-0.5">
                     <CheckCircle2 size={13} />
-                    <span>Today, 27 Oct</span>
+                    <span>Today, {todayLabel}</span>
                   </div>
                   <p className="text-[11px] text-slate-600 dark:text-emerald-200/70 font-medium">Leaderboard Season Active</p>
                 </div>
