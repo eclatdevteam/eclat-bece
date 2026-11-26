@@ -1,5 +1,6 @@
 import { useState, useId, useMemo } from "react";
 import Papa from "papaparse";
+import * as XLSX from "xlsx";
 import {
   Upload,
   Download,
@@ -31,34 +32,19 @@ import { SchoolClassItem } from "@/hooks/useSchoolData";
 import { supabase } from "@/integrations/supabase/client";
 import { getEdgeFunctionError } from "@/lib/errorUtils";
 import { toast } from "sonner";
+import {
+  ParsedStudentRow,
+  ImportResult,
+  normalizeCohort,
+  cleanUsername,
+  autoGenerateUsername,
+  parseRawRosterRows,
+} from "./bulkRosterParser";
 
-export interface ParsedStudentRow {
-  rowId: string;
-  fullName: string;
-  cohort: "year_6" | "year_9";
-  classArmName: string;
-  classId: string | null;
-  username: string;
-  password: string;
-  isAutoUsername: boolean;
-  isAutoPassword: boolean;
-  status: "ready" | "error";
-  errors: string[];
-  selected: boolean;
-}
+export type { ParsedStudentRow, ImportResult };
+export { normalizeCohort, cleanUsername, autoGenerateUsername, parseRawRosterRows };
 
-interface ImportResult {
-  rowId: string;
-  fullName: string;
-  username: string;
-  password: string;
-  cohort: string;
-  classArm: string;
-  success: boolean;
-  error?: string;
-}
-
-interface SchoolBulkStudentDialogProps {
+export interface SchoolBulkStudentDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   classes: SchoolClassItem[];
@@ -112,27 +98,57 @@ export function SchoolBulkStudentDialog({
     onOpenChange(false);
   };
 
-  // Helper to normalize cohort string
-  const normalizeCohort = (val: string | undefined): "year_6" | "year_9" => {
-    if (!val) return defaultCohort;
-    const clean = val.toLowerCase().trim();
-    if (clean.includes("6") || clean.includes("primary") || clean === "p6" || clean === "year 6") {
-      return "year_6";
-    }
-    return "year_9";
+  // Download pre-formatted sample Excel (.xlsx) template
+  const handleDownloadExcelTemplate = () => {
+    const sampleClassA = classes[0]?.name || "JSS 3A";
+    const sampleClassB = classes[1]?.name || "JSS 3B";
+    const sampleRows = [
+      {
+        "Full Name": "Ada Okafor",
+        "Cohort": "year_9",
+        "Class Arm": sampleClassA,
+        "Username": "ada.okafor",
+        "Temporary Password": "Password123!",
+      },
+      {
+        "Full Name": "Kwame Mensah",
+        "Cohort": "year_9",
+        "Class Arm": sampleClassB,
+        "Username": "kwame.mensah",
+        "Temporary Password": "Password123!",
+      },
+      {
+        "Full Name": "Fatima Bello",
+        "Cohort": "year_6",
+        "Class Arm": "",
+        "Username": "fatima.bello",
+        "Temporary Password": "Password123!",
+      },
+      {
+        "Full Name": "Chidi Eze",
+        "Cohort": "year_9",
+        "Class Arm": sampleClassA,
+        "Username": "",
+        "Temporary Password": "",
+      },
+    ];
+
+    const worksheet = XLSX.utils.json_to_sheet(sampleRows);
+    worksheet["!cols"] = [
+      { wch: 22 },
+      { wch: 12 },
+      { wch: 16 },
+      { wch: 18 },
+      { wch: 22 },
+    ];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Student Roster Template");
+    XLSX.writeFile(workbook, "eclat_student_roster_template.xlsx");
+    toast.success("Excel (.xlsx) template downloaded successfully");
   };
 
-  // Helper to normalize username candidate
-  const cleanUsername = (str: string): string => {
-    return str
-      .toLowerCase()
-      .trim()
-      .replace(/[^a-z0-9._-]/g, "")
-      .slice(0, 20);
-  };
-
-  // Download pre-formatted sample CSV
-  const handleDownloadTemplate = () => {
+  // Download pre-formatted sample CSV template
+  const handleDownloadCsvTemplate = () => {
     const sampleClassA = classes[0]?.name || "JSS 3A";
     const sampleClassB = classes[1]?.name || "JSS 3B";
     const csvContent = [
@@ -147,155 +163,69 @@ export function SchoolBulkStudentDialog({
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", "eclat_bece_student_import_template.csv");
+    link.setAttribute("download", "eclat_student_roster_template.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    toast.success("Template downloaded successfully");
+    toast.success("CSV (.csv) template downloaded successfully");
   };
 
-  // Parse raw text or file content
+  // Parse Excel ArrayBuffer
+  const processExcelBuffer = (buffer: ArrayBuffer) => {
+    try {
+      const data = new Uint8Array(buffer);
+      const workbook = XLSX.read(data, { type: "array" });
+      const firstSheetName = workbook.SheetNames[0];
+      if (!firstSheetName) {
+        toast.error("The Excel workbook contains no worksheets.");
+        return;
+      }
+      const worksheet = workbook.Sheets[firstSheetName];
+      const rawRows = XLSX.utils.sheet_to_json<Record<string, any>>(worksheet, { defval: "" });
+
+      if (!rawRows || rawRows.length === 0) {
+        toast.error("The Excel worksheet is empty or formatted incorrectly.");
+        return;
+      }
+
+      const rows = parseRawRosterRows(rawRows, classes, defaultCohort, defaultClassId);
+
+      if (rows.length === 0) {
+        toast.error("No valid student rows found in the Excel file.");
+        return;
+      }
+
+      setParsedRows(rows);
+      setStep("preview");
+      toast.info(`Parsed ${rows.length} rows from Excel. Please review before proceeding.`);
+    } catch (err: any) {
+      console.error("Excel parse error:", err);
+      toast.error(`Excel parsing error: ${err.message || "Failed to read spreadsheet"}`);
+    }
+  };
+
+  // Parse CSV string content
   const processCSVContent = (csvString: string) => {
     Papa.parse<Record<string, string>>(csvString, {
       header: true,
       skipEmptyLines: "greedy",
       complete: (parseResult) => {
         if (!parseResult.data || parseResult.data.length === 0) {
-          toast.error("The CSV file is empty or formatted incorrectly.");
+          toast.error("The CSV data is empty or formatted incorrectly.");
           return;
         }
 
-        const seenUsernames = new Set<string>();
-        const rows: ParsedStudentRow[] = [];
-
-        parseResult.data.forEach((row, index) => {
-          // Flexible key lookup
-          const getVal = (...keys: string[]): string => {
-            for (const k of keys) {
-              for (const [colKey, colVal] of Object.entries(row)) {
-                if (colKey.trim().toLowerCase() === k.toLowerCase()) {
-                  return (colVal || "").trim();
-                }
-              }
-            }
-            return "";
-          };
-
-          const rawName = getVal("Full Name", "fullName", "full_name", "name", "student name");
-          const rawCohort = getVal("Cohort", "cohort", "classYear", "class_year", "level");
-          const rawClass = getVal("Class Arm", "class_arm", "classArm", "class", "arm");
-          const rawUsername = getVal("Username", "username", "user");
-          const rawPassword = getVal("Temporary Password", "Password", "password", "temp_password");
-
-          if (!rawName && !rawUsername) {
-            // Empty row
-            return;
-          }
-
-          const errors: string[] = [];
-
-          // Validate Full Name
-          if (!rawName || rawName.length < 2) {
-            errors.push("Full name must be at least 2 characters.");
-          } else if (rawName.length > 100) {
-            errors.push("Full name must not exceed 100 characters.");
-          }
-
-          const cohort = normalizeCohort(rawCohort);
-
-          // Resolve class arm
-          let matchedClassId: string | null = null;
-          let matchedClassName = "";
-
-          if (rawClass) {
-            const foundClass = classes.find(
-              (c) => c.name.toLowerCase() === rawClass.toLowerCase()
-            );
-            if (foundClass) {
-              matchedClassId = foundClass.id;
-              matchedClassName = foundClass.name;
-            } else {
-              matchedClassName = rawClass;
-            }
-          } else if (defaultClassId !== "none") {
-            const foundClass = classes.find((c) => c.id === defaultClassId);
-            if (foundClass) {
-              matchedClassId = foundClass.id;
-              matchedClassName = foundClass.name;
-            }
-          }
-
-          // Resolve or auto-generate username
-          let username = "";
-          let isAutoUsername = false;
-
-          if (rawUsername) {
-            username = cleanUsername(rawUsername);
-            if (username.length < 2 || username.length > 20) {
-              errors.push("Username must be between 2 and 20 characters.");
-            }
-          } else if (rawName) {
-            isAutoUsername = true;
-            const parts = rawName.toLowerCase().trim().split(/\s+/);
-            const baseUser = cleanUsername(parts.length > 1 ? `${parts[0]}.${parts[1]}` : parts[0]);
-            let candidate = baseUser.slice(0, 16);
-            let counter = 1;
-            while (seenUsernames.has(candidate)) {
-              candidate = `${baseUser.slice(0, 14)}${counter}`;
-              counter++;
-            }
-            username = candidate;
-          }
-
-          if (username) {
-            if (seenUsernames.has(username)) {
-              errors.push(`Duplicate username "@${username}" detected in import list.`);
-            } else {
-              seenUsernames.add(username);
-            }
-          } else {
-            errors.push("Could not generate valid username.");
-          }
-
-          // Resolve or auto-generate password
-          let password = "";
-          let isAutoPassword = false;
-
-          if (rawPassword) {
-            password = rawPassword.trim();
-            if (password.length < 6) {
-              errors.push("Password must be at least 6 characters.");
-            }
-          } else {
-            isAutoPassword = true;
-            password = `Eclat${Math.floor(1000 + Math.random() * 9000)}!`;
-          }
-
-          rows.push({
-            rowId: `row-${index}-${Date.now()}`,
-            fullName: rawName,
-            cohort,
-            classArmName: matchedClassName,
-            classId: matchedClassId,
-            username,
-            password,
-            isAutoUsername,
-            isAutoPassword,
-            status: errors.length > 0 ? "error" : "ready",
-            errors,
-            selected: errors.length === 0,
-          });
-        });
+        const rows = parseRawRosterRows(parseResult.data, classes, defaultCohort, defaultClassId);
 
         if (rows.length === 0) {
-          toast.error("No valid student rows found in the CSV file.");
+          toast.error("No valid student rows found in the CSV data.");
           return;
         }
 
         setParsedRows(rows);
         setStep("preview");
-        toast.info(`Parsed ${rows.length} rows. Please review before proceeding.`);
+        toast.info(`Parsed ${rows.length} rows from CSV. Please review before proceeding.`);
       },
       error: (err) => {
         console.error("PapaParse error:", err);
@@ -308,14 +238,40 @@ export function SchoolBulkStudentDialog({
     const selected = e.target.files?.[0];
     if (!selected) return;
     setFile(selected);
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      if (text) {
-        processCSVContent(text);
-      }
-    };
-    reader.readAsText(selected);
+
+    const name = selected.name.toLowerCase();
+    const isExcel = name.endsWith(".xlsx") || name.endsWith(".xls");
+    const isCsv = name.endsWith(".csv") || name.endsWith(".txt");
+
+    if (isExcel) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const buffer = event.target?.result as ArrayBuffer;
+        if (buffer) {
+          processExcelBuffer(buffer);
+        }
+      };
+      reader.readAsArrayBuffer(selected);
+    } else if (isCsv) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target?.result as string;
+        if (text) {
+          processCSVContent(text);
+        }
+      };
+      reader.readAsText(selected);
+    } else {
+      // Fallback: attempt CSV text parsing
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const text = event.target?.result as string;
+        if (text) {
+          processCSVContent(text);
+        }
+      };
+      reader.readAsText(selected);
+    }
   };
 
   const handlePasteSubmit = () => {
@@ -460,8 +416,41 @@ export function SchoolBulkStudentDialog({
     }
   };
 
-  // Download credentials export CSV
-  const handleExportCredentials = () => {
+  // Download credentials export Excel (.xlsx)
+  const handleExportExcelCredentials = () => {
+    if (results.length === 0) return;
+
+    const exportRows = results.map((r) => ({
+      "Full Name": r.fullName,
+      "Cohort": r.cohort === "year_6" ? "Year 6 (Primary 6)" : "Year 9 (JSS 3)",
+      "Class Arm": r.classArm || "Unassigned",
+      "Username": r.username,
+      "Temporary Password": r.password,
+      "Import Status": r.success ? "Success" : "Failed",
+      "Error Note": r.error || "",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportRows);
+    worksheet["!cols"] = [
+      { wch: 22 },
+      { wch: 20 },
+      { wch: 16 },
+      { wch: 18 },
+      { wch: 20 },
+      { wch: 14 },
+      { wch: 32 },
+    ];
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Student Credentials");
+    XLSX.writeFile(
+      workbook,
+      `eclat_imported_students_credentials_${new Date().toISOString().slice(0, 10)}.xlsx`
+    );
+    toast.success("Excel (.xlsx) credentials exported!");
+  };
+
+  // Download credentials export CSV (.csv)
+  const handleExportCsvCredentials = () => {
     if (results.length === 0) return;
 
     const exportRows = [
@@ -482,12 +471,15 @@ export function SchoolBulkStudentDialog({
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `eclat_imported_students_credentials_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute(
+      "download",
+      `eclat_imported_students_credentials_${new Date().toISOString().slice(0, 10)}.csv`
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    toast.success("Credentials CSV exported!");
+    toast.success("CSV (.csv) credentials exported!");
   };
 
   return (
@@ -501,9 +493,11 @@ export function SchoolBulkStudentDialog({
                 <FileSpreadsheet className="h-5 w-5" />
               </div>
               <div>
-                <DialogTitle className="text-lg font-bold text-white">Bulk Student CSV Ingestion</DialogTitle>
+                <DialogTitle className="text-lg font-bold text-white">
+                  Bulk Student Roster Ingestion (Excel & CSV)
+                </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground">
-                  Import hundreds of student accounts and assign them to exam cohorts and classes.
+                  Import hundreds of student accounts from Excel (.xlsx, .xls) or CSV files into your school roster.
                 </DialogDescription>
               </div>
             </div>
@@ -522,26 +516,37 @@ export function SchoolBulkStudentDialog({
                   <div>
                     <p className="font-semibold text-white">Need a spreadsheet template?</p>
                     <p className="text-muted-foreground text-[11px] mt-0.5">
-                      Download our pre-configured CSV with required columns and sample learners.
+                      Download our pre-configured template with required columns and sample learners.
                     </p>
                   </div>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={handleDownloadTemplate}
-                  className="border-sky-500/40 text-[#71c9ed] hover:bg-sky-500/10 text-xs flex-shrink-0"
-                >
-                  <Download className="mr-1.5 h-3.5 w-3.5" />
-                  Download CSV Template
-                </Button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleDownloadExcelTemplate}
+                    className="border-sky-500/40 text-[#71c9ed] hover:bg-sky-500/10 text-xs flex-shrink-0"
+                  >
+                    <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
+                    Excel (.xlsx)
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleDownloadCsvTemplate}
+                    className="border-sky-500/40 text-[#71c9ed] hover:bg-sky-500/10 text-xs flex-shrink-0"
+                  >
+                    <FileText className="mr-1.5 h-3.5 w-3.5" />
+                    CSV (.csv)
+                  </Button>
+                </div>
               </div>
 
               {/* Default Cohort & Class Selectors */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="default-cohort" className="text-xs text-muted-foreground">
-                    Default Exam Cohort (if unspecified in CSV)
+                    Default Exam Cohort (if unspecified in spreadsheet)
                   </Label>
                   <select
                     id="default-cohort"
@@ -564,7 +569,7 @@ export function SchoolBulkStudentDialog({
                     onChange={(e) => setDefaultClassId(e.target.value)}
                     className="h-9 w-full rounded-lg border border-[#34415b] bg-background px-3 text-xs text-white"
                   >
-                    <option value="none">Auto-match from CSV "Class Arm" column</option>
+                    <option value="none">Auto-match from spreadsheet "Class Arm" column</option>
                     {classes.map((cls) => (
                       <option key={cls.id} value={cls.id}>
                         {cls.name} ({cls.level})
@@ -585,7 +590,7 @@ export function SchoolBulkStudentDialog({
                       : "text-muted-foreground hover:text-white"
                   }`}
                 >
-                  Upload CSV File
+                  Upload File (Excel / CSV)
                 </button>
                 <button
                   type="button"
@@ -609,16 +614,16 @@ export function SchoolBulkStudentDialog({
                   <input
                     id={fileInputId}
                     type="file"
-                    accept=".csv,text/csv"
+                    accept=".xlsx,.xls,.csv,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
                     onChange={handleFileChange}
                     className="hidden"
                   />
                   <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#162744] text-[#3bc2f3] mb-3">
                     <Upload className="h-6 w-6" />
                   </div>
-                  <p className="text-sm font-semibold text-white">Click or drag & drop a .csv file here</p>
+                  <p className="text-sm font-semibold text-white">Click or drag & drop an Excel (.xlsx, .xls) or CSV file here</p>
                   <p className="text-xs text-muted-foreground mt-1 max-w-sm">
-                    Supports comma-separated values exported from Excel, Google Sheets, or School Management Software.
+                    Supports Microsoft Excel workbooks, Google Sheets downloads, and CSV exports from School Information Systems.
                   </p>
                 </div>
               ) : (
@@ -728,7 +733,7 @@ export function SchoolBulkStudentDialog({
                     No rows match this filter.
                   </div>
                 ) : (
-                  filteredPreviewRows.map((r, idx) => (
+                  filteredPreviewRows.map((r) => (
                     <div
                       key={r.rowId}
                       className={`grid grid-cols-[40px_1.5fr_1fr_1.2fr_1fr_100px] items-center border-b border-[#172236] px-3 py-2.5 text-xs transition-colors ${
@@ -861,13 +866,23 @@ export function SchoolBulkStudentDialog({
                     </p>
                   </div>
                 </div>
-                <Button
-                  onClick={handleExportCredentials}
-                  className="bg-[#2184a7] text-white hover:bg-[#2c9bc2] text-xs font-semibold flex-shrink-0"
-                >
-                  <Download className="mr-1.5 h-3.5 w-3.5" />
-                  Download Credentials (.csv)
-                </Button>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Button
+                    onClick={handleExportExcelCredentials}
+                    className="bg-[#2184a7] text-white hover:bg-[#2c9bc2] text-xs font-semibold flex-shrink-0"
+                  >
+                    <FileSpreadsheet className="mr-1.5 h-3.5 w-3.5" />
+                    Download Excel (.xlsx)
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={handleExportCsvCredentials}
+                    className="border-sky-500/40 text-[#71c9ed] hover:bg-sky-500/10 text-xs font-semibold flex-shrink-0"
+                  >
+                    <FileText className="mr-1.5 h-3.5 w-3.5" />
+                    Download CSV (.csv)
+                  </Button>
+                </div>
               </div>
 
               {/* Failures List if any */}

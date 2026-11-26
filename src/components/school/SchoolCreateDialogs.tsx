@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Loader2, FileSpreadsheet } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -149,9 +149,10 @@ interface CreateStudentDialogProps {
   onOpenChange: (open: boolean) => void;
   classes?: Array<{ id: string; name: string; level: string; class_year?: string | null }>;
   onCreated?: (student: { fullName: string; classYear: string; username: string }) => void;
+  onSwitchToBulk?: () => void;
 }
 
-export function CreateStudentDialog({ open, onOpenChange, classes = [], onCreated }: CreateStudentDialogProps) {
+export function CreateStudentDialog({ open, onOpenChange, classes = [], onCreated, onSwitchToBulk }: CreateStudentDialogProps) {
   const [fullName, setFullName] = useState("");
   const [classYear, setClassYear] = useState("year_9");
   const [selectedClassId, setSelectedClassId] = useState<string>("none");
@@ -234,6 +235,26 @@ export function CreateStudentDialog({ open, onOpenChange, classes = [], onCreate
           </div>
         ) : (
           <>
+            {onSwitchToBulk && (
+              <div className="flex items-center justify-between gap-2 rounded-xl border border-sky-500/20 bg-sky-500/10 p-3 text-xs mt-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <FileSpreadsheet className="h-4 w-4 text-[#3bc2f3] flex-shrink-0" />
+                  <span className="text-white truncate">Adding an entire class or roster?</span>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    close();
+                    onSwitchToBulk();
+                  }}
+                  className="border-sky-500/40 text-[#71c9ed] hover:bg-sky-500/20 h-7 text-[11px] px-2.5 flex-shrink-0 font-medium"
+                >
+                  Spreadsheet Import
+                </Button>
+              </div>
+            )}
             <div className="space-y-4 py-3">
               <div className="space-y-2">
                 <Label htmlFor="student-name">Full name</Label>

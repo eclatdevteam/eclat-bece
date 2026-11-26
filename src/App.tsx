@@ -91,6 +91,9 @@ const AboutPage = lazy(() => import("./pages/AboutPage"));
 const FeaturesPage = lazy(() => import("./pages/FeaturesPage"));
 const PublicLeaderboardPage = lazy(() => import("./pages/PublicLeaderboardPage"));
 const CertificateVerificationPage = lazy(() => import("./pages/CertificateVerificationPage"));
+const AgreementsPage = lazy(() => import("./pages/legal/AgreementsPage"));
+const PupilPrivacyPage = lazy(() => import("./pages/legal/PupilPrivacyPage"));
+const StudentPrivacyPage = lazy(() => import("./pages/student/StudentPrivacyPage"));
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -119,7 +122,12 @@ const App = () => (
                 <Route path="/leaderboard" element={<PublicLeaderboardPage />} />
                 <Route path="/verify-certificate" element={<CertificateVerificationPage />} />
                 <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                <Route path="/privacy" element={<Navigate to="/privacy-policy" replace />} />
                 <Route path="/terms-of-service" element={<TermsOfService />} />
+                <Route path="/terms" element={<Navigate to="/terms-of-service" replace />} />
+                <Route path="/agreements" element={<AgreementsPage />} />
+                <Route path="/pupil-privacy" element={<PupilPrivacyPage />} />
+                <Route path="/your-privacy" element={<Navigate to="/pupil-privacy" replace />} />
                 <Route path="/role-selection" element={<Navigate to="/auth/login/role-selection" replace />} />
                 <Route path="/auth/login/role-selection" element={<LoginRoleSelectionPage />} />
                 <Route path="/auth/signup/role-selection" element={<SignUpRoleSelectionPage />} />
@@ -129,6 +137,7 @@ const App = () => (
                 <Route path="/student-login" element={<StudentLogInPage />} />
                 <Route path="/student-signup" element={<Navigate to="/student-login" replace />} />
                 <Route path="/school-login" element={<SchoolLogInPage />} />
+                <Route path="/school-signup" element={<SchoolSignUpPage />} />
                 <Route path="/teacher-login" element={<TeacherLoginPage />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/password-reset" element={<PasswordResetPage />} />
@@ -155,6 +164,7 @@ const App = () => (
                   <Route path="subject-analytics" element={<SubjectAnalytics />} />
                   <Route path="leaderboard" element={<StudentLeaderboardPage />} />
                   <Route path="settings" element={<StudentSettingsPage />} />
+                  <Route path="privacy" element={<StudentPrivacyPage />} />
                   <Route path="duel-of-minds" element={<DuelOfMindsPage />} />
                 </Route>
                 <Route path="/dashboard/student/daily-challenge" element={

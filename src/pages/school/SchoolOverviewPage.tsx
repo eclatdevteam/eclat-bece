@@ -51,6 +51,7 @@ export function SchoolOverviewPage() {
 
   // Dialog states
   const [studentDialogOpen, setStudentDialogOpen] = useState(false);
+  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [classDialogOpen, setClassDialogOpen] = useState(false);
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
@@ -955,6 +956,13 @@ export function SchoolOverviewPage() {
         onOpenChange={setStudentDialogOpen}
         classes={classes}
         onCreated={() => refresh()}
+        onSwitchToBulk={() => setBulkDialogOpen(true)}
+      />
+      <SchoolBulkStudentDialog
+        open={bulkDialogOpen}
+        onOpenChange={setBulkDialogOpen}
+        classes={classes}
+        onSuccess={() => refresh()}
       />
 
       <CreateClassDialog

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,6 +30,17 @@ export default function AuthPage({ roleOverride }: { roleOverride?: AuthRole }) 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const role = searchParams.get("role") || "parent";
+
+  useEffect(() => {
+    if (role === "school") {
+      navigate("/school-signup", { replace: true });
+    } else if (role === "parent") {
+      navigate("/parent-signup", { replace: true });
+    } else if (role === "student") {
+      navigate("/student-login", { replace: true });
+    }
+  }, [role, navigate]);
+
   const [isLoading, setIsLoading] = useState(false);
   const [showSignupPassword, setShowSignupPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
