@@ -51,7 +51,6 @@ export function SchoolOverviewPage() {
 
   // Dialog states
   const [studentDialogOpen, setStudentDialogOpen] = useState(false);
-  const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [classDialogOpen, setClassDialogOpen] = useState(false);
   const [bulkDialogOpen, setBulkDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
